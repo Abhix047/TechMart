@@ -2,6 +2,8 @@ import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
 import generateToken from "../utils/generateToken.js";
 
+
+
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role, storeName } = req.body;
 
@@ -63,4 +65,20 @@ export const logoutUser = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json({ message: "User successfully logged out" });
+});
+export const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      storeName: user.storeName,
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not Found");
+  }
 });

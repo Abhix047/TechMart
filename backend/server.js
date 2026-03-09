@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js"; 
 import userRoutes from "./routes/userRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
 dotenv.config();
 connectDB();
 
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 
 // Yahan hum apne Routes lagayenge baad mein...
 app.use("/api/users", userRoutes);
+app.use("/api/products", productRoutes);
 // Error middlewares hamesha sabse last mein lagte hain
 app.use(notFound);
 app.use(errorHandler);

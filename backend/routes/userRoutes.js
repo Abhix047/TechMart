@@ -1,9 +1,19 @@
 import express from "express";
-import { registerUser } from "../controllers/userController.js";
+import { 
+  registerUser, 
+  authUser, 
+  logoutUser,
+  getUserProfile 
+} from "../controllers/userController.js";
+
+import { protect } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
 
-// Jab bhi koi POST request /api/users par aayegi, toh registerUser function chalega
 router.post("/", registerUser);
+router.post("/auth", authUser);
+router.post("/logout", logoutUser);
+
+router.get("/profile", protect, getUserProfile);
 
 export default router;
