@@ -5,7 +5,7 @@ const Home = () => {
     <div>
 
       <Hero />
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 };
