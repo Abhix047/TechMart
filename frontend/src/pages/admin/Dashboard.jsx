@@ -1,208 +1,326 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
-import { 
-  LayoutDashboard, 
-  Package, 
-  ShoppingCart, 
-  DollarSign, 
-  Users, 
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Loader2
+import { motion, useInView, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard, Package, ShoppingCart,
+  IndianRupee, Users, ArrowRight,
+  CheckCircle2, Clock, Truck, XCircle, TrendingUp
 } from "lucide-react";
 
-const AdminDashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
+/* ── Fonts ── */
+if (typeof document !== "undefined" && !document.getElementById("ad-fonts")) {
+  const l = document.createElement("link");
+  l.id = "ad-fonts"; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
+  document.head.appendChild(l);
+}
+
+const ease = [0.22, 1, 0.36, 1];
+
+/* ── Animated counter ── */
+function Counter({ target, prefix = "", suffix = "" }) {
+  const [val, setVal] = useState(0);
+  const ref   = useRef(null);
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    const n = typeof target === "number" ? target : 0;
+    if (n === 0) return;
+    let start = 0;
+    const step = n / 40;
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= n) { setVal(n); clearInterval(timer); }
+      else setVal(Math.floor(start));
+    }, 30);
+    return () => clearInterval(timer);
+  }, [inView, target]);
+
+  return (
+    <span ref={ref}>
+      {prefix}{val.toLocaleString("en-IN")}{suffix}
+    </span>
+  );
+}
+
+/* ── Stat card ── */
+function StatCard({ title, value, rawValue, icon: Icon, delay, accent, link }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "0px -40px" });
+
+  const inner = (
+    <motion.div
+      ref={ref}
+      className="bg-white border border-black/[0.07] rounded-2xl p-6 flex flex-col gap-4 hover:border-black/[0.14] hover:shadow-sm transition-all duration-300 group relative overflow-hidden cursor-pointer"
+      initial={{ opacity: 0, y: 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay, ease }}
+    >
+      {/* Accent strip */}
+      <div className={`absolute top-0 left-0 right-0 h-[2px] ${accent} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
+      <div className="flex items-start justify-between">
+        <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] font-semibold uppercase tracking-[0.2em] text-black/35">
+          {title}
+        </p>
+        <div className="w-9 h-9 rounded-xl bg-[#f7f5f2] border border-black/[0.06] flex items-center justify-center shrink-0">
+          <Icon size={15} className="text-black/45" strokeWidth={1.5} />
+        </div>
+      </div>
+
+      <div>
+        <p className="font-[family-name:'Cormorant_Garamond',serif] text-[38px] font-[500] text-[#0f0f0f] leading-none">
+          {typeof rawValue === "number"
+            ? <Counter target={rawValue} prefix={title === "Total Revenue" ? "₹" : ""} />
+            : value}
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-medium text-black/32">
+          <TrendingUp size={11} strokeWidth={1.5} />
+          <span>Updated just now</span>
+        </div>
+        {link && (
+          <ArrowRight size={13} strokeWidth={1.5} className="text-black/20 group-hover:text-black/50 group-hover:translate-x-1 transition-all duration-200" />
+        )}
+      </div>
+    </motion.div>
+  );
+
+  return link ? <Link to={link} className="no-underline block">{inner}</Link> : inner;
+}
+
+/* ── Status badge ── */
+function StatusBadge({ order }) {
+  if (order.isCancelled)
+    return (
+      <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/60 px-2.5 py-1 rounded-full">
+        <XCircle size={11} /> Cancelled
+      </span>
+    );
+  if (order.isDelivered)
+    return (
+      <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full">
+        <CheckCircle2 size={11} /> Delivered
+      </span>
+    );
+  if (order.isShipped)
+    return (
+      <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-2.5 py-1 rounded-full">
+        <Truck size={11} /> Shipped
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
+      <Clock size={11} /> Pending
+    </span>
+  );
+}
+
+/* ════════════════════ MAIN ════════════════════ */
+const Dashboard = () => {
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalProducts: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-    totalUsers: 0,
-    recentOrders: []
+    totalOrders:   0,
+    totalRevenue:  0,
+    totalUsers:    0,
+    recentOrders:  [],
   });
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const { data } = await API.get("/admin/dashboard");
-        setStats(data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboard();
+    API.get("/admin/dashboard")
+      .then(({ data }) => setStats(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const statCards = [
-    { 
-      title: "Total Revenue", 
-      value: `$${Number(stats.totalRevenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-      icon: DollarSign, 
-      color: "text-emerald-500", 
-      bg: "bg-emerald-50" 
-    },
-    { 
-      title: "Total Orders", 
-      value: stats.totalOrders.toLocaleString(), 
-      icon: ShoppingCart, 
-      color: "text-blue-500", 
-      bg: "bg-blue-50" 
-    },
-    { 
-      title: "Total Products", 
-      value: stats.totalProducts.toLocaleString(), 
-      icon: Package, 
-      color: "text-purple-500", 
-      bg: "bg-purple-50" 
-    },
-    { 
-      title: "Customers", 
-      value: stats.totalUsers.toLocaleString(), 
-      icon: Users, 
-      color: "text-orange-500", 
-      bg: "bg-orange-50" 
-    }
+  const STAT_CARDS = [
+    { title: "Total Revenue",  rawValue: stats.totalRevenue,  icon: IndianRupee,   delay: 0.08, accent: "bg-emerald-400", link: "/admin/orders"   },
+    { title: "Total Orders",   rawValue: stats.totalOrders,   icon: ShoppingCart,  delay: 0.14, accent: "bg-blue-400",    link: "/admin/orders"   },
+    { title: "Total Products", rawValue: stats.totalProducts, icon: Package,       delay: 0.20, accent: "bg-violet-400",  link: "/admin/products" },
+    { title: "Customers",      rawValue: stats.totalUsers,    icon: Users,         delay: 0.26, accent: "bg-amber-400",   link: "/admin/users"    },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center pt-20">
-        <Loader2 size={40} className="text-emerald-500 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium">Loading dashboard...</p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
+      <motion.div
+        className="w-7 h-7 border-[1.5px] border-black/10 border-t-black/55 rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
+      />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pt-28 pb-12 px-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-[1100px] mx-auto px-6 sm:px-10 pt-20 lg:pt-10">
 
-        {/* HEADER */}
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <LayoutDashboard className="text-emerald-500" /> 
-            Admin Dashboard
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Here is what's happening with your store today.</p>
-        </div>
-
-        {/* STATS GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={index}
-                className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      {item.title}
-                    </p>
-                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">
-                      {item.value}
-                    </h3>
-                  </div>
-                  <div className={`p-3 rounded-xl ${item.bg}`}>
-                    <Icon size={20} className={item.color} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* RECENT ORDERS TABLE */}
-        <div className="bg-white border border-slate-200/60 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col">
-          
-          <div className="flex items-center justify-between p-6 border-b border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <ShoppingCart size={18} className="text-slate-400" />
-              Recent Orders
-            </h2>
-            <Link 
-              to="/admin/orders" 
-              className="text-[13px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
+        {/* ══ HEADER ══ */}
+        <motion.div
+          className="flex items-end justify-between mb-10 pb-7 border-b border-black/[0.08]"
+          initial={{ opacity: 0, y: -14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease }}
+        >
+          <div>
+            <motion.p
+              className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-2.5"
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.06, ease }}
             >
-              View All <ArrowRight size={14} />
+              Overview
+            </motion.p>
+            <motion.h1
+              className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(34px,4vw,48px)] font-[400] text-[#0f0f0f] leading-none"
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.12, ease }}
+            >
+              Admin <em className="italic font-[300]">Dashboard</em>
+            </motion.h1>
+            <motion.p
+              className="font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/40 mt-2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.2, ease }}
+            >
+              Here's what's happening with your store today.
+            </motion.p>
+          </div>
+
+          {/* Today's date */}
+          <motion.div
+            className="text-right hidden sm:block shrink-0"
+            initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.15, ease }}
+          >
+            <p className="font-[family-name:'Cormorant_Garamond',serif] text-[28px] font-[400] text-[#0f0f0f] leading-none">
+              {new Date().getDate()}
+            </p>
+            <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] font-medium uppercase tracking-[0.16em] text-black/30 mt-1">
+              {new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" })}
+            </p>
+          </motion.div>
+        </motion.div>
+
+        {/* ══ STAT CARDS ══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {STAT_CARDS.map((card) => (
+            <StatCard key={card.title} {...card} />
+          ))}
+        </div>
+
+        {/* ══ RECENT ORDERS ══ */}
+        <motion.div
+          className="bg-white border border-black/[0.07] rounded-2xl overflow-hidden"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.32, ease }}
+        >
+          {/* Table header */}
+          <div className="flex items-center justify-between px-7 py-5 border-b border-black/[0.06]">
+            <div>
+              <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.2em] text-black/28 mb-1">
+                Latest Activity
+              </p>
+              <h2 className="font-[family-name:'Cormorant_Garamond',serif] text-[22px] font-[500] text-[#0f0f0f] leading-none">
+                Recent Orders
+              </h2>
+            </div>
+            <Link
+              to="/admin/orders"
+              className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/40 hover:text-[#0f0f0f] transition-colors group"
+            >
+              View All
+              <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform duration-200" />
             </Link>
           </div>
 
+          {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50/80 backdrop-blur-sm border-b border-slate-200/80">
-                <tr className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="px-6 py-4">Order ID</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
+            <table className="w-full" style={{ borderCollapse: "collapse" }}>
+              <thead>
+                <tr className="border-b border-black/[0.055]">
+                  {["Order ID", "Customer", "Amount", "Items", "Status"].map(h => (
+                    <th key={h} className="px-7 py-3.5 text-left font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              
-              <tbody className="divide-y divide-slate-100">
-                {stats.recentOrders.length > 0 ? (
-                  stats.recentOrders.map((order) => (
-                    <tr key={order._id} className="hover:bg-slate-50/50 transition-colors group">
-                      
-                      {/* ORDER ID */}
-                      <td className="px-6 py-4">
-                        <span className="text-[13px] font-mono font-semibold text-slate-600">
-                          #{order._id.slice(-6).toUpperCase()}
-                        </span>
-                      </td>
+              <tbody>
+                <AnimatePresence>
+                  {stats.recentOrders.length > 0 ? (
+                    stats.recentOrders.map((order, i) => (
+                      <motion.tr
+                        key={order._id}
+                        className="border-b border-black/[0.045] last:border-none hover:bg-[#f9f8f6] transition-colors duration-200 group"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.38, delay: 0.36 + i * 0.07, ease }}
+                      >
+                        {/* Order ID */}
+                        <td className="px-7 py-4">
+                          <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold text-black/55 font-mono tracking-wide">
+                            #{order._id.slice(-8).toUpperCase()}
+                          </span>
+                        </td>
 
-                      {/* CUSTOMER */}
-                      <td className="px-6 py-4">
-                        <span className="text-[14px] font-bold text-slate-800">
-                          {order.user?.name || "Guest User"}
-                        </span>
-                      </td>
-
-                      {/* AMOUNT */}
-                      <td className="px-6 py-4">
-                        <span className="text-[14px] font-bold text-emerald-600">
-                          ${Number(order.totalPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </td>
-
-                      {/* STATUS */}
-                      <td className="px-6 py-4">
-                        {order.isDelivered ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[11px] font-bold tracking-wide w-fit">
-                            <CheckCircle2 size={12} />
-                            Delivered
+                        {/* Customer */}
+                        <td className="px-7 py-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-[#f0ede8] border border-black/[0.06] flex items-center justify-center shrink-0">
+                              <span className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold text-black/50">
+                                {(order.user?.name || "G")[0].toUpperCase()}
+                              </span>
+                            </div>
+                            <span className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium text-[#0f0f0f]">
+                              {order.user?.name || "Guest User"}
+                            </span>
                           </div>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-600 text-[11px] font-bold tracking-wide w-fit">
-                            <Clock size={12} />
-                            Pending
-                          </div>
-                        )}
-                      </td>
+                        </td>
 
+                        {/* Amount */}
+                        <td className="px-7 py-4">
+                          <span className="font-[family-name:'Cormorant_Garamond',serif] text-[18px] font-[500] text-[#0f0f0f] leading-none">
+                            ₹{Number(order.totalPrice).toLocaleString("en-IN")}
+                          </span>
+                        </td>
+
+                        {/* Items count */}
+                        <td className="px-7 py-4">
+                          <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/42">
+                            {order.orderItems?.length || 0} item{(order.orderItems?.length || 0) !== 1 ? "s" : ""}
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-7 py-4">
+                          <StatusBadge order={order} />
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-7 py-16 text-center">
+                        <p className="font-[family-name:'Cormorant_Garamond',serif] italic text-[20px] font-[400] text-[#0f0f0f] mb-1.5">
+                          No orders yet
+                        </p>
+                        <p className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/35">
+                          Orders will appear here once placed.
+                        </p>
+                      </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-slate-500 text-sm">
-                      No recent orders found.
-                    </td>
-                  </tr>
-                )}
+                  )}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>
-        </div>
-
-      </div>
+        </motion.div>
+      <style>{`* { -webkit-font-smoothing: antialiased; }`}</style>
     </div>
   );
 };
 
-export default AdminDashboard;
+export default Dashboard;

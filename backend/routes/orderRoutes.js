@@ -8,6 +8,7 @@ import {
   cancelOrder,
   updateOrderToConfirmed,
   updateOrderToShipped,
+  updateOrderToPaid,
 } from "../controllers/orderController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { admin } from "../middleware/adminMiddleware.js";
@@ -27,5 +28,6 @@ router.put("/:id/confirm", protect, admin, validateObjectIdParam(), updateOrderT
 router.put("/:id/ship", protect, admin, validateObjectIdParam(), updateOrderToShipped);
 router.put("/:id/deliver", protect, admin, validateObjectIdParam(), updateOrderToDelivered);
 router.put("/:id/cancel", protect, validateObjectIdParam(), cancelOrder);
+router.put("/:id/pay", protect, admin, validateObjectIdParam(), updateOrderToPaid);
 
 export default router;

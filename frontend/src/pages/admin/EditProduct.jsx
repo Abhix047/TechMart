@@ -2,400 +2,483 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import API from "../../services/api.js";
 import toast from "react-hot-toast";
-import { 
-  Package, Info, DollarSign, Boxes, Settings, 
-  Image as ImageIcon, Palette, Plus, Trash2, Save, 
-  UploadCloud, X, Loader2, ArrowLeft
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Package, Info, IndianRupee, Boxes, Settings,
+  ImageIcon, Palette, Plus, Trash2, Save,
+  UploadCloud, X, ArrowLeft, CheckCircle2
 } from "lucide-react";
 
-const EditProduct = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+/* ── Fonts ── */
+if (typeof document !== "undefined" && !document.getElementById("ep-fonts")) {
+  const l = document.createElement("link");
+  l.id = "ep-fonts"; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
+  document.head.appendChild(l);
+}
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const ease = [0.22, 1, 0.36, 1];
+const inp  = "w-full bg-[#f7f5f2] border border-black/[0.08] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[13.5px] text-[#0f0f0f] placeholder:text-black/28 outline-none focus:border-black/25 focus:bg-white transition-all duration-200";
+const lbl  = "block font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/38 mb-2";
+
+/* ── Reusable section card ── */
+function Section({ icon: Icon, title, children, delay = 0 }) {
+  return (
+    <motion.div
+      className="bg-white border border-black/[0.07] rounded-2xl overflow-hidden"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease }}
+    >
+      <div className="px-6 py-4 border-b border-black/[0.06] flex items-center gap-2.5">
+        <Icon size={13} className="text-black/35" strokeWidth={1.5} />
+        <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold uppercase tracking-[0.18em] text-black/38">
+          {title}
+        </p>
+      </div>
+      <div className="p-6">{children}</div>
+    </motion.div>
+  );
+}
+
+const EditProduct = () => {
+  const { id }    = useParams();
+  const navigate  = useNavigate();
+  const fileRef   = useRef(null);
+
+  const [isLoading,  setIsLoading]  = useState(true);
+  const [isSaving,   setIsSaving]   = useState(false);
+  const [isUploading,setIsUploading]= useState(false);
+  const [dragOver,   setDragOver]   = useState(false);
 
   const [form, setForm] = useState({
-    name: "",
-    brand: "",
-    category: "",
-    description: "",
-    price: "",
-    discountPrice: "",
-    countInStock: "",
-    colors: "",
-    images: []
+    name: "", brand: "", category: "", description: "",
+    price: "", discountPrice: "", countInStock: "",
+    colors: "", images: [],
   });
+  const [specs, setSpecs] = useState([{ name: "", value: "" }]);
 
-  const [specs, setSpecs] = useState([]);
-
-  // LOAD PRODUCT
+  /* ── Load product ── */
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const { data } = await API.get(`/products/${id}`);
+    API.get(`/products/${id}`)
+      .then(({ data }) => {
         setForm({
-          name: data.name || "",
-          brand: data.brand || "",
-          category: data.category || "",
-          description: data.description || "",
-          price: data.price || "",
+          name:          data.name          || "",
+          brand:         data.brand         || "",
+          category:      data.category      || "",
+          description:   data.description   || "",
+          price:         data.price         || "",
           discountPrice: data.discountPrice || "",
-          countInStock: data.countInStock || "",
-          colors: data.colors ? data.colors.join(", ") : "",
-          images: data.images || []
+          countInStock:  data.countInStock  || "",
+          colors:        data.colors ? data.colors.join(", ") : "",
+          images:        data.images        || [],
         });
-        setSpecs(data.specifications && data.specifications.length > 0 ? data.specifications : [{ name: "", value: "" }]);
-      } catch (error) {
-        console.error("Failed to fetch product", error);
-        alert("Could not load product data.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProduct();
+        setSpecs(
+          data.specifications?.length > 0
+            ? data.specifications
+            : [{ name: "", value: "" }]
+        );
+      })
+      .catch(() => toast.error("Could not load product data."))
+      .finally(() => setIsLoading(false));
   }, [id]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // IMAGE UPLOAD (Brought over from AddProduct)
-  const handleImageUpload = async (e) => {
-    const files = e.target.files;
+  const handleImageUpload = async (files) => {
     if (!files.length) return;
-
     setIsUploading(true);
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append("images", files[i]);
-    }
-
+    const fd = new FormData();
+    for (const f of files) fd.append("images", f);
     try {
-      const { data } = await API.post("/products/upload", formData, {
+      const { data } = await API.post("/products/upload", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setForm((prev) => ({ ...prev, images: [...prev.images, ...data] }));
-    } catch (error) {
-      console.error("Upload failed", error);
-      alert("Failed to upload images.");
+      setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
+    } catch {
+      toast.error("Failed to upload images.");
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const removeImage = (indexToRemove) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, index) => index !== indexToRemove)
-    }));
+  const removeImage  = idx => setForm(p => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
+  const addSpec      = () => setSpecs([...specs, { name: "", value: "" }]);
+  const removeSpec   = idx => setSpecs(specs.filter((_, i) => i !== idx));
+  const handleSpec   = (idx, field, val) => {
+    const u = [...specs]; u[idx][field] = val; setSpecs(u);
   };
-
-  const handleSpecChange = (index, field, value) => {
-    const updated = [...specs];
-    updated[index][field] = value;
-    setSpecs(updated);
-  };
-
-  const addSpec = () => setSpecs([...specs, { name: "", value: "" }]);
-  
-  const removeSpec = (index) => setSpecs(specs.filter((_, i) => i !== index));
 
   const submitHandler = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-
-    const productData = {
+    const payload = {
       ...form,
-      price: Number(form.price),
-      discountPrice: form.discountPrice === "" ? undefined : Number(form.discountPrice),
-      countInStock: Number(form.countInStock),
-      colors: form.colors ? form.colors.split(",").map((c) => c.trim()) : [],
-      specifications: specs.filter(s => s.name && s.value)
+      price:          Number(form.price),
+      discountPrice:  form.discountPrice === "" ? undefined : Number(form.discountPrice),
+      countInStock:   Number(form.countInStock),
+      colors:         form.colors ? form.colors.split(",").map(c => c.trim()) : [],
+      specifications: specs.filter(s => s.name && s.value),
     };
-
     try {
-      await API.put(`/products/${id}`, productData);
-      // Optional: alert("Product Updated");
+      await API.put(`/products/${id}`, payload);
+      toast.success("Product updated!");
       navigate("/admin/products");
-    } catch (error) {
-      console.error("Failed to update", error);
-      alert(error?.response?.data?.message || "Error updating product");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Error updating product");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // SAAS Design System Classes
-  const inputStyles = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-[14px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white focus:shadow-sm transition-all";
-  const labelStyles = "block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2";
-  const cardStyles = "bg-white border border-slate-200/60 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] p-6";
+  const discount = form.price && form.discountPrice
+    ? Math.round(((Number(form.price) - Number(form.discountPrice)) / Number(form.price)) * 100)
+    : 0;
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center pt-20">
-        <Loader2 size={40} className="text-emerald-500 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium">Loading product data...</p>
-      </div>
-    );
-  }
+  /* ── Loading ── */
+  if (isLoading) return (
+    <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
+      <motion.div
+        className="w-7 h-7 border-[1.5px] border-black/10 border-t-black/55 rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+      />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pt-28 pb-12 px-6">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* HEADER & ACTION BAR */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div
+      className="min-h-screen bg-[#f7f5f2] pb-20"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
+      <div className="max-w-[1100px] mx-auto px-6 sm:px-10 pt-10">
+
+        {/* ══ HEADER ══ */}
+        <motion.div
+          className="flex items-end justify-between mb-8 pb-7 border-b border-black/[0.08]"
+          initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease }}
+        >
           <div>
-            <Link to="/admin/products" className="inline-flex items-center gap-1 text-[13px] font-semibold text-slate-500 hover:text-slate-800 transition-colors mb-2">
-              <ArrowLeft size={14} /> Back to Products
-            </Link>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Package className="text-emerald-500" />
-              Edit Product
-            </h1>
+            {/* Back link */}
+            <motion.div
+              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.04, ease }}
+            >
+              <Link
+                to="/admin/products"
+                className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-medium text-black/32 hover:text-black/65 transition-colors mb-3 group"
+              >
+                <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+                Back to Products
+              </Link>
+            </motion.div>
+
+            <motion.p
+              className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-2.5"
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.08, ease }}
+            >
+              Admin · Products
+            </motion.p>
+            <motion.h1
+              className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(30px,4vw,44px)] font-[400] text-[#0f0f0f] leading-none"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.14, ease }}
+            >
+              Edit <em className="italic font-[300]">Product</em>
+            </motion.h1>
+            <motion.p
+              className="font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/40 mt-2 max-w-[380px] truncate"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.22, ease }}
+            >
+              {form.name || "Editing product…"}
+            </motion.p>
           </div>
-          
-          <div className="flex items-center gap-3">
+
+          {/* Desktop actions */}
+          <motion.div
+            className="hidden md:flex items-center gap-3"
+            initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.18, ease }}
+          >
             <Link
               to="/admin/products"
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-200 bg-slate-100 transition-all"
+              className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium text-black/48 border border-black/10 bg-white hover:bg-black/[0.025] hover:border-black/18 rounded-2xl px-5 py-2.5 transition-all duration-200"
             >
               Cancel
             </Link>
-            <button
+            <motion.button
+              type="button"
               onClick={submitHandler}
               disabled={isSaving}
-              className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-emerald-600 disabled:bg-slate-400 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md min-w-[140px]"
+              className="flex items-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold px-6 py-2.5 rounded-2xl hover:bg-black/80 disabled:bg-black/20 disabled:text-black/30 transition-all duration-200"
+              whileTap={{ scale: 0.97 }}
             >
-              {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              {isSaving ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-        </div>
+              {isSaving ? (
+                <motion.span
+                  className="w-4 h-4 border-[1.5px] border-white/30 border-t-white rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
+                />
+              ) : <Save size={13} />}
+              {isSaving ? "Saving…" : "Save Changes"}
+            </motion.button>
+          </motion.div>
+        </motion.div>
 
+        {/* ══ FORM GRID ══ */}
         <form onSubmit={submitHandler}>
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-            
-            {/* LEFT COLUMN - MAIN INFO */}
-            <div className="space-y-6">
-              
-              {/* BASIC INFO */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <Info size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Basic Information</h2>
-                </div>
-                
-                <div className="space-y-5">
-                  <div>
-                    <label className={labelStyles}>Product Name</label>
-                    <input name="name" value={form.name} onChange={handleChange} className={inputStyles} required />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className={labelStyles}>Brand</label>
-                      <input name="brand" value={form.brand} onChange={handleChange} className={inputStyles} required />
-                    </div>
-                    <div>
-                      <label className={labelStyles}>Category</label>
-                      <input name="category" value={form.category} onChange={handleChange} className={inputStyles} required />
-                    </div>
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5">
 
+            {/* LEFT */}
+            <div className="flex flex-col gap-5">
+
+              {/* Basic info */}
+              <Section icon={Info} title="Basic Information" delay={0.1}>
+                <div className="flex flex-col gap-4">
                   <div>
-                    <label className={labelStyles}>Description</label>
-                    <textarea 
-                      name="description" 
+                    <label className={lbl}>Product Name</label>
+                    <input name="name" value={form.name} onChange={handleChange} className={inp} required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={lbl}>Brand</label>
+                      <input name="brand" value={form.brand} onChange={handleChange} className={inp} required />
+                    </div>
+                    <div>
+                      <label className={lbl}>Category</label>
+                      <input name="category" value={form.category} onChange={handleChange} className={inp} required />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={lbl}>Description</label>
+                    <textarea
+                      name="description"
                       value={form.description}
-                      onChange={handleChange} 
-                      className={`${inputStyles} min-h-[120px] resize-y`} 
-                      required 
+                      onChange={handleChange}
+                      rows={4}
+                      className={`${inp} resize-y min-h-[110px]`}
+                      required
                     />
                   </div>
                 </div>
-              </div>
+              </Section>
 
-              {/* SPECIFICATIONS */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <Settings size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Specifications</h2>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="hidden md:grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
-                    <label className={labelStyles}>Property</label>
-                    <label className={labelStyles}>Value</label>
+              {/* Specifications */}
+              <Section icon={Settings} title="Specifications" delay={0.16}>
+                <div className="flex flex-col gap-2.5">
+                  <div className="hidden md:grid grid-cols-[1fr_1fr_32px] gap-3 mb-0.5">
+                    <span className={lbl}>Property</span>
+                    <span className={lbl}>Value</span>
+                    <span />
                   </div>
 
-                  {specs.map((spec, index) => (
-                    <div key={index} className="flex flex-col md:flex-row gap-3">
-                      <input
-                        placeholder="e.g. Processor"
-                        value={spec.name}
-                        onChange={(e) => handleSpecChange(index, "name", e.target.value)}
-                        className={inputStyles}
-                      />
-                      <input
-                        placeholder="e.g. Snapdragon 8 Gen 3"
-                        value={spec.value}
-                        onChange={(e) => handleSpecChange(index, "value", e.target.value)}
-                        className={inputStyles}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeSpec(index)}
-                        className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors self-end md:self-auto"
+                  <AnimatePresence>
+                    {specs.map((spec, i) => (
+                      <motion.div
+                        key={i}
+                        className="flex gap-2.5 items-center"
+                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.28, ease }}
                       >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  ))}
+                        <input
+                          placeholder="e.g. Processor"
+                          value={spec.name}
+                          onChange={e => handleSpec(i, "name", e.target.value)}
+                          className={`${inp} flex-1`}
+                        />
+                        <input
+                          placeholder="e.g. A17 Pro"
+                          value={spec.value}
+                          onChange={e => handleSpec(i, "value", e.target.value)}
+                          className={`${inp} flex-1`}
+                        />
+                        {specs.length > 1 && (
+                          <motion.button
+                            type="button"
+                            onClick={() => removeSpec(i)}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl text-black/30 hover:text-red-500 hover:bg-red-50 transition-all duration-200 shrink-0"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Trash2 size={13} />
+                          </motion.button>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
 
                   <button
                     type="button"
                     onClick={addSpec}
-                    className="flex items-center gap-1.5 mt-4 text-[13px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-3 py-2 rounded-lg transition-colors w-fit"
+                    className="flex items-center gap-1.5 mt-2 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/45 hover:text-[#0f0f0f] hover:bg-black/[0.04] px-3 py-2 rounded-xl transition-all duration-200 w-fit"
                   >
-                    <Plus size={16} /> Add Specification
+                    <Plus size={13} /> Add Specification
                   </button>
                 </div>
-              </div>
+              </Section>
             </div>
 
-            {/* RIGHT COLUMN - MEDIA & CONFIG */}
-            <div className="space-y-6">
-              
-              {/* IMAGES */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <ImageIcon size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Product Images</h2>
-                </div>
+            {/* RIGHT */}
+            <div className="flex flex-col gap-5">
 
-                <div className="mb-5">
-                  <input 
-                    type="file" 
-                    multiple 
-                    accept="image/*"
-                    onChange={handleImageUpload} 
-                    ref={fileInputRef}
-                    className="hidden" 
-                    id="edit-image-upload"
+              {/* Images */}
+              <Section icon={ImageIcon} title="Product Images" delay={0.12}>
+                {/* Upload zone */}
+                <div
+                  className={`relative border-2 border-dashed rounded-2xl transition-all duration-200 cursor-pointer mb-4 ${
+                    dragOver
+                      ? "border-[#0f0f0f]/40 bg-black/[0.03]"
+                      : "border-black/12 hover:border-black/22 hover:bg-black/[0.02]"
+                  }`}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => { e.preventDefault(); setDragOver(false); handleImageUpload(e.dataTransfer.files); }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <input
+                    type="file" multiple accept="image/*"
+                    onChange={e => handleImageUpload(e.target.files)}
+                    ref={fileRef} className="hidden"
                   />
-                  <label 
-                    htmlFor="edit-image-upload"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-emerald-300 transition-all group"
-                  >
+                  <div className="flex flex-col items-center justify-center py-7 gap-2.5">
                     {isUploading ? (
-                      <div className="flex flex-col items-center gap-2 text-emerald-500">
-                        <Loader2 size={24} className="animate-spin" />
-                        <span className="text-xs font-semibold">Uploading...</span>
-                      </div>
+                      <>
+                        <motion.div
+                          className="w-6 h-6 border-[1.5px] border-black/15 border-t-black/50 rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                        />
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] text-black/38">Uploading…</span>
+                      </>
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-emerald-500">
-                        <UploadCloud size={28} />
-                        <span className="text-xs font-semibold">Click to upload more</span>
-                      </div>
+                      <>
+                        <UploadCloud size={20} className="text-black/28" strokeWidth={1.5} />
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium text-black/45">
+                          Drop or click to add images
+                        </span>
+                      </>
                     )}
-                  </label>
+                  </div>
                 </div>
 
+                {/* Preview grid */}
                 {form.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3">
-                    {form.images.map((img, index) => (
-                      <div key={index} className="relative aspect-square group rounded-lg overflow-hidden border border-slate-200 shadow-sm">
-                        <img
-                          src={`http://localhost:5000${img}`}
-                          alt={`Product ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-black/50 hover:bg-red-500 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <AnimatePresence>
+                      {form.images.map((img, i) => (
+                        <motion.div
+                          key={i}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.07] bg-[#f0ede8] group"
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.28, ease }}
                         >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+                          <img
+                            src={img.startsWith("http") ? img : `${BASE_URL}${img}`}
+                            alt={`Product ${i + 1}`}
+                            className="w-full h-full object-contain mix-blend-multiply p-1"
+                          />
+                          <motion.button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-[#0f0f0f]/70 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <X size={11} />
+                          </motion.button>
+                          {i === 0 && (
+                            <span className="absolute bottom-1.5 left-1.5 font-[family-name:'DM_Sans',sans-serif] text-[9px] font-semibold uppercase tracking-[0.12em] text-white bg-[#0f0f0f]/65 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
+                              Main
+                            </span>
+                          )}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
-              </div>
+              </Section>
 
-              {/* PRICING */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <DollarSign size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Pricing</h2>
-                </div>
-                <div className="space-y-5">
+              {/* Pricing */}
+              <Section icon={IndianRupee} title="Pricing" delay={0.18}>
+                <div className="flex flex-col gap-4">
                   <div>
-                    <label className={labelStyles}>Regular Price ($)</label>
-                    <input name="price" type="number" value={form.price} onChange={handleChange} className={inputStyles} required />
+                    <label className={lbl}>Regular Price (₹)</label>
+                    <input name="price" type="number" value={form.price} onChange={handleChange} className={inp} required />
                   </div>
                   <div>
-                    <label className={labelStyles}>Discount Price ($)</label>
-                    <input name="discountPrice" type="number" value={form.discountPrice} onChange={handleChange} className={inputStyles} />
+                    <label className={lbl}>Discount Price (₹)</label>
+                    <input name="discountPrice" type="number" value={form.discountPrice} onChange={handleChange} className={inp} />
                   </div>
-                </div>
-              </div>
 
-              {/* INVENTORY & VARIANTS */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <Boxes size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Inventory & Variants</h2>
+                  <AnimatePresence>
+                    {discount > 0 && (
+                      <motion.div
+                        className="flex items-center justify-between bg-emerald-50 border border-emerald-200/60 rounded-xl px-4 py-3"
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        transition={{ duration: 0.28, ease }}
+                      >
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] text-emerald-700">Customer saves</span>
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-emerald-700">{discount}% off</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="space-y-5">
+              </Section>
+
+              {/* Inventory */}
+              <Section icon={Boxes} title="Inventory & Variants" delay={0.22}>
+                <div className="flex flex-col gap-4">
                   <div>
-                    <label className={labelStyles}>Stock Quantity</label>
-                    <input name="countInStock" type="number" value={form.countInStock} onChange={handleChange} className={inputStyles} required />
+                    <label className={lbl}>Stock Quantity</label>
+                    <input name="countInStock" type="number" value={form.countInStock} onChange={handleChange} className={inp} required />
                   </div>
                   <div>
-                    <label className={labelStyles}>Available Colors</label>
+                    <label className={lbl}>Available Colors</label>
                     <div className="relative">
-                      <Palette size={16} className="absolute left-3.5 top-3 text-slate-400" />
-                      <input 
-                        name="colors" 
-                        value={form.colors}
-                        onChange={handleChange} 
-                        className={`${inputStyles} pl-10`} 
-                      />
+                      <Palette size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/28 pointer-events-none" strokeWidth={1.5} />
+                      <input name="colors" value={form.colors} onChange={handleChange} className={`${inp} pl-9`} />
                     </div>
+                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mt-1.5">
+                      Separate multiple colors with a comma
+                    </p>
                   </div>
                 </div>
-              </div>
+              </Section>
 
+              {/* Mobile actions */}
+              <div className="md:hidden flex flex-col gap-3">
+                <motion.button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full flex items-center justify-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold py-3.5 rounded-2xl hover:bg-black/80 disabled:bg-black/15 disabled:text-black/25 transition-all duration-200"
+                  whileTap={{ scale: 0.985 }}
+                >
+                  {isSaving ? (
+                    <motion.span className="w-4 h-4 border-[1.5px] border-white/30 border-t-white rounded-full"
+                      animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} />
+                  ) : <Save size={13} />}
+                  {isSaving ? "Saving…" : "Save Changes"}
+                </motion.button>
+
+                <Link
+                  to="/admin/products"
+                  className="w-full text-center font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium text-black/48 border border-black/10 bg-white rounded-2xl py-3.5 hover:bg-black/[0.025] transition-colors"
+                >
+                  Cancel
+                </Link>
+              </div>
             </div>
           </div>
-
-          {/* MOBILE ACTIONS */}
-          <div className="md:hidden mt-8 flex flex-col gap-3">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-emerald-600 disabled:bg-slate-400 text-white px-6 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-md"
-            >
-              {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              {isSaving ? "Saving..." : "Save Changes"}
-            </button>
-            <Link
-              to="/admin/products"
-              className="w-full text-center px-6 py-3.5 rounded-xl text-sm font-semibold text-slate-600 bg-slate-200 hover:bg-slate-300 transition-all"
-            >
-              Cancel
-            </Link>
-          </div>
-
         </form>
       </div>
+
+      <style>{`* { -webkit-font-smoothing: antialiased; }`}</style>
     </div>
   );
 };

@@ -165,7 +165,7 @@ const UserNavbar = () => {
                     letterSpacing: "0.34em", textTransform: "uppercase",
                     color: "rgba(26,17,8,0.30)",
                     display: "block",
-                  }}>Est. 2024</span>
+                  }}>Est. 2026</span>
                 </div>
 
                 {/* TECHMART — Bodoni Moda, same weight/style as MONARCA */}

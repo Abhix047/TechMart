@@ -1,192 +1,299 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
-import { Trash2, Search, Filter, MoreVertical, UserPlus, Mail, Shield, User, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Trash2, Search, Shield, User, X, Users as UsersIcon
+} from "lucide-react";
 import toast from "react-hot-toast";
 
+/* ── Fonts ── */
+if (typeof document !== "undefined" && !document.getElementById("au-fonts")) {
+  const l = document.createElement("link");
+  l.id = "au-fonts"; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
+  document.head.appendChild(l);
+}
+
+const ease = [0.22, 1, 0.36, 1];
+
+/* ── Delete modal ── */
+function DeleteModal({ user, onConfirm, onCancel }) {
+  return (
+    <AnimatePresence>
+      {user && (
+        <>
+          <motion.div className="fixed inset-0 bg-black/25 backdrop-blur-[3px] z-[100]"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }} onClick={onCancel} />
+          <div className="fixed inset-0 z-[101] flex items-center justify-center px-4">
+            <motion.div className="bg-white rounded-2xl p-7 w-full max-w-[380px] border border-black/[0.07]"
+              initial={{ opacity: 0, scale: 0.93, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.3, ease }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center mb-5">
+                <Trash2 size={15} className="text-red-500" />
+              </div>
+              <h2 className="font-[family-name:'Cormorant_Garamond',serif] text-[22px] font-[500] text-[#0f0f0f] mb-2 leading-snug">
+                Delete this user?
+              </h2>
+              <p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium text-[#0f0f0f] mb-1">{user.name}</p>
+              <p className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/38 mb-7 truncate">{user.email}</p>
+              <div className="flex gap-2.5">
+                <button onClick={onCancel}
+                  className="flex-1 py-3 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium text-black/50 border border-black/10 hover:bg-black/[0.025] transition-colors">
+                  Cancel
+                </button>
+                <motion.button onClick={onConfirm} whileTap={{ scale: 0.97 }}
+                  className="flex-1 py-3 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors">
+                  Delete
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ════════════════════ MAIN ════════════════════ */
 const Users = () => {
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const [users,       setUsers]       = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [search,      setSearch]      = useState("");
+  const [activeTab,   setActiveTab]   = useState("all");
+  const [deleteTarget,setDeleteTarget]= useState(null);
 
   useEffect(() => {
-    fetchUsers();
+    API.get("/users")
+      .then(({ data }) => setUsers(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchUsers = async () => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      const { data } = await API.get("/users");
-      setUsers(data);
-      setFilteredUsers(data);
-    } catch (error) {
-      console.error("Error fetching users:", error);
+      await API.delete(`/users/${deleteTarget._id}`);
+      setUsers(prev => prev.filter(u => u._id !== deleteTarget._id));
+      toast.success("User deleted.");
+    } catch {
+      toast.error("Failed to delete user.");
     } finally {
-      setLoading(false);
+      setDeleteTarget(null);
     }
   };
 
-  // Search and Filter Logic
-  useEffect(() => {
-    let result = users.filter(user => 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const filtered = users.filter(u => {
+    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
+                        u.email.toLowerCase().includes(search.toLowerCase());
+    const matchTab    = activeTab === "all" || u.role === activeTab;
+    return matchSearch && matchTab;
+  });
 
-    if (activeTab !== "all") {
-      result = result.filter(user => user.role === activeTab);
-    }
-
-    setFilteredUsers(result);
-  }, [searchTerm, activeTab, users]);
-
-  const deleteHandler = async (id) => {
-    if (!window.confirm("Are you sure? This action cannot be undone.")) return;
-    try {
-      await API.delete(`/users/${id}`);
-      setUsers(users.filter((u) => u._id !== id));
-      toast.success("User deleted");
-    } catch (err) {
-      toast.error("Error deleting user");
-    }
-  };
-
-  if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-white">
-      <Loader2 className="animate-spin text-blue-600" size={40} />
-    </div>
-  );
+  const admins    = users.filter(u => u.role === "admin").length;
+  const customers = users.filter(u => u.role !== "admin").length;
 
   return (
-    /* 1. Yahan pt-24 (Padding Top) add kiya hai taaki Navbar ke liye space ban jaye */
-    <div className="pt-24 pb-10 px-4 md:px-8 bg-[#F9FAFB] min-h-screen font-sans">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-[#f7f5f2] pb-20" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      <DeleteModal user={deleteTarget} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />
+
+      <div className="max-w-[1100px] mx-auto px-6 sm:px-10 pt-10">
+
+        {/* ══ HEADER ══ */}
+        <motion.div
+          className="flex items-end justify-between mb-8 pb-7 border-b border-black/[0.08] flex-wrap gap-5"
+          initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease }}
+        >
           <div>
-            {/* 2. Heading ko thoda aur clean kiya */}
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              User Management
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Tech Mart ke saare users aur permissions yahan se control karein.
-            </p>
-          </div>
-          
-          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-200 active:scale-95">
-            <UserPlus size={20} />
-            <span className="font-semibold">Add New User</span>
-          </button>
-        </div>
-
-        {/* Stats & Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-           <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Total Users</p>
-              <h3 className="text-2xl font-black text-gray-800">{users.length}</h3>
-           </div>
-           {/* Add more stats cards if needed */}
-        </div>
-
-        {/* Table Container */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          
-          {/* Toolbar */}
-          <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between gap-4 items-center bg-gray-50/50">
-            <div className="flex bg-white border border-gray-200 rounded-lg px-3 py-2 w-full md:w-80 focus-within:ring-2 ring-blue-100 transition-all">
-              <Search className="text-gray-400 mr-2" size={20} />
-              <input 
-                type="text" 
-                placeholder="Search by name or email..." 
-                className="outline-none text-sm w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
-              {['all', 'admin', 'customer'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    activeTab === tab ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
+            <motion.p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-2.5"
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.06, ease }}>
+              Admin · People
+            </motion.p>
+            <motion.h1 className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(30px,4vw,44px)] font-[400] text-[#0f0f0f] leading-none"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.12, ease }}>
+              User <em className="italic font-[300]">Management</em>
+            </motion.h1>
+            <motion.p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/40 mt-2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.2, ease }}>
+              {loading ? "Loading…" : `${filtered.length} of ${users.length} users`}
+            </motion.p>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap">
-              <thead>
-                <tr className="text-xs font-semibold text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100">
-                  <th className="px-6 py-4">User Details</th>
-                  <th className="px-6 py-4">Role & Access</th>
-                  <th className="px-6 py-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredUsers.map((user) => (
-                  <tr key={user._id} className="group hover:bg-blue-50/30 transition-all">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="h-11 w-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm">
-                          {user.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{user.name}</p>
-                          <p className="text-sm text-gray-500 flex items-center gap-1 leading-none mt-1">
-                            <Mail size={12} /> {user.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.role === "admin" ? (
-                        <div className="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md w-fit text-xs font-bold ring-1 ring-indigo-100">
-                          <Shield size={14} /> ADMIN
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2.5 py-1 rounded-md w-fit text-xs font-bold ring-1 ring-gray-100">
-                          <User size={14} /> CUSTOMER
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                           onClick={() => deleteHandler(user._id)}
-                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
-                          <MoreVertical size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {filteredUsers.length === 0 && (
-            <div className="p-20 text-center">
-              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search size={30} className="text-gray-300" />
+          {/* Stats pills */}
+          {!loading && (
+            <motion.div className="flex items-center gap-3 flex-wrap"
+              initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.45, delay: 0.18, ease }}>
+              <div className="bg-white border border-black/[0.07] rounded-2xl px-5 py-3 text-center">
+                <p className="font-[family-name:'Cormorant_Garamond',serif] text-[28px] font-[400] text-[#0f0f0f] leading-none">{users.length}</p>
+                <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.16em] text-black/30 mt-1">Total</p>
               </div>
-              <h3 className="text-gray-900 font-semibold">No users found</h3>
-              <p className="text-gray-500 text-sm">Try adjusting your search or filters.</p>
-            </div>
+              <div className="bg-white border border-black/[0.07] rounded-2xl px-5 py-3 text-center">
+                <p className="font-[family-name:'Cormorant_Garamond',serif] text-[28px] font-[400] text-[#0f0f0f] leading-none">{admins}</p>
+                <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.16em] text-black/30 mt-1">Admins</p>
+              </div>
+              <div className="bg-white border border-black/[0.07] rounded-2xl px-5 py-3 text-center">
+                <p className="font-[family-name:'Cormorant_Garamond',serif] text-[28px] font-[400] text-[#0f0f0f] leading-none">{customers}</p>
+                <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.16em] text-black/30 mt-1">Customers</p>
+              </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
+
+        {/* ══ TOOLBAR ══ */}
+        <motion.div
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.24, ease }}
+        >
+          {/* Search */}
+          <div className="relative">
+            <Search size={12} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/28 pointer-events-none" strokeWidth={1.5} />
+            <input type="text" placeholder="Search by name or email…"
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="w-60 bg-white border border-black/[0.08] rounded-xl pl-9 pr-3 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-[#0f0f0f] placeholder:text-black/28 outline-none focus:border-black/22 transition-colors" />
+            {search && (
+              <button onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-black/28 hover:text-black/55 transition-colors">
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Tab filter */}
+          <div className="flex items-center bg-white border border-black/[0.07] rounded-xl p-0.5 gap-0">
+            {[
+              { val: "all",      label: "All"       },
+              { val: "admin",    label: "Admins"    },
+              { val: "customer", label: "Customers" },
+            ].map(tab => (
+              <button key={tab.val} onClick={() => setActiveTab(tab.val)}
+                className={`relative px-4 py-1.5 rounded-[10px] font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium transition-all duration-200 ${
+                  activeTab === tab.val
+                    ? "bg-[#0f0f0f] text-white"
+                    : "text-black/42 hover:text-black/68"
+                }`}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* ══ LOADING ══ */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <motion.div className="w-7 h-7 border-[1.5px] border-black/10 border-t-black/55 rounded-full"
+              animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} />
+          </div>
+        )}
+
+        {/* ══ TABLE ══ */}
+        {!loading && (
+          <motion.div
+            className="bg-white border border-black/[0.07] rounded-2xl overflow-hidden"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.28, ease }}
+          >
+            {filtered.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full" style={{ borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr className="border-b border-black/[0.06]">
+                      {["User", "Email", "Role", ""].map((h, i) => (
+                        <th key={i}
+                          className={`px-6 py-3.5 font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30 ${i === 3 ? "text-right" : "text-left"}`}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence>
+                      {filtered.map((user, i) => (
+                        <motion.tr
+                          key={user._id}
+                          className="border-b border-black/[0.045] last:border-none hover:bg-[#f9f8f6] transition-colors duration-200 group"
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.38, delay: 0.3 + i * 0.05, ease }}
+                        >
+                          {/* Name + avatar */}
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-[#f0ede8] border border-black/[0.06] flex items-center justify-center shrink-0">
+                                <span className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-black/48">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[13.5px] font-medium text-[#0f0f0f]">
+                                {user.name}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* Email */}
+                          <td className="px-6 py-4">
+                            <p className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/45 truncate max-w-[220px]">
+                              {user.email}
+                            </p>
+                          </td>
+
+                          {/* Role */}
+                          <td className="px-6 py-4">
+                            {user.role === "admin" ? (
+                              <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-[#0f0f0f] bg-[#0f0f0f]/[0.06] border border-black/[0.08] px-2.5 py-1 rounded-full">
+                                <Shield size={10} strokeWidth={1.8} /> Admin
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-medium text-black/42 bg-[#f7f5f2] border border-black/[0.06] px-2.5 py-1 rounded-full">
+                                <User size={10} strokeWidth={1.5} /> Customer
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Delete */}
+                          <td className="px-6 py-4 text-right">
+                            <motion.button
+                              onClick={() => setDeleteTarget(user)}
+                              className="w-8 h-8 flex items-center justify-center ml-auto text-black/28 hover:text-red-500 hover:bg-red-50 border border-black/[0.07] hover:border-red-200/60 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                              whileTap={{ scale: 0.9 }}
+                              title="Delete user"
+                            >
+                              <Trash2 size={13} strokeWidth={1.5} />
+                            </motion.button>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-11 h-11 rounded-2xl bg-[#f7f5f2] border border-black/[0.06] flex items-center justify-center mb-5">
+                  <UsersIcon size={16} className="text-black/22" strokeWidth={1.5} />
+                </div>
+                <p className="font-[family-name:'Cormorant_Garamond',serif] italic text-[22px] font-[400] text-[#0f0f0f] mb-1.5">
+                  No users found
+                </p>
+                <p className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/35">
+                  {search ? "Try a different search term." : "No users registered yet."}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
+
+      <style>{`* { -webkit-font-smoothing: antialiased; }`}</style>
     </div>
   );
 };

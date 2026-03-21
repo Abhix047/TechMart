@@ -24,6 +24,7 @@ import Wishlist from "./pages/Wishlist";
 import AdminOffers from "./pages/admin/Offers";
 import Offers from "./pages/Offers";
 import About from "./pages/About";
+import AdminLayout from "./pages/admin/AdminLayout";
 
 function App() {
   const location = useLocation();
@@ -41,24 +42,28 @@ function App() {
           padding: '12px 20px',
         }
       }} />
-      <Navbar />
+      {!isAdminRoute && <Navbar />}
       <Routes>
         <Route path="/" element={<Home/>} />
-        {/* <Route path="/categories" element={<Categories />} /> */}
         <Route path="/about" element={<About />} />
         <Route path="/cart" element={<Cart />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/products" element={<ProductCard/>} />
         <Route path="/offers" element={<Offers/>} />
-        <Route path="/admin/product/:id/edit" element={<EditProduct />} />
-        <Route path="/admin/dashboard" element={<Dashboard />} />
-        <Route path="/admin/add-product" element={<AddProduct />} />
-        <Route path="/admin/products" element={<MyProducts />} /> 
-        <Route path="/admin/orders" element={<Orders />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/admin/banner" element={<Banner/>} />
-        <Route path="/admin/offers" element={<AdminOffers/>} />
+        
+        {/* Admin Routes with Layout */}
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="product/:id/edit" element={<EditProduct />} />
+          <Route path="add-product" element={<AddProduct />} />
+          <Route path="products" element={<MyProducts />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="users" element={<Users />} />
+          <Route path="banner" element={<Banner />} />
+          <Route path="offers" element={<AdminOffers />} />
+        </Route>
+
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={ <Cart/>} />
         <Route path="/checkout" element={<Checkout/>} />

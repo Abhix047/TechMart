@@ -21,12 +21,38 @@ export const createBanner = async (req, res) => {
   }
 };
 
-// ✅ GET
+// ✅ GET (public – only active, max 5 for hero slider)
 export const getBanners = async (req, res) => {
   try {
     const banners = await Banner.find({ isActive: true }).limit(5);
+    res.json(banners);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
-    res.json(banners); // 🔥 IMPORTANT (array return karna)
+// ✅ GET ALL (admin – every banner regardless of isActive)
+export const getAllBanners = async (req, res) => {
+  try {
+    const banners = await Banner.find().sort({ createdAt: -1 });
+    res.json(banners);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ✅ UPDATE (title + optional new media)
+export const updateBanner = async (req, res) => {
+  try {
+    const banner = await Banner.findById(req.params.id);
+    if (!banner) return res.status(404).json({ message: "Banner not found" });
+
+    if (req.body.title !== undefined) banner.title = req.body.title;
+    if (req.body.isActive !== undefined) banner.isActive = req.body.isActive === "true" || req.body.isActive === true;
+    if (req.file) banner.media = `/uploads/banners/${req.file.filename}`;
+
+    const updated = await banner.save();
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

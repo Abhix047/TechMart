@@ -1,356 +1,422 @@
 import { useState, useRef } from "react";
 import API from "../../services/api.js";
 import toast from "react-hot-toast";
-import { 
-  Package, Tag, Info, DollarSign, Boxes, Settings, 
-  Image as ImageIcon, Palette, Plus, Trash2, CheckCircle, 
-  UploadCloud, X, Loader2
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Package, Tag, Info, IndianRupee, Boxes, Settings,
+  ImageIcon, Palette, Plus, Trash2, CheckCircle2,
+  UploadCloud, X, Zap
 } from "lucide-react";
+
+/* ── Fonts ── */
+if (typeof document !== "undefined" && !document.getElementById("ap-fonts")) {
+  const l = document.createElement("link");
+  l.id = "ap-fonts"; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
+  document.head.appendChild(l);
+}
+
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const ease = [0.22, 1, 0.36, 1];
+
+/* ── Shared input styles ── */
+const inp = "w-full bg-[#f7f5f2] border border-black/[0.08] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[13.5px] text-[#0f0f0f] placeholder:text-black/28 outline-none focus:border-black/25 focus:bg-white transition-all duration-200";
+const lbl = "block font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/38 mb-2";
+
+/* ── Section card ── */
+function Section({ icon: Icon, title, children, delay = 0 }) {
+  return (
+    <motion.div
+      className="bg-white border border-black/[0.07] rounded-2xl overflow-hidden"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease }}
+    >
+      <div className="px-6 py-4 border-b border-black/[0.06] flex items-center gap-2.5">
+        <Icon size={13} className="text-black/35" strokeWidth={1.5} />
+        <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold uppercase tracking-[0.18em] text-black/38">
+          {title}
+        </p>
+      </div>
+      <div className="p-6">{children}</div>
+    </motion.div>
+  );
+}
 
 const AddProduct = () => {
   const [form, setForm] = useState({
-    name: "",
-    brand: "",
-    category: "",
-    description: "",
-    price: "",
-    discountPrice: "",
-    countInStock: "",
-    images: [], 
-    colors: "",
+    name: "", brand: "", category: "", description: "",
+    price: "", discountPrice: "", countInStock: "",
+    images: [], colors: "",
   });
-
-  const [specs, setSpecs] = useState([{ name: "", value: "" }]);
+  const [specs,       setSpecs]       = useState([{ name: "", value: "" }]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const fileInputRef = useRef(null);
+  const [isPublishing,setIsPublishing]= useState(false);
+  const [dragOver,    setDragOver]    = useState(false);
+  const fileRef = useRef(null);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // ⭐ SAAS STYLE IMAGE UPLOAD
-  const handleImageUpload = async (e) => {
-    const files = e.target.files;
+  const handleImageUpload = async (files) => {
     if (!files.length) return;
-
     setIsUploading(true);
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-      formData.append("images", files[i]);
-    }
-
+    const fd = new FormData();
+    for (const f of files) fd.append("images", f);
     try {
-      const { data } = await API.post(
-        "/products/upload",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
-      // Append new images to existing ones
-      setForm((prev) => ({
-        ...prev,
-        images: [...prev.images, ...data]
-      }));
-    } catch (error) {
-      console.error("Upload failed", error);
-      alert("Failed to upload images. Please try again.");
+      const { data } = await API.post("/products/upload", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
+    } catch {
+      toast.error("Failed to upload images.");
     } finally {
       setIsUploading(false);
-      // Reset input so the same file can be selected again if needed
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const removeImage = (indexToRemove) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, index) => index !== indexToRemove)
-    }));
-  };
+  const removeImage = idx =>
+    setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
 
-  const addSpec = () => setSpecs([...specs, { name: "", value: "" }]);
-  
-  const removeSpec = (index) => setSpecs(specs.filter((_, i) => i !== index));
-
-  const handleSpecChange = (index, field, value) => {
-    const updated = [...specs];
-    updated[index][field] = value;
-    setSpecs(updated);
+  const addSpec    = () => setSpecs([...specs, { name: "", value: "" }]);
+  const removeSpec = idx => setSpecs(specs.filter((_, i) => i !== idx));
+  const handleSpec = (idx, field, val) => {
+    const u = [...specs]; u[idx][field] = val; setSpecs(u);
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
     setIsPublishing(true);
-
-    const productData = {
+    const payload = {
       ...form,
-      price: Number(form.price),
+      price:        Number(form.price),
       discountPrice: form.discountPrice === "" ? undefined : Number(form.discountPrice),
       countInStock: Number(form.countInStock),
-      colors: form.colors ? form.colors.split(",").map(c => c.trim()) : [],
-      specifications: specs.filter(s => s.name && s.value), // Only send filled specs
+      colors:       form.colors ? form.colors.split(",").map(c => c.trim()) : [],
+      specifications: specs.filter(s => s.name && s.value),
     };
-
     try {
-      await API.post("/products", productData);
-      alert("Product Created Successfully!");
-      // Optional: Redirect to products list here
-    } catch (error) {
-      console.error(error);
-      alert(error?.response?.data?.message || "Error creating product");
+      await API.post("/products", payload);
+      toast.success("Product published!");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Error creating product");
     } finally {
       setIsPublishing(false);
     }
   };
 
-  // SAAS Design System Classes
-  const inputStyles = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-[14px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white focus:shadow-sm transition-all";
-  const labelStyles = "block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2";
-  const cardStyles = "bg-white border border-slate-200/60 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] p-6";
+  const discount = form.price && form.discountPrice
+    ? Math.round(((Number(form.price) - Number(form.discountPrice)) / Number(form.price)) * 100)
+    : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pt-28 pb-12 px-6">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* HEADER & ACTION BAR */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div
+      className="min-h-screen bg-[#f7f5f2] pb-20"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
+      <div className="max-w-[1100px] mx-auto px-6 sm:px-10 pt-10">
+
+        {/* ══ HEADER ══ */}
+        <motion.div
+          className="flex items-end justify-between mb-8 pb-7 border-b border-black/[0.08]"
+          initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease }}
+        >
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Package className="text-emerald-500" />
-              Add New Product
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Configure your product details, pricing, and media.</p>
+            <motion.p
+              className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-2.5"
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.06, ease }}
+            >
+              Admin · Products
+            </motion.p>
+            <motion.h1
+              className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(30px,4vw,44px)] font-[400] text-[#0f0f0f] leading-none"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.12, ease }}
+            >
+              Add New <em className="italic font-[300]">Product</em>
+            </motion.h1>
+            <motion.p
+              className="font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/40 mt-2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.2, ease }}
+            >
+              Configure details, pricing, media and specifications.
+            </motion.p>
           </div>
-          
-          <button
+
+          {/* Publish button — desktop */}
+          <motion.button
+            type="button"
             onClick={submitHandler}
             disabled={isPublishing}
-            className="hidden md:flex items-center justify-center gap-2 bg-slate-900 hover:bg-emerald-600 disabled:bg-slate-400 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md"
+            className="hidden md:flex items-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold px-6 py-3 rounded-2xl hover:bg-black/80 disabled:bg-black/20 disabled:text-black/30 transition-all duration-200"
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.18, ease }}
           >
-            {isPublishing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-            {isPublishing ? "Publishing..." : "Publish Product"}
-          </button>
-        </div>
+            {isPublishing ? (
+              <motion.span className="w-4 h-4 border-[1.5px] border-white/30 border-t-white rounded-full"
+                animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} />
+            ) : <Zap size={13} />}
+            {isPublishing ? "Publishing…" : "Publish Product"}
+          </motion.button>
+        </motion.div>
 
+        {/* ══ GRID ══ */}
         <form onSubmit={submitHandler}>
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-            
-            {/* LEFT COLUMN - MAIN INFO */}
-            <div className="space-y-6">
-              
-              {/* BASIC INFO */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <Info size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Basic Information</h2>
-                </div>
-                
-                <div className="space-y-5">
-                  <div>
-                    <label className={labelStyles}>Product Name</label>
-                    <input name="name" placeholder="e.g. iPhone 15 Pro Max" onChange={handleChange} className={inputStyles} required />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className={labelStyles}>Brand</label>
-                      <input name="brand" placeholder="e.g. Apple" onChange={handleChange} className={inputStyles} required />
-                    </div>
-                    <div>
-                      <label className={labelStyles}>Category</label>
-                      <input name="category" placeholder="e.g. Smartphones" onChange={handleChange} className={inputStyles} required />
-                    </div>
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5">
 
+            {/* LEFT */}
+            <div className="flex flex-col gap-5">
+
+              {/* Basic info */}
+              <Section icon={Info} title="Basic Information" delay={0.1}>
+                <div className="flex flex-col gap-4">
                   <div>
-                    <label className={labelStyles}>Description</label>
-                    <textarea 
-                      name="description" 
-                      placeholder="Enter a detailed product description..." 
-                      onChange={handleChange} 
-                      className={`${inputStyles} min-h-[120px] resize-y`} 
-                      required 
+                    <label className={lbl}>Product Name</label>
+                    <input name="name" placeholder="e.g. iPhone 15 Pro Max" onChange={handleChange} className={inp} required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={lbl}>Brand</label>
+                      <input name="brand" placeholder="e.g. Apple" onChange={handleChange} className={inp} required />
+                    </div>
+                    <div>
+                      <label className={lbl}>Category</label>
+                      <input name="category" placeholder="e.g. Smartphones" onChange={handleChange} className={inp} required />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={lbl}>Description</label>
+                    <textarea
+                      name="description"
+                      placeholder="Detailed product description…"
+                      onChange={handleChange}
+                      rows={4}
+                      className={`${inp} resize-y min-h-[110px]`}
+                      required
                     />
                   </div>
                 </div>
-              </div>
+              </Section>
 
-              {/* SPECIFICATIONS */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <Settings size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Specifications</h2>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="hidden md:grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
-                    <label className={labelStyles}>Property</label>
-                    <label className={labelStyles}>Value</label>
+              {/* Specifications */}
+              <Section icon={Settings} title="Specifications" delay={0.16}>
+                <div className="flex flex-col gap-2.5">
+                  {/* Column headers */}
+                  <div className="hidden md:grid grid-cols-[1fr_1fr_32px] gap-3 mb-0.5">
+                    <span className={lbl}>Property</span>
+                    <span className={lbl}>Value</span>
+                    <span />
                   </div>
 
-                  {specs.map((spec, index) => (
-                    <div key={index} className="flex flex-col md:flex-row gap-3">
-                      <input
-                        placeholder="e.g. Processor"
-                        value={spec.name}
-                        onChange={(e) => handleSpecChange(index, "name", e.target.value)}
-                        className={inputStyles}
-                      />
-                      <input
-                        placeholder="e.g. Snapdragon 8 Gen 3"
-                        value={spec.value}
-                        onChange={(e) => handleSpecChange(index, "value", e.target.value)}
-                        className={inputStyles}
-                      />
-                      {specs.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeSpec(index)}
-                          className="flex-shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors self-end md:self-auto"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  <AnimatePresence>
+                    {specs.map((spec, i) => (
+                      <motion.div
+                        key={i}
+                        className="flex gap-2.5 items-center"
+                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.28, ease }}
+                      >
+                        <input
+                          placeholder="e.g. Processor"
+                          value={spec.name}
+                          onChange={e => handleSpec(i, "name", e.target.value)}
+                          className={`${inp} flex-1`}
+                        />
+                        <input
+                          placeholder="e.g. A17 Pro"
+                          value={spec.value}
+                          onChange={e => handleSpec(i, "value", e.target.value)}
+                          className={`${inp} flex-1`}
+                        />
+                        {specs.length > 1 && (
+                          <motion.button
+                            type="button"
+                            onClick={() => removeSpec(i)}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl text-black/30 hover:text-red-500 hover:bg-red-50 transition-all duration-200 shrink-0"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Trash2 size={13} />
+                          </motion.button>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
 
                   <button
                     type="button"
                     onClick={addSpec}
-                    className="flex items-center gap-1.5 mt-4 text-[13px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-3 py-2 rounded-lg transition-colors w-fit"
+                    className="flex items-center gap-1.5 mt-2 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/45 hover:text-[#0f0f0f] hover:bg-black/[0.04] px-3 py-2 rounded-xl transition-all duration-200 w-fit"
                   >
-                    <Plus size={16} /> Add Specification
+                    <Plus size={13} /> Add Specification
                   </button>
                 </div>
-              </div>
+              </Section>
             </div>
 
-            {/* RIGHT COLUMN - MEDIA & CONFIG */}
-            <div className="space-y-6">
-              
-              {/* IMAGES (Upgraded UI) */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <ImageIcon size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Product Images</h2>
-                </div>
+            {/* RIGHT */}
+            <div className="flex flex-col gap-5">
 
-                {/* Custom File Dropzone */}
-                <div className="mb-5">
-                  <input 
-                    type="file" 
-                    multiple 
-                    accept="image/*"
-                    onChange={handleImageUpload} 
-                    ref={fileInputRef}
-                    className="hidden" 
-                    id="image-upload"
+              {/* Images */}
+              <Section icon={ImageIcon} title="Product Images" delay={0.12}>
+                {/* Drop zone */}
+                <div
+                  className={`relative border-2 border-dashed rounded-2xl transition-all duration-200 cursor-pointer mb-4 ${
+                    dragOver
+                      ? "border-[#0f0f0f]/40 bg-black/[0.03]"
+                      : "border-black/12 hover:border-black/22 hover:bg-black/[0.02]"
+                  }`}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => { e.preventDefault(); setDragOver(false); handleImageUpload(e.dataTransfer.files); }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <input
+                    type="file" multiple accept="image/*"
+                    onChange={e => handleImageUpload(e.target.files)}
+                    ref={fileRef} className="hidden"
                   />
-                  <label 
-                    htmlFor="image-upload"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-emerald-300 transition-all group"
-                  >
+                  <div className="flex flex-col items-center justify-center py-8 gap-2.5">
                     {isUploading ? (
-                      <div className="flex flex-col items-center gap-2 text-emerald-500">
-                        <Loader2 size={24} className="animate-spin" />
-                        <span className="text-xs font-semibold">Uploading...</span>
-                      </div>
+                      <>
+                        <motion.div className="w-6 h-6 border-[1.5px] border-black/15 border-t-black/50 rounded-full"
+                          animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} />
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] text-black/38">Uploading…</span>
+                      </>
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-emerald-500">
-                        <UploadCloud size={28} />
-                        <span className="text-xs font-semibold">Click to upload images</span>
-                      </div>
+                      <>
+                        <UploadCloud size={22} className="text-black/28" strokeWidth={1.5} />
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium text-black/45">
+                          Drop images or click to upload
+                        </span>
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/28">
+                          PNG, JPG up to 10MB
+                        </span>
+                      </>
                     )}
-                  </label>
+                  </div>
                 </div>
 
-                {/* IMAGE PREVIEW GRID */}
+                {/* Preview grid */}
                 {form.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3">
-                    {form.images.map((img, index) => (
-                      <div key={index} className="relative aspect-square group rounded-lg overflow-hidden border border-slate-200 shadow-sm">
-                        <img
-                          src={`http://localhost:5000${img}`}
-                          alt={`Upload preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-black/50 hover:bg-red-500 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <AnimatePresence>
+                      {form.images.map((img, i) => (
+                        <motion.div
+                          key={i}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.07] bg-[#f0ede8] group"
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.28, ease }}
                         >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+                          <img
+                            src={`${BASE_URL}${img}`}
+                            alt={`Preview ${i + 1}`}
+                            className="w-full h-full object-cover mix-blend-multiply p-1"
+                          />
+                          <motion.button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-[#0f0f0f]/70 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <X size={11} />
+                          </motion.button>
+                          {i === 0 && (
+                            <span className="absolute bottom-1.5 left-1.5 font-[family-name:'DM_Sans',sans-serif] text-[9px] font-semibold uppercase tracking-[0.12em] text-white bg-[#0f0f0f]/65 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
+                              Main
+                            </span>
+                          )}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
-              </div>
+              </Section>
 
-              {/* PRICING */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <DollarSign size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Pricing</h2>
-                </div>
-                <div className="space-y-5">
+              {/* Pricing */}
+              <Section icon={IndianRupee} title="Pricing" delay={0.18}>
+                <div className="flex flex-col gap-4">
                   <div>
-                    <label className={labelStyles}>Regular Price ($)</label>
-                    <input name="price" type="number" placeholder="0.00" onChange={handleChange} className={inputStyles} required />
+                    <label className={lbl}>Regular Price (₹)</label>
+                    <input name="price" type="number" placeholder="0" onChange={handleChange} className={inp} required />
                   </div>
                   <div>
-                    <label className={labelStyles}>Discount Price ($)</label>
-                    <input name="discountPrice" type="number" placeholder="0.00" onChange={handleChange} className={inputStyles} />
+                    <label className={lbl}>Discount Price (₹)</label>
+                    <input name="discountPrice" type="number" placeholder="0" onChange={handleChange} className={inp} />
                   </div>
-                </div>
-              </div>
 
-              {/* INVENTORY & VARIANTS */}
-              <div className={cardStyles}>
-                <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                  <Boxes size={18} className="text-slate-400" />
-                  <h2 className="font-bold text-slate-800">Inventory & Variants</h2>
+                  {/* Discount preview */}
+                  <AnimatePresence>
+                    {discount > 0 && (
+                      <motion.div
+                        className="flex items-center justify-between bg-emerald-50 border border-emerald-200/60 rounded-xl px-4 py-3"
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        transition={{ duration: 0.28, ease }}
+                      >
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] text-emerald-700">
+                          Customer saves
+                        </span>
+                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-emerald-700">
+                          {discount}% off
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="space-y-5">
+              </Section>
+
+              {/* Inventory & Variants */}
+              <Section icon={Boxes} title="Inventory & Variants" delay={0.22}>
+                <div className="flex flex-col gap-4">
                   <div>
-                    <label className={labelStyles}>Stock Quantity</label>
-                    <input name="countInStock" type="number" placeholder="e.g. 50" onChange={handleChange} className={inputStyles} required />
+                    <label className={lbl}>Stock Quantity</label>
+                    <input name="countInStock" type="number" placeholder="e.g. 50" onChange={handleChange} className={inp} required />
                   </div>
                   <div>
-                    <label className={labelStyles}>Available Colors</label>
+                    <label className={lbl}>Available Colors</label>
                     <div className="relative">
-                      <Palette size={16} className="absolute left-3.5 top-3 text-slate-400" />
-                      <input 
-                        name="colors" 
-                        placeholder="Black, Silver, Blue" 
-                        onChange={handleChange} 
-                        className={`${inputStyles} pl-10`} 
+                      <Palette size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/28 pointer-events-none" strokeWidth={1.5} />
+                      <input
+                        name="colors"
+                        placeholder="Black, Silver, Blue"
+                        onChange={handleChange}
+                        className={`${inp} pl-9`}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1.5 ml-1">Separate multiple colors with a comma</p>
+                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mt-1.5">
+                      Separate multiple colors with a comma
+                    </p>
                   </div>
                 </div>
-              </div>
+              </Section>
 
+              {/* Publish — mobile */}
+              <motion.button
+                type="submit"
+                disabled={isPublishing}
+                className="md:hidden w-full flex items-center justify-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold py-3.5 rounded-2xl hover:bg-black/80 disabled:bg-black/15 disabled:text-black/25 transition-all duration-200"
+                whileTap={{ scale: 0.985 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                transition={{ delay: 0.30 }}
+              >
+                {isPublishing ? (
+                  <motion.span className="w-4 h-4 border-[1.5px] border-white/30 border-t-white rounded-full"
+                    animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} />
+                ) : <Zap size={13} />}
+                {isPublishing ? "Publishing…" : "Publish Product"}
+              </motion.button>
             </div>
           </div>
-
-          {/* MOBILE SUBMIT BUTTON */}
-          <button
-            type="submit"
-            disabled={isPublishing}
-            className="md:hidden mt-8 w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-emerald-600 disabled:bg-slate-400 text-white px-6 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-md"
-          >
-            {isPublishing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-            {isPublishing ? "Publishing..." : "Publish Product"}
-          </button>
-
         </form>
       </div>
+
+      <style>{`* { -webkit-font-smoothing: antialiased; }`}</style>
     </div>
   );
 };

@@ -189,3 +189,25 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   const cancelledOrder = await order.save();
   res.json(cancelledOrder);
 });
+
+/* Toggle paid / unpaid — admin only */
+export const updateOrderToPaid = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error("Order not found");
+  }
+
+  // Toggle: if already paid → mark unpaid, else → mark paid
+  if (order.isPaid) {
+    order.isPaid   = false;
+    order.paidAt   = undefined;
+  } else {
+    order.isPaid   = true;
+    order.paidAt   = Date.now();
+  }
+
+  const updatedOrder = await order.save();
+  res.json(updatedOrder);
+});

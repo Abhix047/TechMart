@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Mail, Lock, X, ArrowRight, Eye, EyeOff, Truck, ShieldCheck, RotateCcw } from "lucide-react";
 import API from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 /* ── Fonts ── */
@@ -75,6 +76,7 @@ function InputField({ icon: Icon, type, name, placeholder, value, onChange, show
 /* ════════════════════ MAIN ════════════════════ */
 const Login = ({ onSwitch, onClose }) => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm]         = useState({ email: "", password: "" });
   const [loading, setLoading]   = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -87,8 +89,12 @@ const Login = ({ onSwitch, onClose }) => {
       if (res.data) {
         toast.success("Login successful!");
         login(res.data);
+        onClose();
+        // Admin users ko admin dashboard pe redirect karo
+        if (res.data.role === "admin") {
+          navigate("/admin/dashboard");
+        }
       }
-      onClose();
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally { setLoading(false); }
