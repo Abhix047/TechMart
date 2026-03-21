@@ -1,34 +1,15 @@
-import { useEffect, useState } from "react";
-import API from "../services/api";
-
 import AdminNavbar from "../pages/admin/AdminNavbar";
+import { useAuth } from "../context/AuthContext";
 import UserNavbar from "./UserNavbar";
 
 const Navbar = () => {
+  const { user, loading } = useAuth();
 
-  const [role, setRole] = useState(null);
+  if (loading) {
+    return null;
+  }
 
-  useEffect(() => {
-
-    const getProfile = async () => {
-      try {
-
-        const res = await API.get("/auth/profile");
-
-        setRole(res.data.role);
-
-      } catch (error) {
-
-        setRole("guest");
-
-      }
-    };
-
-    getProfile();
-
-  }, []);
-
-  if (role === "admin") {
+  if (user?.role === "admin") {
     return <AdminNavbar />;
   }
 

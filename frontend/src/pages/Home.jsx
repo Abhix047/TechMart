@@ -1,13 +1,10 @@
-import Hero from "../components/Hero";
-import Footer from "../components/Footer";
-const Home = () => {
-  return (
-    <div>
+import Hero from "../components/home/Hero";
+import HomeContent from "../components/home/HomeContent";
 
-      <Hero />
-      <Footer />
-    </div>
-  );
-};
-
+const Home = () => (
+  <>
+    <Hero />
+    <HomeContent />
+  </>
+);
 export default Home;

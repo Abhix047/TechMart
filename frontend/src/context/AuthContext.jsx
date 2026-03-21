@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import API from "../services/api";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext();
 
@@ -39,14 +40,17 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await API.post("/auth/logout");
-      setUser(null);
     } catch (error) {
       console.log(error);
+    } finally {
+      localStorage.removeItem("token");
+      setUser(null);
+      toast.success("Logged out successfully");
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, refreshUser: fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

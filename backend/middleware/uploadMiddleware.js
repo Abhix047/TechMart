@@ -2,33 +2,41 @@ import multer from "multer";
 import path from "path";
 
 const storage = multer.diskStorage({
-
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
+  destination(req, file, cb) {
+    if (req.originalUrl.includes("banners")) {
+      cb(null, "uploads/banners/");
+    } else {
+      cb(null, "uploads/");
+    }
   },
-
-  filename: function (req, file, cb) {
-
-    const uniqueName =
-      Date.now() + path.extname(file.originalname);
-
-    cb(null, uniqueName);
+  filename(req, file, cb) {
+    cb(
+      null,
+      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
+    );
   },
 });
 
-const fileFilter = (req, file, cb) => {
+const checkFileType = (file, cb) => {
+  const filetypes = /jpg|jpeg|png|webp|webm|mp4|mov|avi|mkv/;
 
-  if (file.mimetype.startsWith("image")) {
+  const extname = filetypes.test(
+    path.extname(file.originalname).toLowerCase()
+  );
+
+  const mimetype =
+    file.mimetype.startsWith("image") ||
+    file.mimetype.startsWith("video");
+
+  if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb(new Error("Only image files allowed"), false);
+    cb("Only images & videos allowed!");
   }
-
 };
 
-const upload = multer({
+export const upload = multer({
   storage,
-  fileFilter,
+  fileFilter: (req, file, cb) => checkFileType(file, cb),
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
-
-export default upload;
