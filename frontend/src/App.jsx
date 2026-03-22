@@ -9,7 +9,7 @@ import AddProduct from "./pages/admin/AddProduct";
 import Dashboard from "./pages/admin/Dashboard";
 import EditProduct from "./pages/admin/EditProduct";
 import Orders from "./pages/admin/Orders";
-import Users from "./pages/admin/users";
+import Users from "./pages/admin/Users";
 import ProductCard from "./pages/ProductCard"
 import Footer from "./components/home/Footer";
 import ProductDetail from "./pages/ProductDetail"
@@ -59,7 +59,7 @@ function App() {
           <Route path="add-product" element={<AddProduct />} />
           <Route path="products" element={<MyProducts />} />
           <Route path="orders" element={<Orders />} />
-          <Route path="users" element={<Users />} />
+          <Route path="Users" element={<Users />} />
           <Route path="banner" element={<Banner />} />
           <Route path="offers" element={<AdminOffers />} />
         </Route>
