@@ -1,18 +1,17 @@
 import mongoose from "mongoose";
 
-const reviewSchema = new mongoose.Schema(
+const reviewSchema = mongoose.Schema(
   {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     name: { type: String, required: true },
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: "User",
-    },
+    image: { type: String }, // 👈 review image
+    
   },
   { timestamps: true }
 );
+ 
 
 // 2. Specifications Sub-Schema 
 const specificationSchema = new mongoose.Schema({
@@ -46,10 +45,33 @@ const productSchema = new mongoose.Schema(
     colors: [{ type: String }], 
     isFeatured: { type: Boolean, default: false }, 
     
+    activeOffer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer", default: null },
+
     // ⭐ REVIEWS & RATINGS
-    reviews: [reviewSchema],
-    rating: { type: Number, required: true, default: 0 },
-    numReviews: { type: Number, required: true, default: 0 },
+   reviews: [
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    name: { type: String },
+    rating: { type: Number, required: true },
+    comment: { type: String, required: true },
+    image: String,
+  },
+],
+
+numReviews: {
+  type: Number,
+  default: 0,
+},
+
+rating: {
+  type: Number,
+  default: 0,
+},
+
+    
   },
   {
     timestamps: true,
