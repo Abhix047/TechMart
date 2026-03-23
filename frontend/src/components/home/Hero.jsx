@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 /*
   index.css mein add karo:
   @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -183,16 +185,24 @@ const Hero = () => {
               animate="center"
               exit="exit"
               className="absolute inset-0 w-full h-full"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.6}
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = Math.abs(offset.x) * velocity.x;
+                if (swipe < -100) goNext();
+                else if (swipe > 100) goPrev();
+              }}
             >
               {banner.type === "video" ? (
                 <video
-                  src={`http://localhost:5000${banner.media}`}
+                  src={banner.media?.startsWith("http") ? banner.media : `${BASE_URL}${banner.media}`}
                   autoPlay muted loop playsInline
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <img
-                  src={`http://localhost:5000${banner.media}`}
+                  src={banner.media?.startsWith("http") ? banner.media : `${BASE_URL}${banner.media}`}
                   alt={banner.title || "Banner"}
                   className="w-full h-full object-cover"
                   draggable={false}
@@ -246,15 +256,15 @@ const Hero = () => {
             whileHover={{ scale: 1.08, background: "rgba(255,255,255,0.16)" }}
             whileTap={{ scale: 0.88 }}
             onClick={goPrev}
-            className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer border-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30"
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer border-none md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 z-30"
             style={{
-              width: 44, height: 44, borderRadius: "50%",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.14)",
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.16)",
               backdropFilter: "blur(8px)",
             }}
           >
-            <ChevronLeft size={16} strokeWidth={1.6} style={{ color: "rgba(255,255,255,0.75)" }} />
+            <ChevronLeft size={15} strokeWidth={1.6} style={{ color: "rgba(255,255,255,0.80)" }} />
           </motion.button>
 
           {/* ── RIGHT NAVIGATION ARROW ── */}
@@ -263,30 +273,30 @@ const Hero = () => {
             whileHover={{ scale: 1.08, background: "rgba(255,255,255,0.16)" }}
             whileTap={{ scale: 0.88 }}
             onClick={goNext}
-            className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer border-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer border-none md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity duration-300 z-30"
             style={{
-              width: 44, height: 44, borderRadius: "50%",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.14)",
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.16)",
               backdropFilter: "blur(8px)",
             }}
           >
-            <ChevronRight size={16} strokeWidth={1.6} style={{ color: "rgba(255,255,255,0.75)" }} />
+            <ChevronRight size={15} strokeWidth={1.6} style={{ color: "rgba(255,255,255,0.80)" }} />
           </motion.button>
 
           {/* ══════════════════════════════════════
               BOTTOM CONTENT
           ══════════════════════════════════════ */}
           <div
-            className="absolute bottom-0 left-0 right-0 z-20 flex items-end justify-between"
+            className="absolute bottom-0 left-0 right-0 z-20 flex flex-wrap items-end justify-between"
             style={{
-              padding: "0 clamp(20px, 2.8vw, 36px) clamp(20px, 3.2vh, 36px)",
-              gap: 20,
+              padding: "0 clamp(16px, 2.8vw, 36px) clamp(20px, 3.2vh, 36px)",
+              gap: 16,
             }}
           >
 
             {/* ── LEFT: Text block ── */}
-            <div style={{ flex: 1, maxWidth: "54%" }}>
+            <div style={{ flex: "1 1 auto", maxWidth: "100%", paddingRight: 8 }}>
               <AnimatePresence mode="wait">
                 {textReady && (
                   <motion.div key={banner._id + "-text"}>

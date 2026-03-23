@@ -452,11 +452,24 @@ const CollectionsGrid = () => {
           ))}
         </div>
 
-        {/* ══ Mobile — 1-col ══ */}
-        <div className="sm:hidden flex flex-col gap-6">
-          {COLLECTIONS.map((c, i) => (
-            <CollectionCard key={c.key} collection={c} index={i} size="normal" onHover={setHovKey} />
-          ))}
+        {/* ══ Mobile — Slider ══ */}
+        <div className="sm:hidden relative mt-6">
+          {/* Navigation Arrows */}
+          <div className="absolute top-[40%] -translate-y-[50%] left-2 right-2 flex justify-between pointer-events-none z-20">
+            <button onClick={() => document.getElementById('cg-slider')?.scrollBy({ left: -280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button onClick={() => document.getElementById('cg-slider')?.scrollBy({ left: 280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+          <div 
+            id="cg-slider"
+            className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-6 scroll-smooth"
+            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+          >
+            {COLLECTIONS.map((c, i) => (
+              <div key={c.key} className="shrink-0 snap-start" style={{ width: "80vw", maxWidth: "320px" }}>
+                <CollectionCard collection={c} index={i} size="normal" onHover={setHovKey} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Shop All ── */}

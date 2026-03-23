@@ -12,7 +12,8 @@ import {
 } from "framer-motion";
 import {
   CheckCircle2, X, ChevronRight, Heart,
-  ShoppingBag, Zap, Shield, Truck, RotateCcw
+  ShoppingBag, Zap, Shield, Truck, RotateCcw,
+  ArrowRight
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -39,7 +40,7 @@ const containerVariants = {
 };
 const itemVariants = {
   hidden: { opacity: 0, y: 22 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
 };
 
 /* ── Toast ── */
@@ -49,14 +50,13 @@ function Toast({ message }) {
       {message.text && (
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.94 }}
-          animate={{ opacity: 1, y: 0,  scale: 1    }}
-          exit={{    opacity: 0, y: 10, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.96 }}
           transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          className={`fixed bottom-8 right-6 z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium ${
-            message.type === "success"
+          className={`fixed bottom-8 right-6 z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium ${message.type === "success"
               ? "bg-white text-emerald-700 border-emerald-100 shadow-emerald-100/50"
               : "bg-white text-red-600 border-red-100 shadow-red-100/50"
-          }`}
+            }`}
         >
           {message.type === "success"
             ? <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
@@ -73,9 +73,8 @@ function Thumb({ img, active, onClick, index }) {
   return (
     <motion.button
       onClick={onClick}
-      className={`w-[72px] h-[72px] shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-200 bg-[#f5f3f0] ${
-        active ? "border-[#0f0f0f] shadow-md" : "border-transparent hover:border-black/18"
-      }`}
+      className={`w-[72px] h-[72px] shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-200 bg-[#f5f3f0] ${active ? "border-[#0f0f0f] shadow-md" : "border-transparent hover:border-black/18"
+        }`}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.3 + index * 0.06, ease: [0.22, 1, 0.36, 1] }}
@@ -89,7 +88,7 @@ function Thumb({ img, active, onClick, index }) {
 /* ── Related card ── */
 function RelatedCard({ item, index, onClick }) {
   const [hovered, setHovered] = useState(false);
-  const ref    = useRef(null);
+  const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "0px -20px" });
 
   return (
@@ -135,24 +134,26 @@ function RelatedCard({ item, index, onClick }) {
    MAIN
 ════════════════════════════════════════ */
 export default function ProductDetail() {
-  const { id }   = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const buyBoxRef = useRef(null);
+  const buyBoxInView = useInView(buyBoxRef, { margin: "-100px 0px 0px 0px" });
   const { fetchCartCount } = useCart();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [toast, setToast]                     = useState({ type: "", text: "" });
-  const [product, setProduct]                 = useState(null);
+  const [toast, setToast] = useState({ type: "", text: "" });
+  const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
-  const [loading, setLoading]                 = useState(true);
-  const [activeImg, setActiveImg]             = useState(0);
-  const [activeTab, setActiveTab]             = useState("description");
-  const [selectedColor, setSelectedColor]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeImg, setActiveImg] = useState(0);
+  const [activeTab, setActiveTab] = useState("description");
+  const [selectedColor, setSelectedColor] = useState(null);
   const [selectedStorage, setSelectedStorage] = useState(null);
-  const [qty, setQty]                         = useState(1);
-  const [added, setAdded]                     = useState(false);
-  const [isProcessing, setIsProcessing]       = useState(false);
-  const [imgHovered, setImgHovered]           = useState(false);
+  const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [imgHovered, setImgHovered] = useState(false);
 
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = product ? isInWishlist(product._id) : false;
@@ -169,7 +170,7 @@ export default function ProductDetail() {
         setLoading(true);
         const { data } = await API.get(`/products/${id}`);
         setProduct(data);
-        if (data?.colors?.length > 0)         setSelectedColor(data.colors[0]);
+        if (data?.colors?.length > 0) setSelectedColor(data.colors[0]);
         if (data?.storageOptions?.length > 0) setSelectedStorage(data.storageOptions[0]);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
@@ -232,12 +233,12 @@ export default function ProductDetail() {
     </div>
   );
 
-  const p           = product;
-  const variantAdd  = selectedStorage?.priceAdd || 0;
-  const sellPrice   = (p.discountPrice || p.price || 0) + variantAdd;
-  const mrpPrice    = (p.price || 0) + variantAdd;
-  const inStock     = p.countInStock > 0;
-  const discount    = mrpPrice > sellPrice
+  const p = product;
+  const variantAdd = selectedStorage?.priceAdd || 0;
+  const sellPrice = (p.discountPrice || p.price || 0) + variantAdd;
+  const mrpPrice = (p.price || 0) + variantAdd;
+  const inStock = p.countInStock > 0;
+  const discount = mrpPrice > sellPrice
     ? Math.round(((mrpPrice - sellPrice) / mrpPrice) * 100) : 0;
 
   return (
@@ -330,7 +331,7 @@ export default function ProductDetail() {
                   exit={{ opacity: 0, scale: 0.97 }}
                   transition={{
                     opacity: { duration: 0.3, ease: "easeInOut" },
-                    scale:   { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
+                    scale: { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
                   }}
                 />
               </AnimatePresence>
@@ -353,10 +354,10 @@ export default function ProductDetail() {
               transition={{ duration: 0.55, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
               {[
-                { icon: Truck,     label: "Free Delivery" },
-                { icon: RotateCcw, label: "Easy Returns"  },
-                { icon: Shield,    label: "2 Year Warranty"},
-                { icon: Zap,       label: "Fast Shipping" },
+                { icon: Truck, label: "Free Delivery" },
+                { icon: RotateCcw, label: "Easy Returns" },
+                { icon: Shield, label: "2 Year Warranty" },
+                { icon: Zap, label: "Fast Shipping" },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-2 bg-[#f8f7f5] rounded-xl px-3 py-2.5">
                   <Icon size={12} className="text-black/35 shrink-0" />
@@ -417,7 +418,7 @@ export default function ProductDetail() {
                         const isSelected = selectedColor === colorString || selectedColor?.name === colorString;
                         // Attempt to map to CSS color names
                         const bgValue = typeof c === 'string' ? c.toLowerCase().replace(/\s+/g, '') : c.hex;
-                        
+
                         return (
                           <motion.button
                             key={colorString}
@@ -446,11 +447,10 @@ export default function ProductDetail() {
                         <motion.button
                           key={opt.size}
                           onClick={() => setSelectedStorage(opt)}
-                          className={`px-4 py-2 border rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium transition-all ${
-                            selectedStorage?.size === opt.size
+                          className={`px-4 py-2 border rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium transition-all ${selectedStorage?.size === opt.size
                               ? "border-[#0f0f0f] bg-[#0f0f0f] text-white"
                               : "border-black/10 text-black/52 hover:border-black/28"
-                          }`}
+                            }`}
                           whileTap={{ scale: 0.96 }}
                         >
                           {opt.size}
@@ -472,9 +472,8 @@ export default function ProductDetail() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`relative pb-3 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold uppercase tracking-[0.13em] transition-colors ${
-                      activeTab === tab ? "text-[#0f0f0f]" : "text-black/32 hover:text-black/58"
-                    }`}
+                    className={`relative pb-3 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold uppercase tracking-[0.13em] transition-colors ${activeTab === tab ? "text-[#0f0f0f]" : "text-black/32 hover:text-black/58"
+                      }`}
                   >
                     {tab === "specs" ? "Specifications" : "Overview"}
                     {activeTab === tab && (
@@ -533,6 +532,7 @@ export default function ProductDetail() {
               RIGHT: Buy Box
           ══════════════════ */}
           <motion.div
+            ref={buyBoxRef}
             className="lg:sticky lg:top-[106px]"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -617,13 +617,12 @@ export default function ProductDetail() {
                 <motion.button
                   disabled={!inStock || isProcessing}
                   onClick={handleAddToCart}
-                  className={`w-full py-3.5 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold uppercase tracking-[0.13em] flex items-center justify-center gap-2 transition-colors duration-300 ${
-                    !inStock || isProcessing
+                  className={`w-full py-3.5 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold uppercase tracking-[0.13em] flex items-center justify-center gap-2 transition-colors duration-300 ${!inStock || isProcessing
                       ? "bg-black/5 text-black/22 cursor-not-allowed"
                       : added
-                      ? "bg-emerald-500 text-white"
-                      : "bg-[#f0eeeb] text-[#0f0f0f] hover:bg-[#e8e5e0]"
-                  }`}
+                        ? "bg-emerald-500 text-white"
+                        : "bg-[#f0eeeb] text-[#0f0f0f] hover:bg-[#e8e5e0]"
+                    }`}
                   whileTap={inStock ? { scale: 0.98 } : {}}
                   animate={added ? { scale: [1, 1.02, 1] } : {}}
                   transition={added ? { duration: 0.3 } : {}}
@@ -652,11 +651,10 @@ export default function ProductDetail() {
                 <motion.button
                   disabled={!inStock || isProcessing}
                   onClick={handleBuyNow}
-                  className={`w-full py-3.5 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold uppercase tracking-[0.13em] flex items-center justify-center gap-2 transition-colors duration-200 ${
-                    inStock && !isProcessing
+                  className={`w-full py-3.5 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold uppercase tracking-[0.13em] flex items-center justify-center gap-2 transition-colors duration-200 ${inStock && !isProcessing
                       ? "bg-[#0f0f0f] text-white hover:bg-black/82"
                       : "bg-black/5 text-black/22 cursor-not-allowed"
-                  }`}
+                    }`}
                   whileTap={inStock ? { scale: 0.98 } : {}}
                 >
                   <Zap size={14} />
@@ -710,8 +708,8 @@ export default function ProductDetail() {
             ))}
           </div>
           <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 mt-20 border-t border-black/6 pt-14">
-        <ReviewSection productId={id} />
-      </div>
+            <ReviewSection productId={id} />
+          </div>
         </div>
       )}
 

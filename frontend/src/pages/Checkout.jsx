@@ -193,7 +193,7 @@ export default function Checkout() {
   );
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] pb-24 pt-20">
+    <div className="min-h-screen bg-[#fafaf9] pb-[calc(80px+env(safe-area-inset-bottom))] pt-24 sm:pt-20">
 
       {/* Toast */}
       <AnimatePresence>
@@ -263,7 +263,7 @@ export default function Checkout() {
               >
                 <SectionHeader step="1" title="Shipping Information" subtitle="Where should we deliver?" />
 
-                <div className="p-6 grid gap-4 sm:grid-cols-2">
+                <div className="p-4 sm:p-6 grid gap-4 sm:grid-cols-2">
 
                   <div className="sm:col-span-2">
                     <Field label="Full Name *" error={errors.name}>

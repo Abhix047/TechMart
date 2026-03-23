@@ -21,10 +21,10 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const ease = [0.22, 1, 0.36, 1];
 
 const STEPS = [
-  { key: "placed",    label: "Order Placed",    sub: "We received your order",     Icon: Receipt      },
-  { key: "confirmed", label: "Confirmed",        sub: "Payment verified",           Icon: CheckCircle2 },
-  { key: "shipped",   label: "Shipped",          sub: "On the way to you",          Icon: Truck        },
-  { key: "delivered", label: "Delivered",        sub: "Enjoy your purchase",        Icon: Package      },
+  { key: "placed", label: "Order Placed", sub: "We received your order", Icon: Receipt },
+  { key: "confirmed", label: "Confirmed", sub: "Payment verified", Icon: CheckCircle2 },
+  { key: "shipped", label: "Shipped", sub: "On the way to you", Icon: Truck },
+  { key: "delivered", label: "Delivered", sub: "Enjoy your purchase", Icon: Package },
 ];
 
 /* ── Stagger children ── */
@@ -34,16 +34,16 @@ const listVariants = {
 };
 const listItem = {
   hidden: { opacity: 0, y: 16 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.55, ease } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease } },
 };
 
 export default function OrderDetail() {
-  const { id }   = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder]             = useState(null);
+  const [order, setOrder] = useState(null);
   const [reviewedIds, setReviewedIds] = useState([]);
   const [cancelModal, setCancelModal] = useState(false);
-  const [cancelling, setCancelling]   = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     API.get(`/orders/${id}`).then(({ data }) => setOrder(data));
@@ -76,10 +76,10 @@ export default function OrderDetail() {
   const currentStep = order.isDelivered ? 3 : order.isShipped ? 2 : order.isConfirmed ? 1 : 0;
 
   const statusConfig = {
-    3: { label: "Delivered",  textCls: "text-emerald-400", dotCls: "bg-emerald-400", ringCls: "ring-emerald-400/20" },
-    2: { label: "Shipped",    textCls: "text-sky-400",     dotCls: "bg-sky-400",     ringCls: "ring-sky-400/20"     },
-    1: { label: "Confirmed",  textCls: "text-amber-400",   dotCls: "bg-amber-400",   ringCls: "ring-amber-400/20"   },
-    0: { label: "Processing", textCls: "text-orange-400",  dotCls: "bg-orange-400",  ringCls: "ring-orange-400/20"  },
+    3: { label: "Delivered", textCls: "text-emerald-400", dotCls: "bg-emerald-400", ringCls: "ring-emerald-400/20" },
+    2: { label: "Shipped", textCls: "text-sky-400", dotCls: "bg-sky-400", ringCls: "ring-sky-400/20" },
+    1: { label: "Confirmed", textCls: "text-amber-400", dotCls: "bg-amber-400", ringCls: "ring-amber-400/20" },
+    0: { label: "Processing", textCls: "text-orange-400", dotCls: "bg-orange-400", ringCls: "ring-orange-400/20" },
   };
   const status = order.isCancelled
     ? { label: "Cancelled", textCls: "text-red-400", dotCls: "bg-red-400", ringCls: "ring-red-400/20" }
@@ -133,7 +133,7 @@ export default function OrderDetail() {
                   >
                     {cancelling
                       ? <motion.span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full"
-                          animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} />
+                        animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} />
                       : "Yes, Cancel"}
                   </motion.button>
                 </div>
@@ -261,48 +261,49 @@ export default function OrderDetail() {
             Shipment Progress
           </p>
 
-          <div className="flex items-start justify-between relative">
-            {/* Rail */}
-            <div className="absolute top-[18px] left-[10%] right-[10%] h-px bg-black/[0.08]" />
-            {/* Animated fill */}
-            <motion.div
-              className="absolute top-[18px] left-[10%] h-px bg-[#0f0f0f] origin-left"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: currentStep === 0 ? 0.01 : currentStep / (STEPS.length - 1) }}
-              transition={{ duration: 1.2, delay: 0.6, ease }}
-              style={{ right: "10%", transformOrigin: "left" }}
-            />
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0" style={{ scrollbarWidth: "none" }}>
+            <div className="flex items-start justify-between relative min-w-[600px] sm:min-w-0">
+              {/* Rail */}
+              <div className="absolute top-[18px] left-[10%] right-[10%] h-px bg-black/[0.08]" />
+              {/* Animated fill */}
+              <motion.div
+                className="absolute top-[18px] left-[10%] h-px bg-[#0f0f0f] origin-left"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: currentStep === 0 ? 0.01 : currentStep / (STEPS.length - 1) }}
+                transition={{ duration: 1.2, delay: 0.6, ease }}
+                style={{ right: "10%", transformOrigin: "left" }}
+              />
 
-            {STEPS.map((step, i) => {
-              const done    = i <= currentStep;
-              const current = i === currentStep;
-              return (
-                <motion.div
-                  key={step.key}
-                  className="flex flex-col items-center gap-3 z-10 flex-1 px-2"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 + i * 0.12, ease }}
-                >
+              {STEPS.map((step, i) => {
+                const done = i <= currentStep;
+                const current = i === currentStep;
+                return (
                   <motion.div
-                    className={`w-[36px] h-[36px] rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                      done ? "bg-[#0f0f0f] border-[#0f0f0f]" : "bg-white border-black/12"
-                    } ${current && !order.isCancelled ? "shadow-[0_0_0_6px_rgba(0,0,0,0.07)]" : ""}`}
-                    whileHover={{ scale: 1.08 }}
+                    key={step.key}
+                    className="flex flex-col items-center gap-3 z-10 flex-1 px-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 + i * 0.12, ease }}
                   >
-                    <step.Icon size={13} className={done ? "text-white" : "text-black/25"} />
+                    <motion.div
+                      className={`w-[36px] h-[36px] rounded-full flex items-center justify-center border-2 transition-all duration-500 ${done ? "bg-[#0f0f0f] border-[#0f0f0f]" : "bg-white border-black/12"
+                        } ${current && !order.isCancelled ? "shadow-[0_0_0_6px_rgba(0,0,0,0.07)]" : ""}`}
+                      whileHover={{ scale: 1.08 }}
+                    >
+                      <step.Icon size={13} className={done ? "text-white" : "text-black/25"} />
+                    </motion.div>
+                    <div className="text-center">
+                      <p className={`font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold ${done ? "text-[#0f0f0f]" : "text-black/30"}`}>
+                        {step.label}
+                      </p>
+                      <p className={`font-[family-name:'DM_Sans',sans-serif] text-[11px] mt-0.5 ${done ? "text-black/45" : "text-black/22"}`}>
+                        {step.sub}
+                      </p>
+                    </div>
                   </motion.div>
-                  <div className="text-center">
-                    <p className={`font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold ${done ? "text-[#0f0f0f]" : "text-black/30"}`}>
-                      {step.label}
-                    </p>
-                    <p className={`font-[family-name:'DM_Sans',sans-serif] text-[11px] mt-0.5 ${done ? "text-black/45" : "text-black/22"}`}>
-                      {step.sub}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </motion.div>
 
@@ -384,10 +385,10 @@ export default function OrderDetail() {
 
             <div className="px-6 py-2">
               {[
-                { label: "Subtotal",        value: `₹${Number(order.itemsPrice ?? order.totalPrice).toLocaleString("en-IN")}`, sub: null },
-                { label: "Shipping",        value: Number(order.shippingPrice ?? 0) === 0 ? "Free" : `₹${Number(order.shippingPrice).toLocaleString("en-IN")}`, sub: null },
-                { label: "Tax",             value: `₹${Number(order.taxPrice ?? 0).toLocaleString("en-IN")}`, sub: null },
-                { label: "Payment Method",  value: order.paymentMethod || "Online", sub: null },
+                { label: "Subtotal", value: `₹${Number(order.itemsPrice ?? order.totalPrice).toLocaleString("en-IN")}`, sub: null },
+                { label: "Shipping", value: Number(order.shippingPrice ?? 0) === 0 ? "Free" : `₹${Number(order.shippingPrice).toLocaleString("en-IN")}`, sub: null },
+                { label: "Tax", value: `₹${Number(order.taxPrice ?? 0).toLocaleString("en-IN")}`, sub: null },
+                { label: "Payment Method", value: order.paymentMethod || "Online", sub: null },
                 {
                   label: "Payment Status",
                   value: order.isPaid ? "Paid" : "Pending",
@@ -400,10 +401,9 @@ export default function OrderDetail() {
                 <div key={r.label} className="flex justify-between items-start py-3 border-b border-black/[0.05]">
                   <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/45">{r.label}</span>
                   <div className="text-right">
-                    <span className={`font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium ${
-                      r.isPaid === true ? "text-emerald-600 flex items-center gap-1.5" :
-                      r.isPaid === false ? "text-amber-600" : "text-[#0f0f0f]"
-                    }`}>
+                    <span className={`font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium ${r.isPaid === true ? "text-emerald-600 flex items-center gap-1.5" :
+                        r.isPaid === false ? "text-amber-600" : "text-[#0f0f0f]"
+                      }`}>
                       {r.isPaid === true && <CheckCircle2 size={12} />}
                       {r.value}
                     </span>
@@ -466,9 +466,9 @@ export default function OrderDetail() {
             >
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { Icon: Shield,    label: "Secure\nPayment" },
+                  { Icon: Shield, label: "Secure\nPayment" },
                   { Icon: RotateCcw, label: "Easy\nReturns" },
-                  { Icon: Zap,       label: "Fast\nSupport" },
+                  { Icon: Zap, label: "Fast\nSupport" },
                 ].map(({ Icon, label }) => (
                   <div key={label} className="flex flex-col items-center gap-1.5 bg-[#f7f5f2] rounded-2xl px-2 py-3 text-center border border-black/[0.05]">
                     <Icon size={13} className="text-black/35" />

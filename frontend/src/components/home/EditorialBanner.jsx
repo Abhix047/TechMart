@@ -178,7 +178,7 @@ const EditorialBanner = () => {
           <motion.div
             className="relative z-10 flex flex-col flex-1"
             style={{
-              padding: "clamp(44px,6.5vh,80px) clamp(32px,5vw,68px)",
+              padding: "clamp(44px,6.5vh,80px) clamp(24px,5vw,68px)",
               borderRight: `1px solid ${T.border}`,
               y: leftY,
             }}
@@ -375,7 +375,7 @@ const EditorialBanner = () => {
               initial={{ opacity: 0, scale: 0.88 }}
               animate={isInView ? { opacity: 1, scale: 1 } : {}}
               transition={{ delay: 0.38, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center justify-center py-6 select-none"
+              className="hidden md:flex items-center justify-center py-6 select-none"
             >
               {product?.images?.[0] ? (
                 <img

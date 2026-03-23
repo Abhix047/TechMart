@@ -83,7 +83,7 @@ export default function MyOrders() {
 
   return (
     <div
-      className="min-h-screen bg-[#f7f5f2] pt-28 pb-24 px-5 sm:px-8"
+      className="min-h-screen bg-[#f7f5f2] pt-24 sm:pt-28 pb-[calc(80px+env(safe-area-inset-bottom))] px-4 sm:px-8"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       <div className="max-w-[960px] mx-auto">
@@ -179,25 +179,32 @@ export default function MyOrders() {
                 >
 
                   {/* ── TOP ROW: index · id+date · status · price ── */}
-                  <div className="grid grid-cols-[28px_1fr_auto_auto] sm:grid-cols-[32px_1fr_auto_auto] items-center gap-4 sm:gap-6 px-6 py-5 border-b border-black/[0.055]">
+                  <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-black/[0.055]">
+                    {/* Row 1: index + id/date + price (always on same line) */}
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      {/* Index number */}
+                      <span className="font-[family-name:'Cormorant_Garamond',serif] text-[14px] font-[500] text-black/22 leading-none select-none pt-0.5 shrink-0">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
 
-                    {/* Index number */}
-                    <span className="font-[family-name:'Cormorant_Garamond',serif] text-[14px] font-[500] text-black/22 leading-none select-none">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
+                      {/* ID + date */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] font-semibold uppercase tracking-[0.12em] text-black/38 mb-0.5">
+                          #{order._id.slice(-8).toUpperCase()}
+                        </p>
+                        <p className="font-[family-name:'DM_Sans',sans-serif] text-[11.5px] text-black/38">
+                          {formatDate(order.createdAt)}
+                        </p>
+                      </div>
 
-                    {/* ID + date */}
-                    <div className="min-w-0">
-                      <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] font-semibold uppercase tracking-[0.12em] text-black/38 mb-0.5">
-                        #{order._id.slice(-8).toUpperCase()}
-                      </p>
-                      <p className="font-[family-name:'DM_Sans',sans-serif] text-[11.5px] text-black/38">
-                        {formatDate(order.createdAt)}
-                      </p>
+                      {/* Price */}
+                      <span className="font-[family-name:'Cormorant_Garamond',serif] text-[20px] sm:text-[22px] font-[500] text-[#0f0f0f] leading-none shrink-0">
+                        ₹{order.totalPrice?.toLocaleString("en-IN")}
+                      </span>
                     </div>
 
-                    {/* Status pill */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Row 2: status pill (below on mobile, looks clean) */}
+                    <div className="flex items-center gap-2 mt-2.5 pl-[calc(14px+12px)]">
                       <motion.span
                         className={`w-[7px] h-[7px] rounded-full shrink-0 ${sConfig.dot}`}
                         animate={status !== "cancelled" ? { opacity: [1, 0.35, 1], scale: [1, 0.65, 1] } : {}}
@@ -207,15 +214,10 @@ export default function MyOrders() {
                         {sConfig.label}
                       </span>
                     </div>
-
-                    {/* Price */}
-                    <span className="font-[family-name:'Cormorant_Garamond',serif] text-[22px] font-[500] text-[#0f0f0f] leading-none shrink-0">
-                      ₹{order.totalPrice?.toLocaleString("en-IN")}
-                    </span>
                   </div>
 
                   {/* ── BODY: items + meta chips ── */}
-                  <div className="px-6 py-4 flex items-start justify-between gap-5">
+                  <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-5">
 
                     {/* Items */}
                     <div className="flex flex-col gap-2.5 flex-1 min-w-0">

@@ -451,12 +451,18 @@ const FeaturedProducts = () => {
           MOBILE — drag scroll
       ══════════════════════════════════════════ */}
       {!error && (
-        <div className="lg:hidden">
+        <div className="lg:hidden relative">
+          {/* Navigation Arrows */}
+          <div className="absolute top-[40%] -translate-y-1/2 left-2 right-2 flex justify-between pointer-events-none z-20 opacity-90">
+            <button onClick={() => document.getElementById('fp-slider')?.scrollBy({ left: -260, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white border border-black/10 rounded-full shadow-md backdrop-blur-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button onClick={() => document.getElementById('fp-slider')?.scrollBy({ left: 260, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white border border-black/10 rounded-full shadow-md backdrop-blur-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
           <motion.div
+            id="fp-slider"
             variants={gridVariants}
             initial="hidden"
             animate={isInView ? "show" : "hidden"}
-            className="flex gap-4 pb-2 px-5 overflow-x-auto"
+            className="flex gap-4 pb-2 px-5 overflow-x-auto scroll-smooth"
             style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
           >
             {loading

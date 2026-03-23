@@ -25,9 +25,9 @@ if (typeof document !== "undefined" && !document.getElementById("na-lux-fonts"))
 
 /* ── Fetch ── */
 async function fetchLatestProducts() {
-  const res  = await API.get("/products");
+  const res = await API.get("/products");
   const json = res.data;
-  const raw  = Array.isArray(json) ? json : (json.data ?? json.products ?? json.items ?? []);
+  const raw = Array.isArray(json) ? json : (json.data ?? json.products ?? json.items ?? []);
   return raw
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
     .slice(0, 3)
@@ -40,11 +40,11 @@ async function fetchLatestProducts() {
         img = f.startsWith("http") ? f : `${BASE_URL}${f}`;
       }
       return {
-        id:       p.id       ?? p._id,
-        name:     p.name     ?? p.title ?? "—",
+        id: p.id ?? p._id,
+        name: p.name ?? p.title ?? "—",
         category: p.category ?? p.categoryName ?? p.brand ?? p.type ?? "—",
-        price:    Number(p.price ?? p.sellingPrice ?? 0),
-        image:    img,
+        price: Number(p.price ?? p.sellingPrice ?? 0),
+        image: img,
       };
     });
 }
@@ -56,9 +56,8 @@ function CharReveal({ text, italic, delay = 0, inView, className = "" }) {
   return (
     <span
       aria-label={text}
-      className={`inline-flex font-[family-name:'Cormorant_Garamond',serif] font-light leading-none ${
-        italic ? "italic tracking-wide" : "tracking-tight"
-      } ${className}`}
+      className={`inline-flex font-[family-name:'Cormorant_Garamond',serif] font-light leading-none ${italic ? "italic tracking-wide" : "tracking-tight"
+        } ${className}`}
     >
       {text.split("").map((ch, i) => (
         <span key={i} className="overflow-hidden inline-block">
@@ -85,7 +84,7 @@ function ProductCard({ item, index, inView, onClick }) {
 
   return (
     <div
-      className="flex-1 min-w-0 cursor-pointer group"
+      className="shrink-0 w-[80vw] max-w-[320px] md:w-auto md:flex-1 md:min-w-0 snap-center cursor-pointer group"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
@@ -201,7 +200,7 @@ function SkeletonGrid() {
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="flex-1 min-w-0"
+          className="shrink-0 w-[80vw] max-w-[320px] md:w-auto md:flex-1 md:min-w-0 snap-center"
           animate={{ opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.12, ease: "easeInOut" }}
         >
@@ -218,11 +217,11 @@ function SkeletonGrid() {
 const NewArrivals = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [status, setStatus]     = useState("loading");
+  const [status, setStatus] = useState("loading");
 
-  const sectionRef   = useRef(null);
+  const sectionRef = useRef(null);
   const headerInView = useInView(sectionRef, { once: true, margin: "0px 0px -80px 0px" });
-  const cardsInView  = useInView(sectionRef, { once: true, margin: "0px 0px -40px 0px" });
+  const cardsInView = useInView(sectionRef, { once: true, margin: "0px 0px -40px 0px" });
 
   useEffect(() => {
     fetchLatestProducts()
@@ -251,8 +250,8 @@ const NewArrivals = () => {
           aria-label="New Arrivals"
           className="flex justify-center gap-[0.24em] items-baseline flex-wrap mb-5 text-[clamp(36px,5vw,58px)]"
         >
-          <CharReveal text="New"      italic={false} delay={0.04} inView={headerInView} className="text-[#0a0a0a]" />
-          <CharReveal text="Arrivals" italic={true}  delay={0.22} inView={headerInView} className="text-[#0a0a0a]" />
+          <CharReveal text="New" italic={false} delay={0.04} inView={headerInView} className="text-[#0a0a0a]" />
+          <CharReveal text="Arrivals" italic={true} delay={0.22} inView={headerInView} className="text-[#0a0a0a]" />
         </h2>
 
         {/* Subtitle */}
@@ -277,20 +276,30 @@ const NewArrivals = () => {
       </div>
 
       {/* Cards */}
-      <div className="flex gap-3.5 md:gap-5 lg:gap-6 items-start">
+      <div className="relative group">
+        <div className="absolute top-[40%] -translate-y-1/2 left-2 right-2 flex justify-between pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <button onClick={() => document.getElementById('na-slider')?.scrollBy({ left: -280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button onClick={() => document.getElementById('na-slider')?.scrollBy({ left: 280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+        <div
+          id="na-slider"
+          className="flex justify-start md:justify-center gap-3.5 md:gap-5 lg:gap-8 pb-4 overflow-x-auto snap-x snap-mandatory scroll-smooth"
+          style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+        >
         <AnimatePresence mode="wait">
           {status === "loading"
             ? <SkeletonGrid key="sk" />
             : products.map((item, i) => (
-                <ProductCard
-                  key={item.id ?? i}
-                  item={item}
-                  index={i}
-                  inView={cardsInView}
-                  onClick={() => navigate(`/products/${item.id}`)}
-                />
-              ))}
+              <ProductCard
+                key={item.id ?? i}
+                item={item}
+                index={i}
+                inView={cardsInView}
+                onClick={() => navigate(`/product/${item.id}`)}
+              />
+            ))}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* View All */}

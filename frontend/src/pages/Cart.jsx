@@ -111,13 +111,13 @@ export default function CartPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] pb-24 pt-20">
+    <div className="min-h-screen bg-[#fafaf9] pb-[calc(96px+env(safe-area-inset-bottom))] pt-24 sm:pt-20">
 
       <div className="max-w-[1200px] mx-auto px-5 sm:px-10 lg:px-16">
 
         {/* ── Header ── */}
         <motion.div
-          className="mb-10 flex items-end justify-between"
+          className="mb-8 sm:mb-10 flex items-end justify-between"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
@@ -126,12 +126,12 @@ export default function CartPage() {
             <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.3em] text-black/30 mb-2">
               My Bag
             </p>
-            <h1 className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(34px,5vw,52px)] font-semibold text-[#0f0f0f] leading-none m-0">
+            <h1 className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(32px,5vw,52px)] font-semibold text-[#0f0f0f] leading-none m-0">
               Shopping <em className="italic font-[500]">Cart</em>
             </h1>
           </div>
           {cart.length > 0 && (
-            <p className="hidden sm:block font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/35 mb-1">
+            <p className="font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/35 mb-1">
               {cart.length} item{cart.length !== 1 ? "s" : ""}
             </p>
           )}
@@ -203,96 +203,149 @@ export default function CartPage() {
                           variants={rowVariants}
                           exit="exit"
                           layout
-                          className={`grid grid-cols-[2fr_1fr_0.8fr_36px] gap-4 px-5 py-5 items-center border-b border-black/5 last:border-none ${
+                          className={`border-b border-black/5 last:border-none ${
                             removingId === item._id ? "pointer-events-none" : ""
                           }`}
                           style={{ opacity: removingId === item._id ? 0.4 : 1 }}
                         >
-                          {/* Product */}
-                          <div
-                            className="flex items-center gap-3.5 cursor-pointer group"
-                            onClick={() => navigate(`/product/${item.product._id}`)}
-                          >
+                          {/* Mobile card layout */}
+                          <div className="sm:hidden flex items-start gap-3.5 px-4 py-4">
                             {/* Image */}
-                            <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] shrink-0 bg-[#f5f3f0] rounded-xl overflow-hidden p-1.5">
+                            <div
+                              className="w-[72px] h-[72px] shrink-0 bg-[#f5f3f0] rounded-xl overflow-hidden p-1.5 cursor-pointer"
+                              onClick={() => navigate(`/product/${item.product._id}`)}
+                            >
                               <motion.img
-                                src={imgSrc}
+                                src={getImg(item.product.images?.[0])}
                                 alt={item.product.name}
                                 className="w-full h-full object-contain mix-blend-multiply"
                                 whileHover={{ scale: 1.07 }}
                                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                               />
                             </div>
-
-                            {/* Info */}
-                            <div className="min-w-0">
-                              <h3 className="font-[family-name:'DM_Sans',sans-serif] text-[13.5px] font-medium text-[#0f0f0f] truncate group-hover:text-black/60 transition-colors leading-snug mb-1">
+                            {/* Info + actions */}
+                            <div className="flex-1 min-w-0">
+                              <h3
+                                className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium text-[#0f0f0f] leading-snug mb-0.5 cursor-pointer hover:text-black/60 transition-colors"
+                                onClick={() => navigate(`/product/${item.product._id}`)}
+                              >
                                 {item.product.name}
                               </h3>
-                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30">
+                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mb-2">
                                 {item.product.brand || item.product.category || "Standard"}
                               </p>
-                              {item.product.discountPrice > 0 && item.product.discountPrice < item.product.price && (
-                                <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/25 line-through mt-0.5">
-                                  ₹{item.product.price.toLocaleString("en-IN")}
+                              <div className="flex items-center justify-between gap-2">
+                                {/* Qty stepper */}
+                                <div className="flex items-center border border-black/10 rounded-xl overflow-hidden bg-[#f8f7f5]">
+                                  <motion.button
+                                    onClick={() => updateQty(item, -1)}
+                                    disabled={item.quantity <= 1 || updatingId === item._id}
+                                    className="w-8 h-8 flex items-center justify-center text-[16px] text-black/35 hover:text-black/70 hover:bg-black/5 transition-colors disabled:opacity-25 border-r border-black/8"
+                                    whileTap={{ scale: 0.88 }}
+                                  >−</motion.button>
+                                  <AnimatePresence mode="wait">
+                                    <motion.span
+                                      key={item.quantity}
+                                      className="w-8 text-center font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-[#0f0f0f]"
+                                      initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                                      transition={{ duration: 0.16 }}
+                                    >{item.quantity}</motion.span>
+                                  </AnimatePresence>
+                                  <motion.button
+                                    onClick={() => updateQty(item, +1)}
+                                    disabled={updatingId === item._id}
+                                    className="w-8 h-8 flex items-center justify-center text-[16px] text-black/35 hover:text-black/70 hover:bg-black/5 transition-colors disabled:opacity-25 border-l border-black/8"
+                                    whileTap={{ scale: 0.88 }}
+                                  >+</motion.button>
+                                </div>
+                                {/* Price + delete */}
+                                <div className="flex items-center gap-2">
+                                  <div className="text-right">
+                                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[13.5px] font-semibold text-[#0f0f0f]">
+                                      ₹{rowTotal.toLocaleString("en-IN")}
+                                    </p>
+                                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/28">
+                                      ₹{itemPrice.toLocaleString("en-IN")} each
+                                    </p>
+                                  </div>
+                                  <motion.button
+                                    onClick={() => removeItem(item._id)}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                                    whileTap={{ scale: 0.88 }} title="Remove"
+                                  >
+                                    <Trash2 size={14} strokeWidth={2} />
+                                  </motion.button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Desktop table row layout (sm+) */}
+                          <div className={`hidden sm:grid grid-cols-[2fr_1fr_0.8fr_36px] gap-4 px-5 py-5 items-center`}>
+                            {/* Product */}
+                            <div
+                              className="flex items-center gap-3.5 cursor-pointer group"
+                              onClick={() => navigate(`/product/${item.product._id}`)}
+                            >
+                              <div className="w-[72px] h-[72px] shrink-0 bg-[#f5f3f0] rounded-xl overflow-hidden p-1.5">
+                                <motion.img
+                                  src={getImg(item.product.images?.[0])}
+                                  alt={item.product.name}
+                                  className="w-full h-full object-contain mix-blend-multiply"
+                                  whileHover={{ scale: 1.07 }}
+                                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className="font-[family-name:'DM_Sans',sans-serif] text-[13.5px] font-medium text-[#0f0f0f] truncate group-hover:text-black/60 transition-colors leading-snug mb-1">
+                                  {item.product.name}
+                                </h3>
+                                <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30">
+                                  {item.product.brand || item.product.category || "Standard"}
                                 </p>
-                              )}
+                                {item.product.discountPrice > 0 && item.product.discountPrice < item.product.price && (
+                                  <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/25 line-through mt-0.5">
+                                    ₹{item.product.price.toLocaleString("en-IN")}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Qty stepper */}
-                          <div className="flex justify-center">
-                            <div className="flex items-center border border-black/10 rounded-xl overflow-hidden bg-[#f8f7f5]">
-                              <motion.button
-                                onClick={() => updateQty(item, -1)}
-                                disabled={item.quantity <= 1 || updatingId === item._id}
-                                className="w-8 h-8 flex items-center justify-center text-[16px] text-black/35 hover:text-black/70 hover:bg-black/5 transition-colors disabled:opacity-25 border-r border-black/8"
-                                whileTap={{ scale: 0.88 }}
-                              >
-                                −
-                              </motion.button>
-                              <AnimatePresence mode="wait">
-                                <motion.span
-                                  key={item.quantity}
-                                  className="w-8 text-center font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-[#0f0f0f]"
-                                  initial={{ opacity: 0, y: -5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: 5 }}
-                                  transition={{ duration: 0.16 }}
-                                >
-                                  {item.quantity}
-                                </motion.span>
-                              </AnimatePresence>
-                              <motion.button
-                                onClick={() => updateQty(item, +1)}
-                                disabled={updatingId === item._id}
-                                className="w-8 h-8 flex items-center justify-center text-[16px] text-black/35 hover:text-black/70 hover:bg-black/5 transition-colors disabled:opacity-25 border-l border-black/8"
-                                whileTap={{ scale: 0.88 }}
-                              >
-                                +
-                              </motion.button>
+                            {/* Qty stepper */}
+                            <div className="flex justify-center">
+                              <div className="flex items-center border border-black/10 rounded-xl overflow-hidden bg-[#f8f7f5]">
+                                <motion.button onClick={() => updateQty(item, -1)} disabled={item.quantity <= 1 || updatingId === item._id}
+                                  className="w-8 h-8 flex items-center justify-center text-[16px] text-black/35 hover:text-black/70 hover:bg-black/5 transition-colors disabled:opacity-25 border-r border-black/8"
+                                  whileTap={{ scale: 0.88 }}>−</motion.button>
+                                <AnimatePresence mode="wait">
+                                  <motion.span key={item.quantity} className="w-8 text-center font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-[#0f0f0f]"
+                                    initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.16 }}>
+                                    {item.quantity}
+                                  </motion.span>
+                                </AnimatePresence>
+                                <motion.button onClick={() => updateQty(item, +1)} disabled={updatingId === item._id}
+                                  className="w-8 h-8 flex items-center justify-center text-[16px] text-black/35 hover:text-black/70 hover:bg-black/5 transition-colors disabled:opacity-25 border-l border-black/8"
+                                  whileTap={{ scale: 0.88 }}>+</motion.button>
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Total */}
-                          <div className="text-center">
-                            <p className="font-[family-name:'DM_Sans',sans-serif] text-[14px] font-semibold text-[#0f0f0f]">
-                              ₹{rowTotal.toLocaleString("en-IN")}
-                            </p>
-                            <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] text-black/28 mt-0.5">
-                              ₹{itemPrice.toLocaleString("en-IN")} each
-                            </p>
-                          </div>
+                            {/* Total */}
+                            <div className="text-center">
+                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[14px] font-semibold text-[#0f0f0f]">
+                                ₹{rowTotal.toLocaleString("en-IN")}
+                              </p>
+                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] text-black/28 mt-0.5">
+                                ₹{itemPrice.toLocaleString("en-IN")} each
+                              </p>
+                            </div>
 
-                          {/* Delete */}
-                          <motion.button
-                            onClick={() => removeItem(item._id)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
-                            whileTap={{ scale: 0.88 }}
-                            title="Remove"
-                          >
-                            <Trash2 size={14} strokeWidth={2} />
-                          </motion.button>
+                            {/* Delete */}
+                            <motion.button onClick={() => removeItem(item._id)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-black/20 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                              whileTap={{ scale: 0.88 }} title="Remove">
+                              <Trash2 size={14} strokeWidth={2} />
+                            </motion.button>
+                          </div>
                         </motion.div>
                       );
                     })}

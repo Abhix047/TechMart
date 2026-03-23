@@ -122,10 +122,9 @@ const Footer = () => {
           initial={{ opacity: 0, y: 32 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col justify-between"
+          className="flex flex-col justify-between lg:border-r lg:border-white/[0.06]"
           style={{
             padding: "clamp(40px,6vh,72px) clamp(24px,5vw,72px)",
-            borderRight: "1px solid rgba(255,255,255,0.06)",
           }}
         >
           <div>

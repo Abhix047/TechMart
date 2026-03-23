@@ -7,8 +7,8 @@ import { useCart } from "../context/CartContext";
 import API from "../services/api";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const imgUrl   = (src) => (!src ? null : src.startsWith("http") ? src : `${BASE_URL}${src}`);
-const ease     = [0.22, 1, 0.36, 1];
+const imgUrl = (src) => (!src ? null : src.startsWith("http") ? src : `${BASE_URL}${src}`);
+const ease = [0.22, 1, 0.36, 1];
 
 /* ── Fonts ── */
 if (typeof document !== "undefined" && !document.getElementById("wl-fonts")) {
@@ -22,8 +22,8 @@ export default function Wishlist() {
   const { wishlist, toggleWishlist, loading: wishlistLoading } = useWishlist();
   const { fetchCartCount } = useCart();
   const [addingToCart, setAddingToCart] = React.useState(null);
-  const [addedIds, setAddedIds]         = React.useState([]);
-  const [hoveredId, setHoveredId]       = React.useState(null);
+  const [addedIds, setAddedIds] = React.useState([]);
+  const [hoveredId, setHoveredId] = React.useState(null);
 
   const handleAddToCart = async (product) => {
     setAddingToCart(product._id);
@@ -147,14 +147,14 @@ export default function Wishlist() {
           >
             <AnimatePresence mode="popLayout">
               {wishlist.map((item, i) => {
-                const img      = imgUrl(item.images?.[0]);
-                const price    = item.discountPrice || item.price || 0;
-                const mrp      = item.price || 0;
+                const img = imgUrl(item.images?.[0]);
+                const price = item.discountPrice || item.price || 0;
+                const mrp = item.price || 0;
                 const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
                 const isAdding = addingToCart === item._id;
-                const isAdded  = addedIds.includes(item._id);
-                const inStock  = item.countInStock > 0;
-                const hovered  = hoveredId === item._id;
+                const isAdded = addedIds.includes(item._id);
+                const inStock = item.countInStock > 0;
+                const hovered = hoveredId === item._id;
 
                 return (
                   <motion.div
@@ -245,13 +245,12 @@ export default function Wishlist() {
                       <motion.button
                         onClick={() => handleAddToCart(item)}
                         disabled={isAdding || !inStock}
-                        className={`mt-3 w-full py-3 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[11.5px] font-semibold uppercase tracking-[0.1em] flex items-center justify-center gap-2 transition-all duration-300 ${
-                          !inStock
+                        className={`mt-3 w-full py-3 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[11.5px] font-semibold uppercase tracking-[0.1em] flex items-center justify-center gap-2 transition-all duration-300 ${!inStock
                             ? "bg-black/5 text-black/25 cursor-not-allowed"
                             : isAdded
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                            : "bg-[#0f0f0f] text-white hover:bg-black/82"
-                        }`}
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                              : "bg-[#0f0f0f] text-white hover:bg-black/82"
+                          }`}
                         whileTap={inStock ? { scale: 0.97 } : {}}
                       >
                         {isAdded ? (
