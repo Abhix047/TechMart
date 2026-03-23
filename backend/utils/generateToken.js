@@ -2,8 +2,8 @@ import jwt from "jsonwebtoken";
 
 export const buildAuthCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV !== "development",
-  sameSite: "strict",
+  secure: process.env.NODE_ENV === "production" || process.env.NODE_ENV !== "development",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   path: "/",
 });
 
