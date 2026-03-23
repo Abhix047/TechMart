@@ -28,16 +28,24 @@ const allowedOrigins = (process.env.CLIENT_URLS || "http://localhost:5173")
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(securityHeaders);
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);  
-    }
+const cors = require('cors');
 
-    return callback(new Error("CORS origin denied"));
-  },
-  credentials: true
+// Add this middleware before your routes
+app.use(cors({
+    origin: 'https://itstechmart.vercel.app', // Your exact Vercel domain
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true // Crucial for your Axios setup
 }));
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       return callback(null, true);  
+//     }
+
+//     return callback(new Error("CORS origin denied"));
+//   },
+//   credentials: true
+// }));
 app.use(apiRateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
