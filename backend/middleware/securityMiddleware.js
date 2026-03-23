@@ -13,7 +13,7 @@ const cspDirectives = [
 export const securityHeaders = (req, res, next) => {
   res.setHeader("Content-Security-Policy", cspDirectives);
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   res.setHeader("Origin-Agent-Cluster", "?1");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
