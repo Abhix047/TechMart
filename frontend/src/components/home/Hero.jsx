@@ -125,7 +125,7 @@ const Hero = () => {
   if (loading) {
     return (
       <div style={{ marginTop: NAVBAR_H, padding: "0 clamp(14px, 2vw, 28px) clamp(14px, 2vw, 28px)" }}>
-        <div className="w-full flex items-center justify-center h-[45vh] md:h-[clamp(400px,66vh,800px)]" style={{
+        <div className="w-full flex items-center justify-center h-[48vh] md:h-[clamp(400px,66vh,800px)]" style={{
           background: "#efefed",
         }}>
           <div style={{
@@ -169,7 +169,7 @@ const Hero = () => {
             — NO hover pause (video keeps going)
         ══════════════════════════════════════ */}
         <div
-          className="relative overflow-hidden group w-full h-[25vh] md:h-[clamp(400px,88vh,920px)] rounded-[20px] md:rounded-none"
+          className="relative overflow-hidden group w-full h-[29vh] md:h-[clamp(400px,88vh,920px)] rounded-[20px] md:rounded-none"
           onClick={handleCardClick}
           style={{
             background: "#111",
