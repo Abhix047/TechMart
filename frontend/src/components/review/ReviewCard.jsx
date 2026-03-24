@@ -2,7 +2,7 @@ import React from "react";
 import { Star, CheckCircle2, ThumbsUp } from "lucide-react";
 import { motion } from "framer-motion";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 
 const ReviewCard = ({ review, index = 0 }) => {
@@ -121,7 +121,7 @@ const ReviewCard = ({ review, index = 0 }) => {
             </p>
             <div className="w-14 h-14 rounded-xl overflow-hidden border border-black/[0.07] bg-[#f0ede8]">
               <img
-                src={review.image.startsWith("http") ? review.image : `${BASE_URL}${review.image.replace(/\\/g, '/')}`}
+                src={getImg(review.image)}
                 alt="Review photo"
                 className="w-full h-full object-cover hover:scale-110 transition-transform duration-500 mix-blend-multiply"
               />

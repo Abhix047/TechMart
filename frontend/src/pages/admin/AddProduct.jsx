@@ -16,7 +16,7 @@ if (typeof document !== "undefined" && !document.getElementById("ap-fonts")) {
   document.head.appendChild(l);
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { BASE_URL } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 
 /* ── Shared input styles ── */

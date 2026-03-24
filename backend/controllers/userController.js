@@ -78,7 +78,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    generateToken(res, user._id);
+    generateToken(req, res, user._id);
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -101,7 +101,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email: email.trim().toLowerCase() });
   if (user && (await user.matchPassword(password))) {
-    generateToken(res, user._id);
+    generateToken(req, res, user._id);
     res.status(200).json({
       _id: user._id,
       name: user.name,
@@ -116,7 +116,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 });
 export const logoutUser = asyncHandler(async (req, res) => {
   res.cookie("jwt", "", {
-    ...buildAuthCookieOptions(),
+    ...buildAuthCookieOptions(req),
     expires: new Date(0),
   });
 

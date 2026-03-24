@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { getImg, BASE_URL } from "../../config";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -379,7 +380,7 @@ const EditorialBanner = () => {
             >
               {product?.images?.[0] ? (
                 <img
-                  src={`http://localhost:5000${product.images[3]}`}
+                  src={getImg(product.images[3])}
                   alt={product.name}
                   className="w-full max-w-[500px] lg:scale-110 object-contain drop-shadow-2xl mix-blend-multiply transition-transform"
                 />

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../../config";
 
 /*
   index.css mein add karo:
@@ -21,6 +21,14 @@ const Hero = () => {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading]   = useState(true);
   const [textReady, setTextReady] = useState(false);
+  const [isMobile, setIsMobile]   = useState(false);
+
+  useEffect(() => {
+    const checkSize = () => setIsMobile(window.innerWidth < 768);
+    checkSize();
+    window.addEventListener("resize", checkSize);
+    return () => window.removeEventListener("resize", checkSize);
+  }, []);
 
   const navigate   = useNavigate();
   const timerRef   = useRef(null);
@@ -117,10 +125,8 @@ const Hero = () => {
   if (loading) {
     return (
       <div style={{ marginTop: NAVBAR_H, padding: "0 clamp(14px, 2vw, 28px) clamp(14px, 2vw, 28px)" }}>
-        <div style={{
-          width: "100%", height: "clamp(400px, 66vh, 800px)",
+        <div className="w-full flex items-center justify-center h-[45vh] md:h-[clamp(400px,66vh,800px)]" style={{
           background: "#efefed",
-          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <div style={{
             width: 22, height: 22, borderRadius: "50%",
@@ -140,8 +146,8 @@ const Hero = () => {
   return (
     <section
       style={{
-        marginTop: NAVBAR_H,
-        padding: "0 clamp(14px, 2vw, 28px) clamp(14px, 2vw, 28px)",
+        marginTop: isMobile ? 64 : NAVBAR_H,
+        padding: isMobile ? "0 12px 24px" : "0 clamp(14px, 2vw, 28px) 40px",
         background: "white",
         position: "relative",
       }}
@@ -163,12 +169,9 @@ const Hero = () => {
             — NO hover pause (video keeps going)
         ══════════════════════════════════════ */}
         <div
-          className="relative overflow-hidden group"
+          className="relative overflow-hidden group w-full h-[25vh] md:h-[clamp(400px,88vh,920px)] rounded-[20px] md:rounded-none"
           onClick={handleCardClick}
           style={{
-            width: "100%",
-            height: "clamp(400px, 88vh, 920px)",
-            borderRadius: 0,           /* sharp corners */
             background: "#111",
             cursor: "pointer",
             boxShadow: "0 8px 48px rgba(0,0,0,0.16)",
@@ -196,13 +199,13 @@ const Hero = () => {
             >
               {banner.type === "video" ? (
                 <video
-                  src={banner.media?.startsWith("http") ? banner.media : `${BASE_URL}${banner.media}`}
+                  src={getImg(banner.media)}
                   autoPlay muted loop playsInline
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <img
-                  src={banner.media?.startsWith("http") ? banner.media : `${BASE_URL}${banner.media}`}
+                  src={getImg(banner.media)}
                   alt={banner.title || "Banner"}
                   className="w-full h-full object-cover"
                   draggable={false}

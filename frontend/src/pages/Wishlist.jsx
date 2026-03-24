@@ -6,8 +6,8 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import API from "../services/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const imgUrl = (src) => (!src ? null : src.startsWith("http") ? src : `${BASE_URL}${src}`);
+import { getImg, BASE_URL } from "../config";
+// Removed local getImg in favor of centralized one
 const ease = [0.22, 1, 0.36, 1];
 
 /* ── Fonts ── */
@@ -147,7 +147,7 @@ export default function Wishlist() {
           >
             <AnimatePresence mode="popLayout">
               {wishlist.map((item, i) => {
-                const img = imgUrl(item.images?.[0]);
+                const img = getImg(item.images?.[0]);
                 const price = item.discountPrice || item.price || 0;
                 const mrp = item.price || 0;
                 const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;

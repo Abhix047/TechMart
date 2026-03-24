@@ -17,7 +17,7 @@ if (typeof document !== "undefined" && !document.getElementById("od-fonts")) {
   document.head.appendChild(l);
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg, BASE_URL } from "../config";
 const ease = [0.22, 1, 0.36, 1];
 
 const STEPS = [
@@ -339,7 +339,7 @@ export default function OrderDetail() {
                 >
                   <div className="w-[50px] h-[50px] rounded-xl bg-[#eae6df] border border-black/[0.07] shrink-0 overflow-hidden">
                     {item.image ? (
-                      <img src={`${BASE_URL}${item.image}`} alt={item.name}
+                      <img src={getImg(item.image)} alt={item.name} // Removed local getImg in favor of centralized one
                         className="w-full h-full object-contain mix-blend-multiply p-1.5" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -524,7 +524,7 @@ export default function OrderDetail() {
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl bg-[#eae6df] border border-black/[0.06] shrink-0 overflow-hidden">
                       {item.image ? (
-                        <img src={`${BASE_URL}${item.image}`} alt={item.name}
+                        <img src={getImg(item.image)} alt={item.name}
                           className="w-full h-full object-contain mix-blend-multiply p-1" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

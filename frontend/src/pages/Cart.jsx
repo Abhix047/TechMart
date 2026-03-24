@@ -9,7 +9,7 @@ import API from "../services/api";
 import { useCart } from "../context/CartContext.jsx";
 import toast from "react-hot-toast";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg, BASE_URL } from "../config";
 
 /* ── Fonts ── */
 if (typeof document !== "undefined" && !document.getElementById("cart-fonts")) {
@@ -21,8 +21,7 @@ if (typeof document !== "undefined" && !document.getElementById("cart-fonts")) {
   document.head.appendChild(l);
 }
 
-const getImg = (src) =>
-  !src ? "" : src.startsWith("http") ? src : `${BASE_URL}${src}`;
+// Removed local getImg in favor of centralized one
 
 /* ── stagger variants ── */
 const listVariants = {

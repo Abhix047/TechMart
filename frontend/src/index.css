@@ -11,3 +11,12 @@ html, body {
   overflow-x: hidden;
   max-width: 100vw;
 }
+
+.no-sb::-webkit-scrollbar {
+  display: none;
+}
+
+.no-sb {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

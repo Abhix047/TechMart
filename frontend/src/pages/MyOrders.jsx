@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getImg } from "../config";
 import { Link } from "react-router-dom";
 import API from "../services/api";
 import {
@@ -226,7 +227,7 @@ export default function MyOrders() {
                           <div className="w-[38px] h-[38px] rounded-xl bg-[#f0ede8] border border-black/[0.06] shrink-0 overflow-hidden flex items-center justify-center">
                             {item.image ? (
                               <img
-                                src={item.image.startsWith("http") ? item.image : `${import.meta.env.VITE_API_URL || "http://localhost:5000"}${item.image}`}
+                                src={getImg(item.image)}
                                 alt={item.name}
                                 className="w-full h-full object-contain mix-blend-multiply p-1"
                               />

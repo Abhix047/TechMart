@@ -7,7 +7,7 @@ import {
   CheckCircle2, X, Shield, Truck, RotateCcw, Lock, ChevronRight
 } from "lucide-react";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg, BASE_URL } from "../config";
 
 /* ── Fonts ── */
 if (typeof document !== "undefined" && !document.getElementById("co-fonts")) {
@@ -19,7 +19,7 @@ if (typeof document !== "undefined" && !document.getElementById("co-fonts")) {
   document.head.appendChild(l);
 }
 
-const getImg = (src) => (!src ? "" : src.startsWith("http") ? src : `${BASE_URL}${src}`);
+// Removed local getImg in favor of centralized one
 
 /* ── stagger variants ── */
 const containerVariants = {

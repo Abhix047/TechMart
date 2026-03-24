@@ -29,11 +29,18 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(securityHeaders);
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://itstechmart.vercel.app",
-    "https://techmart-nr4y.onrender.com"
-  ],
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || 
+        origin.includes("vercel.app") || 
+        origin.includes("onrender.com") ||
+        origin.includes("localhost")) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   credentials: true,
 }));

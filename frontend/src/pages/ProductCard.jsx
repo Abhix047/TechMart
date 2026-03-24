@@ -8,7 +8,7 @@ import {
 import { Link, useSearchParams } from "react-router-dom";
 import { useWishlist } from "../context/WishlistContext.jsx";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../config";
 const ease = [0.22, 1, 0.36, 1];
 
 if (typeof document !== "undefined" && !document.getElementById("pp-fonts")) {
@@ -18,8 +18,7 @@ if (typeof document !== "undefined" && !document.getElementById("pp-fonts")) {
   document.head.appendChild(l);
 }
 
-const imgUrl = (src) =>
-  !src ? null : src.startsWith("http") ? src : `${BASE_URL}${src}`;
+// Removed local getImg in favor of centralized one
 
 /* ── Skeleton ── */
 const SkeletonCard = ({ i }) => (
@@ -100,7 +99,7 @@ const ProductCard = ({ product, index }) => {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product._id);
 
-  const src = imgUrl(product.images?.[0]);
+  const src = getImg(product.images?.[0]);
   const hasDiscount = product.discountPrice > 0 && product.discountPrice < product.price;
   const price = product.discountPrice || product.price;
   const pct = hasDiscount ? Math.round(((product.price - product.discountPrice) / product.price) * 100) : 0;
@@ -124,7 +123,7 @@ const ProductCard = ({ product, index }) => {
           {src ? (
             <motion.img
               src={src} alt={product.name}
-              className="absolute inset-0 w-full h-full object-contain mix-blend-multiply p-6"
+              className="absolute inset-0 w-full h-full object-contain mix-blend-multiply p-2"
               animate={{ scale: hovered ? 1.07 : 1 }}
               transition={{ duration: 0.8, ease }}
             />
@@ -476,9 +475,9 @@ const ProductsPage = () => {
 
             {/* Right — product image */}
             <div className="hidden md:flex items-end justify-center relative self-stretch overflow-hidden">
-              {imgUrl(featured.images?.[0]) && (
+              {getImg(featured.images?.[0]) && (
                 <motion.img
-                  src={imgUrl(featured.images[0])}
+                  src={getImg(featured.images[0])}
                   alt={featured.name}
                   className="absolute bottom-0 h-[90%] w-auto max-w-full object-contain mix-blend-luminosity opacity-90"
                   initial={{ opacity: 0, y: 40, scale: 0.94 }}

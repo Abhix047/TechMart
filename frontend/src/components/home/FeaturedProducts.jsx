@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { Label } from "./utils";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../../config";
 
 const BG_COLORS = [
   "#f2f0ec", "#eaecf0", "#edf0ea",
@@ -24,8 +24,9 @@ const ProductCard = ({ product, index, onClick }) => {
   const category = product?.category || product?.brand || "";
   const price    = product?.price    || 0;
   const badge    = product?.badge    || (product?.isNew ? "New" : product?.isSale ? "Sale" : null);
+  // Replaced local getImg with centralized one
   const image    = product?.images?.length > 0
-    ? `${BASE_URL}${product.images[0]}`
+    ? getImg(product.images[0])
     : null;
 
   return (
@@ -58,7 +59,7 @@ const ProductCard = ({ product, index, onClick }) => {
             src={image}
             alt={name}
             draggable={false}
-            className="w-full h-full object-contain p-6 mix-blend-multiply"
+            className="w-full h-full object-contain p-5 mix-blend-multiply"
             animate={{ scale: hovered ? 0.91 : 1 }}
             transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           />
@@ -301,8 +302,9 @@ const FeaturedProducts = () => {
 
   return (
     <motion.section
+      id="featured-products"
       ref={containerRef}
-      className="py-16 md:py-24 overflow-hidden"
+      className="py-16 md:py-7 overflow-hidden"
       variants={sectionVariants}
       initial="hidden"
       animate={isInView ? "show" : "hidden"}

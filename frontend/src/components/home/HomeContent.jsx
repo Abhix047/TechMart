@@ -1,45 +1,83 @@
-import MarqueeStrip    from "./MarqueeStrip";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import BrandPromises from "./BrandPromises";
+import CollectionsGrid from "./CollectionsGrid";
+import EditorialBanner from "./EditorialBanner";
 import FeaturedProducts from "./FeaturedProducts";
-import EditorialBanner  from "./EditorialBanner";
-import CollectionsGrid  from "./CollectionsGrid";
-import BrandPromises    from "./BrandPromises";
-import NewArrivals      from "./NewArrivals";
-import Newsletter       from "./Newsletter";
-import { Divider }      from "./utils";
+import MarqueeStrip from "./MarqueeStrip";
 import PressQuote from "./PressQuote";
+import { Divider } from "./utils";
+
+const NewArrivals = lazy(() => import("./NewArrivals"));
+const Newsletter = lazy(() => import("./Newsletter"));
+
+function SectionPlaceholder({ minHeight = 320 }) {
+  return (
+    <div
+      className="mx-5 animate-pulse rounded-[28px] bg-neutral-100 sm:mx-10 lg:mx-16 xl:mx-[72px]"
+      style={{ minHeight }}
+    />
+  );
+}
+
+function DeferredSection({ children, fallback, rootMargin = "320px 0px", once = true }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || visible) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          return;
+        }
+
+        setVisible(true);
+        if (once) {
+          observer.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [once, rootMargin, visible]);
+
+  return <div ref={ref}>{visible ? children : fallback}</div>;
+}
 
 const HomeContent = () => (
   <div className="bg-white font-dm">
-
-    {/* 01 — Scrolling marquee strip */}
     <MarqueeStrip />
 
-    {/* 02 — Featured products grid */}
     <FeaturedProducts />
-    <PressQuote/>
+    <PressQuote />
     <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
 
-    {/* 03 — Editorial dark banner */}
     <EditorialBanner />
-
-    {/* 04 — Collections grid */}
     <CollectionsGrid />
 
     <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
-
-    {/* 05 — Brand promises */}
     <BrandPromises />
+    <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
+
+    <DeferredSection fallback={<SectionPlaceholder minHeight={420} />}>
+      <Suspense fallback={<SectionPlaceholder minHeight={420} />}>
+        <NewArrivals />
+      </Suspense>
+    </DeferredSection>
 
     <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
 
-    {/* 06 — New arrivals horizontal scroll */}
-    <NewArrivals />
-
-    <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
-
-    {/* 07 — Newsletter signup */}
-    <Newsletter />
-
+    <DeferredSection fallback={<SectionPlaceholder minHeight={280} />}>
+      <Suspense fallback={<SectionPlaceholder minHeight={280} />}>
+        <Newsletter />
+      </Suspense>
+    </DeferredSection>
   </div>
 );
 

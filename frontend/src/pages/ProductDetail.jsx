@@ -16,7 +16,7 @@ import {
   ArrowRight
 } from "lucide-react";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg, BASE_URL } from "../config";
 
 /* ── Fonts ── */
 if (typeof document !== "undefined" && !document.getElementById("pd-fonts")) {
@@ -28,7 +28,7 @@ if (typeof document !== "undefined" && !document.getElementById("pd-fonts")) {
   document.head.appendChild(l);
 }
 
-const getImg = (img) => (!img ? "" : img.startsWith("http") ? img : `${BASE_URL}${img}`);
+// Removed local getImg in favor of centralized one
 
 /* ─────────────────────────────────────────────
    Stagger container variants — children animate

@@ -84,14 +84,14 @@ export default function Offers() {
 // Reuse the ProductCard item UI isolated for the Offers layout
 import { Heart } from "lucide-react";
 import { useWishlist } from "../context/WishlistContext.jsx";
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const imgUrl = (src) => !src ? null : src.startsWith("http") ? src : `${BASE_URL}${src}`;
+import { getImg } from "../config";
+// Removed local getImg in favor of centralized one
 
 const ProductCardItem = ({ product, index }) => {
   const [hovered, setHovered] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product._id);
-  const src = imgUrl(product.images?.[0]);
+  const src = getImg(product.images?.[0]);
   const pct = Math.round(((product.price - product.discountPrice) / product.price) * 100);
 
   return (

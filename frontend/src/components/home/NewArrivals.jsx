@@ -11,7 +11,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../../config";
 
 /* ── Fonts ── */
 if (typeof document !== "undefined" && !document.getElementById("na-lux-fonts")) {
@@ -33,11 +33,17 @@ async function fetchLatestProducts() {
     .slice(0, 3)
     .map((p) => {
       let img = null;
+      let rawImagePath = null;
       if (p.images?.length > 0) {
-        img = p.images[0].startsWith("http") ? p.images[0] : `${BASE_URL}${p.images[0]}`;
-      } else if (p.image || p.imageUrl) {
-        const f = p.image || p.imageUrl;
-        img = f.startsWith("http") ? f : `${BASE_URL}${f}`;
+        rawImagePath = p.images[0];
+      } else if (p.image) {
+        rawImagePath = p.image;
+      } else if (p.imageUrl) {
+        rawImagePath = p.imageUrl;
+      }
+
+      if (rawImagePath) {
+        img = getImg(rawImagePath); // Removed local getImg in favor of centralized one
       }
       return {
         id: p.id ?? p._id,
@@ -117,7 +123,7 @@ function ProductCard({ item, index, inView, onClick }) {
             <motion.img
               src={item.image}
               alt={item.name}
-              className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
+              className="absolute inset-0 w-full h-full object-contain p-5 mix-blend-multiply"
               animate={{ scale: hovered ? 1.08 : 1 }}
               transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             />
@@ -278,27 +284,27 @@ const NewArrivals = () => {
       {/* Cards */}
       <div className="relative group">
         <div className="absolute top-[40%] -translate-y-1/2 left-2 right-2 flex justify-between pointer-events-none z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button onClick={() => document.getElementById('na-slider')?.scrollBy({ left: -280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-          <button onClick={() => document.getElementById('na-slider')?.scrollBy({ left: 280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          <button onClick={() => document.getElementById('na-slider')?.scrollBy({ left: -280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg></button>
+          <button onClick={() => document.getElementById('na-slider')?.scrollBy({ left: 280, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white/95 rounded-full border border-black/10 backdrop-blur-sm shadow-md active:scale-95 transition-transform"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg></button>
         </div>
         <div
           id="na-slider"
           className="flex justify-start md:justify-center gap-3.5 md:gap-5 lg:gap-8 pb-4 overflow-x-auto snap-x snap-mandatory scroll-smooth"
           style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
         >
-        <AnimatePresence mode="wait">
-          {status === "loading"
-            ? <SkeletonGrid key="sk" />
-            : products.map((item, i) => (
-              <ProductCard
-                key={item.id ?? i}
-                item={item}
-                index={i}
-                inView={cardsInView}
-                onClick={() => navigate(`/product/${item.id}`)}
-              />
-            ))}
-        </AnimatePresence>
+          <AnimatePresence mode="wait">
+            {status === "loading"
+              ? <SkeletonGrid key="sk" />
+              : products.map((item, i) => (
+                <ProductCard
+                  key={item.id ?? i}
+                  item={item}
+                  index={i}
+                  inView={cardsInView}
+                  onClick={() => navigate(`/product/${item.id}`)}
+                />
+              ))}
+          </AnimatePresence>
         </div>
       </div>
 

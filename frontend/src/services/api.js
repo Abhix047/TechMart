@@ -2,10 +2,10 @@ import axios from "axios";
 
 // import.meta.env.VITE_API_URL will pull from your Vercel settings in production,
 // and from your local .env file when you are developing on your computer.
-const baseURL = import.meta.env.VITE_API_URL 
+import { API_URL } from "../config";
 
 const API = axios.create({
-  baseURL: `${baseURL}/api`,
+  baseURL: API_URL.endsWith('/') ? `${API_URL}api` : `${API_URL}/api`,
   withCredentials: true
 });
 

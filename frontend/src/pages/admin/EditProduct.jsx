@@ -17,7 +17,7 @@ if (typeof document !== "undefined" && !document.getElementById("ep-fonts")) {
   document.head.appendChild(l);
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 const inp  = "w-full bg-[#f7f5f2] border border-black/[0.08] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[13.5px] text-[#0f0f0f] placeholder:text-black/28 outline-none focus:border-black/25 focus:bg-white transition-all duration-200";
 const lbl  = "block font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/38 mb-2";
@@ -380,7 +380,7 @@ const EditProduct = () => {
                           transition={{ duration: 0.28, ease }}
                         >
                           <img
-                            src={img.startsWith("http") ? img : `${BASE_URL}${img}`}
+                            src={getImg(img)} // Removed local getImg in favor of centralized one
                             alt={`Product ${i + 1}`}
                             className="w-full h-full object-contain mix-blend-multiply p-1"
                           />

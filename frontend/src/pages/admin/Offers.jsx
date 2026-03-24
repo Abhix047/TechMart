@@ -15,7 +15,7 @@ if (typeof document !== "undefined" && !document.getElementById("of-fonts")) {
   document.head.appendChild(l);
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { getImg } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 const lbl  = "block font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/38 mb-2";
 const inp  = "w-full bg-[#f7f5f2] border border-black/[0.08] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[13.5px] text-[#0f0f0f] placeholder:text-black/28 outline-none focus:border-black/25 focus:bg-white transition-all duration-200";
@@ -234,9 +234,8 @@ export default function Offers() {
                         <div className="max-h-[200px] overflow-y-auto p-2 flex flex-col gap-0.5">
                           {filteredProducts.map(p => {
                             const sel = selectedProducts.includes(p._id);
-                            const img = p.images?.[0]
-                              ? (p.images[0].startsWith("http") ? p.images[0] : `${BASE_URL}${p.images[0]}`)
-                              : null;
+                            // Removed local getImg in favor of centralized one
+                            const img = getImg(p.images?.[0]);
                             return (
                               <label key={p._id}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-200 ${sel ? "bg-[#0f0f0f]" : "hover:bg-[#f7f5f2]"}`}
