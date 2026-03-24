@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     if (!force && !token && !sessionHint) {
       setUser(null);
       setLoading(false);
-      return;
+      return null;
     }
 
     try {
@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
 
       setUser(res.data);
       localStorage.setItem(AUTH_SESSION_HINT, "1");
+      return res.data;
 
     } catch (error) {
 
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem(AUTH_SESSION_HINT);
       }
       setUser(null);
+      return null;
 
     } finally {
 
@@ -47,13 +49,25 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  const login = (userData) => {
+  const login = async (userData) => {
     if (userData?.token) {
       localStorage.setItem("token", userData.token);
+      localStorage.setItem(AUTH_SESSION_HINT, "1");
+      const { token, ...safeUser } = userData || {};
+      setUser(safeUser);
+      return safeUser;
     }
+
+    setLoading(true);
     localStorage.setItem(AUTH_SESSION_HINT, "1");
-    const { token, ...safeUser } = userData || {};
-    setUser(safeUser);
+    const profile = await fetchUser(true);
+
+    if (!profile) {
+      localStorage.removeItem(AUTH_SESSION_HINT);
+      setUser(null);
+    }
+
+    return profile;
   };
 
   const logout = async () => {

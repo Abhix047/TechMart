@@ -77,12 +77,15 @@ const Register = ({ onSwitch, onClose }) => {
     try {
       const res = await API.post("/auth/register", form);
       if (res.data) {
+        const sessionUser = await login(res.data);
+        if (!sessionUser) {
+          throw new Error("Account created but login session could not be established");
+        }
         toast.success("Account created successfully!");
-        login(res.data);
       }
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed");
+      toast.error(err.response?.data?.message || err.message || "Registration failed");
     } finally { setLoading(false); }
   };
 

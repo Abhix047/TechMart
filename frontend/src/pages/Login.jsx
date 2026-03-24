@@ -87,16 +87,19 @@ const Login = ({ onSwitch, onClose }) => {
     try {
       const res = await API.post("/auth/login", form);
       if (res.data) {
+        const sessionUser = await login(res.data);
+        if (!sessionUser) {
+          throw new Error("Login session could not be established");
+        }
         toast.success("Login successful!");
-        login(res.data);
         onClose();
         // Admin users ko admin dashboard pe redirect karo
-        if (res.data.role === "admin") {
+        if (sessionUser.role === "admin") {
           navigate("/admin/dashboard");
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+      toast.error(err.response?.data?.message || err.message || "Login failed");
     } finally { setLoading(false); }
   };
 

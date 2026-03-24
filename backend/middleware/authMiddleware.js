@@ -8,25 +8,25 @@ export const protect = asyncHandler(async (req, res, next) => {
   const bearerToken = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]
     : null;
-  const token = cookieToken || bearerToken;
+  const tokensToTry = [bearerToken, cookieToken].filter(Boolean);
 
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.userId).select("-password");
+  if (tokensToTry.length > 0) {
+    for (const token of tokensToTry) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = await User.findById(decoded.userId).select("-password");
 
-      if (!req.user) {
-        res.status(401);
-        throw new Error("User no longer exists");
+        if (!req.user) {
+          continue;
+        }
+
+        return next();
+      } catch (error) {
+        // Try the next available auth source before rejecting.
       }
-
-      next();
-    } catch (error) {
-      res.status(401);
-      throw new Error("Not authorized");
     }
-  } else {
-    res.status(401);
-    throw new Error("Not authorized");
   }
+
+  res.status(401);
+  throw new Error("Not authorized");
 });
