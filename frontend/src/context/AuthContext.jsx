@@ -10,11 +10,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
+  const fetchUser = async (force = false) => {
     const token = localStorage.getItem("token");
     const sessionHint = localStorage.getItem(AUTH_SESSION_HINT);
 
-    if (!token && !sessionHint) {
+    if (!force && !token && !sessionHint) {
       setUser(null);
       setLoading(false);
       return;

@@ -157,8 +157,6 @@ export default function ProductDetail() {
 
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = product ? isInWishlist(product._id) : false;
-  const hasStoredSession = () =>
-    Boolean(localStorage.getItem("token") || localStorage.getItem("auth_session_hint"));
 
   const showToast = (type, text) => {
     setToast({ type, text });
@@ -187,15 +185,10 @@ export default function ProductDetail() {
   }, [id]);
 
   const handleAddToCart = async () => {
-    if (!user && !hasStoredSession()) {
-      showToast("error", "Please login first.");
-      setIsAuthModalOpen(true);
-      return;
-    }
     setIsProcessing(true);
     try {
-      if (!user && hasStoredSession()) {
-        await refreshUser();
+      if (!user) {
+        await refreshUser(true);
       }
       await API.post("/cart", { productId: product._id, quantity: qty });
       setAdded(true);
@@ -214,15 +207,10 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = async () => {
-    if (!user && !hasStoredSession()) {
-      showToast("error", "Please login first.");
-      setIsAuthModalOpen(true);
-      return;
-    }
     setIsProcessing(true);
     try {
-      if (!user && hasStoredSession()) {
-        await refreshUser();
+      if (!user) {
+        await refreshUser(true);
       }
       await API.post("/cart", { productId: product._id, quantity: qty });
       fetchCartCount();
@@ -234,8 +222,7 @@ export default function ProductDetail() {
       } else {
         showToast("error", "Failed to process.");
       }
-      setIsProcessing(false);
-    }
+    } finally { setIsProcessing(false); }
   };
 
   /* ── Loading ── */
