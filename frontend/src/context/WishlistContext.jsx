@@ -20,10 +20,21 @@ export function WishlistProvider({ children }) {
   }, [user]);
 
   const fetchWishlist = async () => {
+    const token = localStorage.getItem("token");
+    if (!user || !token) {
+      setWishlist([]);
+      return;
+    }
+
     try {
       const { data } = await API.get("/users/wishlist");
       setWishlist(data); // Depends if API returns populated or just array
     } catch (error) {
+      if (error?.response?.status === 401) {
+        localStorage.removeItem("token");
+        setWishlist([]);
+        return;
+      }
       console.error("Failed to fetch wishlist:", error);
     }
   };

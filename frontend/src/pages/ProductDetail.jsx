@@ -136,7 +136,7 @@ function RelatedCard({ item, index, onClick }) {
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const buyBoxRef = useRef(null);
   const buyBoxInView = useInView(buyBoxRef, { margin: "-100px 0px 0px 0px" });
   const { fetchCartCount } = useCart();
@@ -157,6 +157,8 @@ export default function ProductDetail() {
 
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = product ? isInWishlist(product._id) : false;
+  const hasStoredSession = () =>
+    Boolean(localStorage.getItem("token") || localStorage.getItem("auth_session_hint"));
 
   const showToast = (type, text) => {
     setToast({ type, text });
@@ -185,26 +187,55 @@ export default function ProductDetail() {
   }, [id]);
 
   const handleAddToCart = async () => {
-    if (!user) { showToast("error", "Please login first."); setIsAuthModalOpen(true); return; }
+    if (!user && !hasStoredSession()) {
+      showToast("error", "Please login first.");
+      setIsAuthModalOpen(true);
+      return;
+    }
     setIsProcessing(true);
     try {
+      if (!user && hasStoredSession()) {
+        await refreshUser();
+      }
       await API.post("/cart", { productId: product._id, quantity: qty });
       setAdded(true);
       showToast("success", "Added to cart!");
       fetchCartCount();
       setTimeout(() => setAdded(false), 2200);
-    } catch { showToast("error", "Failed to add to cart."); }
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        showToast("error", "Please login first.");
+        setIsAuthModalOpen(true);
+      } else {
+        showToast("error", "Failed to add to cart.");
+      }
+    }
     finally { setIsProcessing(false); }
   };
 
   const handleBuyNow = async () => {
-    if (!user) { showToast("error", "Please login first."); setIsAuthModalOpen(true); return; }
+    if (!user && !hasStoredSession()) {
+      showToast("error", "Please login first.");
+      setIsAuthModalOpen(true);
+      return;
+    }
     setIsProcessing(true);
     try {
+      if (!user && hasStoredSession()) {
+        await refreshUser();
+      }
       await API.post("/cart", { productId: product._id, quantity: qty });
       fetchCartCount();
       navigate("/checkout");
-    } catch { showToast("error", "Failed to process."); setIsProcessing(false); }
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        showToast("error", "Please login first.");
+        setIsAuthModalOpen(true);
+      } else {
+        showToast("error", "Failed to process.");
+      }
+      setIsProcessing(false);
+    }
   };
 
   /* ── Loading ── */

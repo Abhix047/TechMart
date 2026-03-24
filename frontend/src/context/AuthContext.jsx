@@ -3,6 +3,7 @@ import API from "../services/api";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext();
+const AUTH_SESSION_HINT = "auth_session_hint";
 
 export const AuthProvider = ({ children }) => {
 
@@ -10,15 +11,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
+    const token = localStorage.getItem("token");
+    const sessionHint = localStorage.getItem(AUTH_SESSION_HINT);
+
+    if (!token && !sessionHint) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
     try {
 
       const res = await API.get("/auth/profile");
 
       setUser(res.data);
+      localStorage.setItem(AUTH_SESSION_HINT, "1");
 
     } catch (error) {
 
+      if (error?.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem(AUTH_SESSION_HINT);
+      }
       setUser(null);
 
     } finally {
@@ -37,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     if (userData?.token) {
       localStorage.setItem("token", userData.token);
     }
+    localStorage.setItem(AUTH_SESSION_HINT, "1");
     const { token, ...safeUser } = userData || {};
     setUser(safeUser);
   };
@@ -48,6 +63,7 @@ export const AuthProvider = ({ children }) => {
       console.log(error);
     } finally {
       localStorage.removeItem("token");
+      localStorage.removeItem(AUTH_SESSION_HINT);
       setUser(null);
       toast.success("Logged out successfully");
     }
