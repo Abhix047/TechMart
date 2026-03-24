@@ -4,10 +4,10 @@ import CollectionsGrid from "./CollectionsGrid";
 import EditorialBanner from "./EditorialBanner";
 import FeaturedProducts from "./FeaturedProducts";
 import MarqueeStrip from "./MarqueeStrip";
+import NewArrivals from "./NewArrivals";
 import PressQuote from "./PressQuote";
 import { Divider } from "./utils";
 
-const NewArrivals = lazy(() => import("./NewArrivals"));
 const Newsletter = lazy(() => import("./Newsletter"));
 
 function SectionPlaceholder({ minHeight = 320 }) {
@@ -21,7 +21,9 @@ function SectionPlaceholder({ minHeight = 320 }) {
 
 function DeferredSection({ children, fallback, rootMargin = "320px 0px", once = true }) {
   const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(
+    typeof window !== "undefined" && typeof window.IntersectionObserver === "undefined"
+  );
 
   useEffect(() => {
     const node = ref.current;
@@ -29,12 +31,22 @@ function DeferredSection({ children, fallback, rootMargin = "320px 0px", once = 
       return undefined;
     }
 
+    if (typeof window === "undefined" || typeof window.IntersectionObserver === "undefined") {
+      setVisible(true);
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setVisible(true);
+    }, 1200);
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) {
           return;
         }
 
+        window.clearTimeout(timeoutId);
         setVisible(true);
         if (once) {
           observer.disconnect();
@@ -44,7 +56,10 @@ function DeferredSection({ children, fallback, rootMargin = "320px 0px", once = 
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      window.clearTimeout(timeoutId);
+      observer.disconnect();
+    };
   }, [once, rootMargin, visible]);
 
   return <div ref={ref}>{visible ? children : fallback}</div>;
@@ -65,11 +80,7 @@ const HomeContent = () => (
     <BrandPromises />
     <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
 
-    <DeferredSection fallback={<SectionPlaceholder minHeight={420} />}>
-      <Suspense fallback={<SectionPlaceholder minHeight={420} />}>
-        <NewArrivals />
-      </Suspense>
-    </DeferredSection>
+    <NewArrivals />
 
     <Divider className="mx-5 sm:mx-10 lg:mx-16 xl:mx-[72px]" />
 

@@ -78,8 +78,9 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    generateToken(req, res, user._id);
+    const token = generateToken(req, res, user._id);
     res.status(201).json({
+      token,
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -101,8 +102,9 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email: email.trim().toLowerCase() });
   if (user && (await user.matchPassword(password))) {
-    generateToken(req, res, user._id);
+    const token = generateToken(req, res, user._id);
     res.status(200).json({
+      token,
       _id: user._id,
       name: user.name,
       email: user.email,

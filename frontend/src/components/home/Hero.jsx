@@ -15,13 +15,13 @@ const DURATION = 15000;
 const NAVBAR_H = 88;
 
 const Hero = () => {
-  const [banners, setBanners]   = useState([]);
-  const [current, setCurrent]   = useState(0);
+  const [banners, setBanners] = useState([]);
+  const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [progress, setProgress] = useState(0);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
   const [textReady, setTextReady] = useState(false);
-  const [isMobile, setIsMobile]   = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkSize = () => setIsMobile(window.innerWidth < 768);
@@ -30,15 +30,15 @@ const Hero = () => {
     return () => window.removeEventListener("resize", checkSize);
   }, []);
 
-  const navigate   = useNavigate();
-  const timerRef   = useRef(null);
-  const startRef   = useRef(null);
-  const rafRef     = useRef(null);
+  const navigate = useNavigate();
+  const timerRef = useRef(null);
+  const startRef = useRef(null);
+  const rafRef = useRef(null);
 
   /* ── Parallax on scroll ───────────────────────────── */
   const { scrollY } = useScroll();
-  const heroY       = useTransform(scrollY, [0, 500], [0, -120]);
-  const heroScale   = useTransform(scrollY, [0, 500], [1, 0.97]);
+  const heroY = useTransform(scrollY, [0, 500], [0, -120]);
+  const heroScale = useTransform(scrollY, [0, 500], [1, 0.97]);
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.75]);
 
   /* ── Data fetch ───────────────────────────────────── */
@@ -146,7 +146,7 @@ const Hero = () => {
   return (
     <section
       style={{
-        marginTop: isMobile ? 64 : NAVBAR_H,
+        marginTop: isMobile ? 84 : NAVBAR_H,
         padding: isMobile ? "0 12px 24px" : "0 clamp(14px, 2vw, 28px) 40px",
         background: "white",
         position: "relative",

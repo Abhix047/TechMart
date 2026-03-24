@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useInView, animate, useMotionValue } from "framer-motion";
+import { motion, AnimatePresence, animate, useMotionValue } from "framer-motion";
 import { ArrowRight, ChevronRight, ChevronLeft, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
@@ -20,22 +20,20 @@ const PER_PAGE = 4;
 const ProductCard = ({ product, index, onClick }) => {
   const [hovered, setHovered] = useState(false);
 
-  const name     = product?.name     || "—";
+  const name = product?.name || "—";
   const category = product?.category || product?.brand || "";
-  const price    = product?.price    || 0;
-  const badge    = product?.badge    || (product?.isNew ? "New" : product?.isSale ? "Sale" : null);
+  const price = product?.price || 0;
+  const badge = product?.badge || (product?.isNew ? "New" : product?.isSale ? "Sale" : null);
   // Replaced local getImg with centralized one
-  const image    = product?.images?.length > 0
+  const image = product?.images?.length > 0
     ? getImg(product.images[0])
     : null;
 
   return (
     /* Each card animates in with stagger delay — controlled by parent variants */
     <motion.article
-      variants={{
-        hidden: { opacity: 0, y: 40, scale: 0.97 },
-        show:   { opacity: 1, y: 0,  scale: 1     },
-      }}
+      initial={{ opacity: 0, y: 40, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
         duration: 0.65,
         ease: [0.22, 1, 0.36, 1],
@@ -161,7 +159,7 @@ const Skeleton = ({ index }) => (
     className="animate-pulse"
     variants={{
       hidden: { opacity: 0, y: 24 },
-      show:   { opacity: 1, y: 0  },
+      show: { opacity: 1, y: 0 },
     }}
     transition={{ duration: 0.5, delay: index * 0.07 }}
   >
@@ -176,19 +174,17 @@ const Skeleton = ({ index }) => (
    MAIN — FeaturedProducts
 ═══════════════════════════════════════════════════ */
 const FeaturedProducts = () => {
-  const navigate     = useNavigate();
+  const navigate = useNavigate();
   const containerRef = useRef(null);
-  const x            = useMotionValue(0);
+  const x = useMotionValue(0);
 
   const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
-  const [page, setPage]         = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
   const [containerW, setContainerW] = useState(0);
 
   /* ── useInView — triggers once when section enters viewport ── */
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
-
   /* measure container */
   useEffect(() => {
     const measure = () => {
@@ -207,7 +203,7 @@ const FeaturedProducts = () => {
         const data = Array.isArray(res.data)
           ? res.data
           : Array.isArray(res.data?.products)
-          ? res.data.products : [];
+            ? res.data.products : [];
         setProducts(data);
       })
       .catch(() => setError("Could not load products."))
@@ -236,7 +232,7 @@ const FeaturedProducts = () => {
       accum += e.deltaX;
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (accum > 60)       goToPage(page + 1);
+        if (accum > 60) goToPage(page + 1);
         else if (accum < -60) goToPage(page - 1);
         accum = 0;
       }, 60);
@@ -263,9 +259,9 @@ const FeaturedProducts = () => {
   /* ── Drag end snap ── */
   const onDragEnd = (_, info) => {
     const threshold = containerW * 0.18;
-    if      (info.offset.x < -threshold) goToPage(page + 1);
-    else if (info.offset.x >  threshold) goToPage(page - 1);
-    else                                  goToPage(page);
+    if (info.offset.x < -threshold) goToPage(page + 1);
+    else if (info.offset.x > threshold) goToPage(page - 1);
+    else goToPage(page);
   };
 
   const pageItems = products.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
@@ -276,12 +272,12 @@ const FeaturedProducts = () => {
   ────────────────────────────────────────────────── */
   const sectionVariants = {
     hidden: {},
-    show:   { transition: { staggerChildren: 0.06 } },
+    show: { transition: { staggerChildren: 0.06 } },
   };
 
   const headlineVariants = {
     hidden: { opacity: 0, y: 28, filter: "blur(4px)" },
-    show:   {
+    show: {
       opacity: 1, y: 0, filter: "blur(0px)",
       transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
     },
@@ -289,12 +285,12 @@ const FeaturedProducts = () => {
 
   const gridVariants = {
     hidden: {},
-    show:   { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+    show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
   };
 
   const dotsVariants = {
     hidden: { opacity: 0, y: 10 },
-    show:   {
+    show: {
       opacity: 1, y: 0,
       transition: { duration: 0.5, delay: 0.55, ease: "easeOut" },
     },
@@ -307,7 +303,7 @@ const FeaturedProducts = () => {
       className="py-16 md:py-7 overflow-hidden"
       variants={sectionVariants}
       initial="hidden"
-      animate={isInView ? "show" : "hidden"}
+      animate="show"
     >
 
       {/* ── HEADER ── */}
@@ -378,7 +374,7 @@ const FeaturedProducts = () => {
               >
                 <ChevronLeft size={20} strokeWidth={1.5} style={{ color: "#0a0a0a" }} />
               </motion.button>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -408,13 +404,13 @@ const FeaturedProducts = () => {
               {loading
                 ? Array.from({ length: PER_PAGE }).map((_, i) => <Skeleton key={i} index={i} />)
                 : pageItems.map((p, i) => (
-                    <ProductCard
-                      key={p._id || i}
-                      product={p}
-                      index={i}
-                      onClick={() => navigate(`/product/${p._id}`)}
-                    />
-                  ))
+                  <ProductCard
+                    key={p._id || i}
+                    product={p}
+                    index={i}
+                    onClick={() => navigate(`/product/${p._id}`)}
+                  />
+                ))
               }
             </motion.div>
           </AnimatePresence>
@@ -456,38 +452,51 @@ const FeaturedProducts = () => {
         <div className="lg:hidden relative">
           {/* Navigation Arrows */}
           <div className="absolute top-[40%] -translate-y-1/2 left-2 right-2 flex justify-between pointer-events-none z-20 opacity-90">
-            <button onClick={() => document.getElementById('fp-slider')?.scrollBy({ left: -260, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white border border-black/10 rounded-full shadow-md backdrop-blur-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-            <button onClick={() => document.getElementById('fp-slider')?.scrollBy({ left: 260, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white border border-black/10 rounded-full shadow-md backdrop-blur-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+            <button onClick={() => document.getElementById('fp-slider')?.scrollBy({ left: -260, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white border border-black/10 rounded-full shadow-md backdrop-blur-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg></button>
+            <button onClick={() => document.getElementById('fp-slider')?.scrollBy({ left: 260, behavior: 'smooth' })} className="pointer-events-auto w-[36px] h-[36px] flex items-center justify-center bg-white border border-black/10 rounded-full shadow-md backdrop-blur-md active:scale-95 transition-transform"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg></button>
           </div>
           <motion.div
             id="fp-slider"
             variants={gridVariants}
             initial="hidden"
-            animate={isInView ? "show" : "hidden"}
-            className="flex gap-4 pb-2 px-5 overflow-x-auto scroll-smooth"
+            animate="show"
+            className="flex gap-4 pb-2 px-5 overflow-x-auto snap-x snap-mandatory scroll-smooth"
             style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory" }}
           >
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="shrink-0 w-52">
-                    <Skeleton index={i} />
-                  </div>
-                ))
+                <div key={i} className="shrink-0 w-52">
+                  <Skeleton index={i} />
+                </div>
+              ))
               : products.map((p, i) => (
-                  <motion.div
-                    key={p._id || i}
-                    className="shrink-0"
-                    style={{ width: "clamp(175px, 50vw, 230px)", scrollSnapAlign: "start" }}
-                  >
-                    <ProductCard
-                      product={p}
-                      index={i}
-                      onClick={() => navigate(`/product/${p._id}`)}
-                    />
-                  </motion.div>
-                ))
+                <div
+                  key={p._id || i}
+                  className="shrink-0"
+                  style={{ width: "clamp(175px, 50vw, 230px)", scrollSnapAlign: "start" }}
+                >
+                  <ProductCard
+                    product={p}
+                    index={i}
+                    onClick={() => navigate(`/product/${p._id}`)}
+                  />
+                </div>
+              ))
             }
           </motion.div>
+
+          {!loading && products.length === 0 && (
+            <p
+              className="px-5 pt-6 text-center"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 13,
+                color: "rgba(0,0,0,0.4)",
+              }}
+            >
+              Featured products are not available right now.
+            </p>
+          )}
 
           {!loading && (
             <motion.div

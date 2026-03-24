@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu, X, LogOut, ShoppingCart, Search,
-  Package, Send, User, ArrowRight, Heart, ChevronDown,
+  Package, Send, User, ArrowRight, Heart, ChevronDown, House,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -16,30 +16,33 @@ import API from "../services/api.js";
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 */
 
-const BRAND  = "#1a1108";
-const CREAM  = "rgba(250,248,244,1)";
-const MUTED  = "rgba(26,17,8,0.38)";
+const BRAND = "#1a1108";
+const CREAM = "rgba(250,248,244,1)";
+const MUTED = "rgba(26,17,8,0.38)";
 const BORDER = "rgba(26,17,8,0.07)";
 
 const UserNavbar = () => {
-  const [mobileOpen, setMobileOpen]         = useState(false);
-  const [profileOpen, setProfileOpen]       = useState(false);
-  const [searchOpen, setSearchOpen]         = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm]         = useState("");
-  const [authOpen, setAuthOpen]             = useState(false);
-  const [scrolled, setScrolled]             = useState(false);
-  const [scrollY, setScrollY]               = useState(0);
-  const [allProducts, setAllProducts]       = useState([]);
-  const [searchResults, setSearchResults]   = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
 
   const { user, logout } = useAuth();
-  const navigate         = useNavigate();
-  const profileRef       = useRef(null);
-  const searchRef        = useRef(null);
-  const searchInputRef   = useRef(null);
-  const mobileSearchRef  = useRef(null);
-  const { cartCount }    = useCart();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const profileRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+  const progressRef = useRef(null);
+  const scrollFrameRef = useRef(null);
+  const scrolledRef = useRef(false);
+  const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
   useEffect(() => {
@@ -59,10 +62,34 @@ const UserNavbar = () => {
   }, [searchTerm, allProducts]);
 
   useEffect(() => {
-    const fn = () => { setScrolled(window.scrollY > 10); setScrollY(window.scrollY); };
-    fn();
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+    const updateScrollState = () => {
+      const nextScrolled = window.scrollY > 10;
+      if (scrolledRef.current !== nextScrolled) {
+        scrolledRef.current = nextScrolled;
+        setScrolled(nextScrolled);
+      }
+
+      if (progressRef.current) {
+        const progress = Math.min(window.scrollY / 500, 1);
+        progressRef.current.style.transform = `scaleX(${progress})`;
+      }
+
+      scrollFrameRef.current = null;
+    };
+
+    const onScroll = () => {
+      if (scrollFrameRef.current !== null) return;
+      scrollFrameRef.current = window.requestAnimationFrame(updateScrollState);
+    };
+
+    updateScrollState();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(scrollFrameRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -101,31 +128,75 @@ const UserNavbar = () => {
     await logout(); setProfileOpen(false); setMobileOpen(false); navigate("/");
   };
 
-  const leftLinks  = [{ name: "Products", path: "/products" }, { name: "Featured", path: "/featured" }];
+  const leftLinks = [
+    { name: "Products", path: "/products" },
+    { name: "Featured", path: "/#featured-products", sectionId: "featured-products" },
+  ];
   const rightLinks = [{ name: "About", path: "/about" }, { name: "Offers", path: "/offers" }];
-  const allLinks   = [...leftLinks, ...rightLinks];
+  const allLinks = [...leftLinks, ...rightLinks];
   const dropdownLinks = [
-    { to: "/orders",     Icon: Package, label: "My Orders",  delay: 0.04 },
-    { to: "/connect-us", Icon: Send,    label: "Connect Us", delay: 0.09 },
+    { to: "/orders", Icon: Package, label: "My Orders", delay: 0.04 },
+    { to: "/connect-us", Icon: Send, label: "Connect Us", delay: 0.09 },
   ];
 
-  const navH     = scrolled ? 58 : 96;
+  const scrollToSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (!section) return false;
+
+    const offset = window.innerWidth < 1024 ? 84 : 112;
+    const top = section.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: "smooth" });
+    return true;
+  };
+
+  const handleFeaturedNavigation = () => {
+    setProfileOpen(false);
+    setSearchOpen(false);
+    setMobileSearchOpen(false);
+    setMobileOpen(false);
+
+    if (location.pathname === "/" && location.hash === "#featured-products") {
+      scrollToSection("featured-products");
+      return;
+    }
+
+    navigate("/#featured-products");
+  };
+
+  const navH = scrolled ? 58 : 96;
   const taglineO = scrolled ? 0 : 1;
   const taglineH = scrolled ? 0 : 14;
 
   /* ── Desktop nav link ── */
-  const NavItem = ({ path, name }) => (
-    <NavLink to={path} className="no-underline">
-      {({ isActive }) => (
-        <div className="relative group py-1.5 cursor-pointer overflow-hidden">
-          <span style={{ display: "block", fontFamily: "'DM Sans',sans-serif", fontSize: 13.5, fontWeight: 400, letterSpacing: "0.14em", textTransform: "uppercase", color: isActive ? BRAND : MUTED, transition: "color 0.3s" }}>{name}</span>
-          <motion.span style={{ position: "absolute", bottom: 0, left: 0, height: 1, background: BRAND }}
-            animate={{ width: isActive ? "100%" : "0%" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </div>
-      )}
-    </NavLink>
-  );
+  const NavItem = ({ path, name, sectionId }) => {
+    if (sectionId === "featured-products") {
+      const isActive = location.pathname === "/" && location.hash === "#featured-products";
+
+      return (
+        <button type="button" onClick={handleFeaturedNavigation} className="bg-transparent border-none p-0">
+          <div className="relative group py-1.5 cursor-pointer overflow-hidden">
+            <span style={{ display: "block", fontFamily: "'DM Sans',sans-serif", fontSize: 13.5, fontWeight: 400, letterSpacing: "0.14em", textTransform: "uppercase", color: isActive ? BRAND : MUTED, transition: "color 0.3s" }}>{name}</span>
+            <motion.span style={{ position: "absolute", bottom: 0, left: 0, height: 1, background: BRAND }}
+              animate={{ width: isActive ? "100%" : "0%" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+        </button>
+      );
+    }
+
+    return (
+      <NavLink to={path} className="no-underline">
+        {({ isActive }) => (
+          <div className="relative group py-1.5 cursor-pointer overflow-hidden">
+            <span style={{ display: "block", fontFamily: "'DM Sans',sans-serif", fontSize: 13.5, fontWeight: 400, letterSpacing: "0.14em", textTransform: "uppercase", color: isActive ? BRAND : MUTED, transition: "color 0.3s" }}>{name}</span>
+            <motion.span style={{ position: "absolute", bottom: 0, left: 0, height: 1, background: BRAND }}
+              animate={{ width: isActive ? "100%" : "0%" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+        )}
+      </NavLink>
+    );
+  };
 
   /* ── Shared search results panel ── */
   const SearchResults = ({ isMobile = false }) => (
@@ -359,13 +430,13 @@ const UserNavbar = () => {
           <div className="flex items-center justify-between px-3 w-full" style={{ height: scrolled ? 54 : 66 }}>
             {/* Left: Hamburger + Search */}
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 onClick={() => setMobileOpen(true)}
                 className="flex items-center justify-center bg-transparent border-none cursor-pointer w-10 h-10"
               >
                 <Menu size={22} strokeWidth={1.5} style={{ color: BRAND }} />
               </button>
-              <button 
+              <button
                 onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
                 className="flex items-center justify-center bg-transparent border-none cursor-pointer w-10 h-10"
               >
@@ -380,8 +451,11 @@ const UserNavbar = () => {
               </span>
             </NavLink>
 
-            {/* Right: Wishlist + Cart */}
+            {/* Right: Home + Wishlist + Cart */}
             <div className="flex items-center gap-1">
+              <NavLink to="/" className="flex items-center justify-center relative w-10 h-10 no-underline">
+                <House size={20} strokeWidth={1.5} style={{ color: BRAND }} />
+              </NavLink>
               <NavLink to="/wishlist" className="flex items-center justify-center relative w-10 h-10 no-underline">
                 <Heart size={20} strokeWidth={1.5} style={{ color: BRAND }} />
                 <Badge count={wishlistCount} top={6} right={4} />
@@ -396,26 +470,26 @@ const UserNavbar = () => {
           {/* Search Bar Row (If Open) */}
           <AnimatePresence>
             {mobileSearchOpen && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }} 
-                animate={{ height: "auto", opacity: 1 }} 
-                exit={{ height: 0, opacity: 0 }} 
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden px-4"
               >
                 <div className="pb-3 pt-1">
                   <form onSubmit={handleSearch} className="flex items-center gap-2 bg-black/5 px-3 py-2.5 rounded-xl border border-black/10">
                     <Search size={16} className="text-black/40" />
-                    <input 
-                      type="text" 
-                      placeholder="Search..." 
-                      value={searchTerm} 
-                      onChange={e => setSearchTerm(e.target.value)} 
-                      className="bg-transparent border-none outline-none w-full text-[14px] font-[family-name:'DM_Sans'] text-black" 
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="bg-transparent border-none outline-none w-full text-[14px] font-[family-name:'DM_Sans'] text-black"
                     />
                     {searchTerm && (
-                      <X 
-                        size={14} 
-                        className="text-black/50 cursor-pointer flex-shrink-0" 
+                      <X
+                        size={14}
+                        className="text-black/50 cursor-pointer flex-shrink-0"
                         onClick={() => setSearchTerm("")}
                       />
                     )}
@@ -423,7 +497,7 @@ const UserNavbar = () => {
 
                   {/* Dropdown under search using identical results component */}
                   <div className="relative z-50">
-                     <SearchResults isMobile />
+                    <SearchResults isMobile />
                   </div>
                 </div>
               </motion.div>
@@ -432,7 +506,20 @@ const UserNavbar = () => {
         </div>
 
         {/* Scroll progress line */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, height: 1.5, background: "rgba(26,17,8,0.09)", width: `${Math.min((scrollY / 500) * 100, 100)}%`, transition: "width 0.1s" }} />
+        <div
+          ref={progressRef}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 1.5,
+            background: "rgba(26,17,8,0.09)",
+            transform: "scaleX(0)",
+            transformOrigin: "left center",
+            willChange: "transform",
+          }}
+        />
       </header>
 
       {/* ══════════════════════════════════════════════
@@ -465,16 +552,32 @@ const UserNavbar = () => {
               <div className="flex-1 py-4 px-5 flex flex-col gap-2">
                 <p className="text-[10px] font-bold tracking-widest text-black/40 uppercase mb-2" style={{ fontFamily: "'DM Sans',sans-serif" }}>Menu</p>
                 {allLinks.map((link) => (
-                  <NavLink key={link.path} to={link.path} onClick={() => setMobileOpen(false)} className="no-underline">
-                    {({ isActive }) => (
-                      <div className={`py-3 px-4 rounded-xl flex items-center justify-between transition-colors ${isActive ? 'bg-black/5' : 'bg-transparent'}`}>
-                        <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: isActive ? 600 : 400, color: BRAND }}>
+                  link.sectionId === "featured-products" ? (
+                    <button
+                      key={link.name}
+                      type="button"
+                      onClick={handleFeaturedNavigation}
+                      className="w-full bg-transparent border-none p-0 text-left"
+                    >
+                      <div className={`py-3 px-4 rounded-xl flex items-center justify-between transition-colors ${location.pathname === "/" && location.hash === "#featured-products" ? 'bg-black/5' : 'bg-transparent'}`}>
+                        <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: location.pathname === "/" && location.hash === "#featured-products" ? 600 : 400, color: BRAND }}>
                           {link.name}
                         </span>
-                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-black/80 flex-shrink-0" />}
+                        {location.pathname === "/" && location.hash === "#featured-products" ? <div className="w-1.5 h-1.5 rounded-full bg-black/80 flex-shrink-0" /> : null}
                       </div>
-                    )}
-                  </NavLink>
+                    </button>
+                  ) : (
+                    <NavLink key={link.path} to={link.path} onClick={() => setMobileOpen(false)} className="no-underline">
+                      {({ isActive }) => (
+                        <div className={`py-3 px-4 rounded-xl flex items-center justify-between transition-colors ${isActive ? 'bg-black/5' : 'bg-transparent'}`}>
+                          <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: isActive ? 600 : 400, color: BRAND }}>
+                            {link.name}
+                          </span>
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-black/80 flex-shrink-0" />}
+                        </div>
+                      )}
+                    </NavLink>
+                  )
                 ))}
 
                 {/* User Section inside Drawer */}
@@ -494,7 +597,7 @@ const UserNavbar = () => {
                           <p className="text-[14px] font-semibold text-black truncate" style={{ fontFamily: "'DM Sans',sans-serif" }}>{user.name}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col gap-1 mt-2">
                         {dropdownLinks.map(({ to, Icon, label }) => (
                           <NavLink key={to} to={to} onClick={() => setMobileOpen(false)} className="no-underline">

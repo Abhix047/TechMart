@@ -228,6 +228,9 @@ const NewArrivals = () => {
   const sectionRef = useRef(null);
   const headerInView = useInView(sectionRef, { once: true, margin: "0px 0px -80px 0px" });
   const cardsInView = useInView(sectionRef, { once: true, margin: "0px 0px -40px 0px" });
+  const contentReady = status !== "loading";
+  const showHeader = headerInView || contentReady;
+  const showCards = cardsInView || contentReady;
 
   useEffect(() => {
     fetchLatestProducts()
@@ -245,7 +248,7 @@ const NewArrivals = () => {
         <motion.p
           className="font-[family-name:'Tenor_Sans',sans-serif] text-[9px] tracking-[0.34em] uppercase text-black/30 mb-5"
           initial={{ opacity: 0, y: 10 }}
-          animate={headerInView ? { opacity: 1, y: 0 } : {}}
+          animate={showHeader ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
           Just Landed
@@ -256,8 +259,8 @@ const NewArrivals = () => {
           aria-label="New Arrivals"
           className="flex justify-center gap-[0.24em] items-baseline flex-wrap mb-5 text-[clamp(36px,5vw,58px)]"
         >
-          <CharReveal text="New" italic={false} delay={0.04} inView={headerInView} className="text-[#0a0a0a]" />
-          <CharReveal text="Arrivals" italic={true} delay={0.22} inView={headerInView} className="text-[#0a0a0a]" />
+          <CharReveal text="New" italic={false} delay={0.04} inView={showHeader} className="text-[#0a0a0a]" />
+          <CharReveal text="Arrivals" italic={true} delay={0.22} inView={showHeader} className="text-[#0a0a0a]" />
         </h2>
 
         {/* Subtitle */}
@@ -265,7 +268,7 @@ const NewArrivals = () => {
           <motion.p
             className="font-[family-name:'Cormorant_Garamond',serif] font-light italic text-[clamp(15px,1.5vw,18px)] text-black/40 tracking-[0.01em] leading-relaxed m-0"
             initial={{ y: "100%", opacity: 0 }}
-            animate={headerInView ? { y: 0, opacity: 1 } : {}}
+            animate={showHeader ? { y: 0, opacity: 1 } : {}}
             transition={{ duration: 0.7, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
             The latest additions to our curated collection.
@@ -276,7 +279,7 @@ const NewArrivals = () => {
         <motion.div
           className="w-9 h-px bg-black/15 mx-auto mt-5 origin-center"
           initial={{ scaleX: 0 }}
-          animate={headerInView ? { scaleX: 1 } : {}}
+          animate={showHeader ? { scaleX: 1 } : {}}
           transition={{ duration: 0.6, delay: 0.65, ease: [0.22, 1, 0.36, 1] }}
         />
       </div>
@@ -300,7 +303,7 @@ const NewArrivals = () => {
                   key={item.id ?? i}
                   item={item}
                   index={i}
-                  inView={cardsInView}
+                  inView={showCards}
                   onClick={() => navigate(`/product/${item.id}`)}
                 />
               ))}
@@ -308,11 +311,17 @@ const NewArrivals = () => {
         </div>
       </div>
 
+      {status !== "loading" && products.length === 0 && (
+        <p className="mt-8 text-center font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/40">
+          New arrivals are not available right now.
+        </p>
+      )}
+
       {/* View All */}
       <motion.div
         className="flex justify-center mt-11"
         initial={{ opacity: 0, y: 10 }}
-        animate={cardsInView ? { opacity: 1, y: 0 } : {}}
+        animate={showCards ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.55, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
       >
         <motion.button

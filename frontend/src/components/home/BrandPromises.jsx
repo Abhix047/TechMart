@@ -324,6 +324,7 @@ export default function BrandPromises() {
 
     return window.matchMedia(MOBILE_QUERY).matches;
   });
+  const showContent = inView || mobile;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -345,7 +346,7 @@ export default function BrandPromises() {
   }, []);
 
   useEffect(() => {
-    if (!inView || reduceMotion) {
+    if (!inView || reduceMotion || mobile) {
       return undefined;
     }
 
@@ -354,7 +355,7 @@ export default function BrandPromises() {
     }, AUTOPLAY);
 
     return () => window.clearInterval(timer);
-  }, [inView, reduceMotion]);
+  }, [inView, reduceMotion, mobile]);
 
   useEffect(() => {
     const slider = sliderRef.current;
@@ -382,10 +383,7 @@ export default function BrandPromises() {
 
     let frameId = 0;
     const handleScroll = () => {
-      if (frameId) {
-        return;
-      }
-
+      if (frameId) return;
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
         syncActiveCard();
@@ -403,31 +401,27 @@ export default function BrandPromises() {
     };
   }, [mobile]);
 
-  useEffect(() => {
+  const scrollToCard = (index) => {
     const slider = sliderRef.current;
     if (!slider || !mobile) {
-      return undefined;
+      setActive(index);
+      return;
     }
 
-    const card = slider.children[active];
-    if (!card) {
-      return undefined;
-    }
+    const card = slider.children[index];
+    if (!card) return;
 
-    const targetLeft = Math.max(card.offsetLeft - (slider.clientWidth - card.clientWidth) / 2, 0);
-    if (Math.abs(slider.scrollLeft - targetLeft) < 4) {
-      return undefined;
-    }
+    const targetLeft = Math.max(
+      card.offsetLeft - (slider.clientWidth - card.clientWidth) / 2,
+      0
+    );
 
-    const frameId = window.requestAnimationFrame(() => {
-      slider.scrollTo({
-        left: targetLeft,
-        behavior: reduceMotion ? "auto" : "smooth",
-      });
+    setActive(index);
+    slider.scrollTo({
+      left: targetLeft,
+      behavior: reduceMotion ? "auto" : "smooth",
     });
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, [active, mobile, reduceMotion]);
+  };
 
   return (
     <section
@@ -481,7 +475,7 @@ export default function BrandPromises() {
             key={item.title}
             item={item}
             index={index}
-            inView={inView}
+            inView={showContent}
             isActive={active === index}
             isMobile={false}
             reduceMotion={reduceMotion}
@@ -491,19 +485,19 @@ export default function BrandPromises() {
 
       <div
         ref={sliderRef}
-        className="no-sb flex gap-3 overflow-x-auto md:hidden"
-        style={{ scrollSnapType: "x mandatory" }}
+        className="no-sb flex gap-3 overflow-x-auto px-[8vw] md:hidden"
+        style={{ scrollSnapType: "x mandatory", scrollPaddingInline: "8vw" }}
       >
         {PROMISES.map((item, index) => (
           <div
             key={item.title}
             className="shrink-0"
-            style={{ width: "82vw", scrollSnapAlign: "center" }}
+            style={{ width: "84vw", scrollSnapAlign: "center" }}
           >
             <Card
               item={item}
               index={index}
-              inView={inView}
+              inView={showContent}
               isActive={active === index}
               isMobile
               reduceMotion={reduceMotion}
@@ -518,7 +512,7 @@ export default function BrandPromises() {
             key={item.title}
             type="button"
             aria-label={`Show ${item.title}`}
-            onClick={() => setActive(index)}
+            onClick={() => scrollToCard(index)}
             animate={{
               width: index === active ? 24 : 5,
               background: index === active ? GOLD : "rgba(28,23,16,0.14)",
