@@ -187,8 +187,11 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     setIsProcessing(true);
     try {
-      if (!user) {
-        await refreshUser(true);
+      const activeUser = await refreshUser(true);
+      if (!activeUser) {
+        showToast("error", "Please login first.");
+        setIsAuthModalOpen(true);
+        return;
       }
       await API.post("/cart", { productId: product._id, quantity: qty });
       setAdded(true);
@@ -209,8 +212,11 @@ export default function ProductDetail() {
   const handleBuyNow = async () => {
     setIsProcessing(true);
     try {
-      if (!user) {
-        await refreshUser(true);
+      const activeUser = await refreshUser(true);
+      if (!activeUser) {
+        showToast("error", "Please login first.");
+        setIsAuthModalOpen(true);
+        return;
       }
       await API.post("/cart", { productId: product._id, quantity: qty });
       fetchCartCount();

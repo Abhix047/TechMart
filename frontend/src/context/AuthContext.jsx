@@ -47,16 +47,8 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  const login = async (userData) => {
+  const login = async (_userData) => {
     setLoading(true);
-    const sessionUser = normalizeSessionUser(userData);
-
-    if (sessionUser) {
-      setUser(sessionUser);
-      setLoading(false);
-      return sessionUser;
-    }
-
     return fetchUser(true);
   };
 

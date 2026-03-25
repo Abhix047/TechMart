@@ -53,14 +53,8 @@ export const AuthProvider = ({ children }) => {
 
   }, []);
 
-  const login = async (userData) => {
+  const login = async (_userData) => {
     setLoading(true);
-    const sessionUser = normalizeSessionUser(userData);
-    if (sessionUser) {
-      setUser(sessionUser);
-      setLoading(false);
-      return sessionUser;
-    }
     try {
       const res = await API.get("/auth/session");
       const resolvedUser = normalizeSessionUser(res.data);
