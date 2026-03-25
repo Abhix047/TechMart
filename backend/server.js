@@ -20,10 +20,51 @@ dotenv.config();
 connectDB();
 const app = express();
 
-const allowedOrigins = (process.env.CLIENT_URLS || "http://localhost:5173")
-  .split(",")
+const rawAllowedOrigins = [
+  process.env.CLIENT_URLS,
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URLS,
+]
+  .filter(Boolean)
+  .flatMap((value) => value.split(","))
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+const normalizeOrigin = (value) => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+};
+
+const allowedOrigins = new Set(
+  (rawAllowedOrigins.length > 0 ? rawAllowedOrigins : ["http://localhost:5173"]).map(normalizeOrigin).filter(Boolean)
+);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) return false;
+  if (allowedOrigins.has(normalizedOrigin)) return true;
+
+  try {
+    const { hostname } = new URL(normalizedOrigin);
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.endsWith(".localhost") ||
+      hostname === "vercel.app" ||
+      hostname.endsWith(".vercel.app") ||
+      hostname === "onrender.com" ||
+      hostname.endsWith(".onrender.com")
+    );
+  } catch {
+    return false;
+  }
+};
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -32,17 +73,13 @@ app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || 
-        origin.includes("vercel.app") || 
-        origin.includes("onrender.com") ||
-        origin.includes("localhost")) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
 }));
 app.use(apiRateLimiter);
 app.use(express.json());

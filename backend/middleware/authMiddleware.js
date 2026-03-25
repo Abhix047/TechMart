@@ -1,9 +1,10 @@
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
+import { AUTH_COOKIE_NAME } from "../utils/generateToken.js";
 
 export const protect = asyncHandler(async (req, res, next) => {
-  const cookieToken = req.cookies?.jwt;
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
   const authHeader = req.headers.authorization;
   const bearerToken = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]

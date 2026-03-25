@@ -1,6 +1,6 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
-import generateToken, { buildAuthCookieOptions } from "../utils/generateToken.js";
+import generateToken, { AUTH_COOKIE_NAME, buildAuthCookieOptions } from "../utils/generateToken.js";
 
 export const getUsers = asyncHandler(async (req, res) => {
   const users = await User.find({}).select("-password");
@@ -117,8 +117,9 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 });
 export const logoutUser = asyncHandler(async (req, res) => {
-  res.cookie("jwt", "", {
+  res.cookie(AUTH_COOKIE_NAME, "", {
     ...buildAuthCookieOptions(req),
+    maxAge: 0,
     expires: new Date(0),
   });
 
