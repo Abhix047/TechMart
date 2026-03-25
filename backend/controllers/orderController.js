@@ -211,3 +211,18 @@ export const updateOrderToPaid = asyncHandler(async (req, res) => {
   const updatedOrder = await order.save();
   res.json(updatedOrder);
 });
+
+/* Update expected delivery date — admin only */
+export const updateOrderExpectedDelivery = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error("Order not found");
+  }
+
+  order.expectedDeliveryDate = req.body.expectedDeliveryDate;
+
+  const updatedOrder = await order.save();
+  res.json(updatedOrder);
+});

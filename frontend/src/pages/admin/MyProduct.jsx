@@ -4,7 +4,7 @@ import API from "../../services/api.js";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import {
   Trash2, Edit, Package, Plus, Search,
-  Tag, FolderOpen, X
+  Tag, FolderOpen, X, ToggleLeft, ToggleRight, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -75,7 +75,7 @@ function DeleteModal({ product, onConfirm, onCancel }) {
 }
 
 /* ── Product row ── */
-function ProductRow({ product, index, onDelete }) {
+function ProductRow({ product, index, onDelete, onToggleActive, togglingId }) {
   const ref    = useRef(null);
   const inView = useInView(ref, { once: true, margin: "0px -40px" });
   const p      = product;
@@ -181,6 +181,34 @@ function ProductRow({ product, index, onDelete }) {
             {inStock ? `${p.countInStock} in stock` : "Out of stock"}
           </div>
 
+          {/* Active/Inactive Toggle */}
+          <motion.button
+            onClick={() => onToggleActive(p)}
+            disabled={togglingId === p._id}
+            title={p.isActive ? "Deactivate product" : "Activate product"}
+            whileTap={{ scale: 0.9 }}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 ${
+              p.isActive
+                ? "bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100"
+                : "bg-black/5 border-black/5 text-black/40 hover:bg-black/10"
+            }`}
+          >
+            {togglingId === p._id ? (
+              <motion.span
+                className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
+              />
+            ) : p.isActive ? (
+              <ToggleRight size={18} strokeWidth={1.5} />
+            ) : (
+              <ToggleLeft size={18} strokeWidth={1.5} />
+            )}
+            <span className="font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold">
+              {p.isActive ? "Active" : "Inactive"}
+            </span>
+          </motion.button>
+
           {/* Edit + Delete */}
           <div className="flex items-center gap-2">
             <Link
@@ -210,11 +238,16 @@ const ManageProducts = () => {
   const [search,     setSearch]     = useState("");
   const [loading,    setLoading]    = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [togglingId,   setTogglingId]   = useState(null);
 
   useEffect(() => {
-    API.get("/products")
+    // Admin needs to see ALL products to manage status
+    API.get("/products/all")
       .then(({ data }) => setProducts(data))
-      .catch(console.error)
+      .catch(() => {
+        // Fallback if /all doesn't exist yet
+        API.get("/products").then(({ data }) => setProducts(data));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -228,6 +261,21 @@ const ManageProducts = () => {
       toast.error("Failed to delete product.");
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  const toggleActiveStatus = async (product) => {
+    setTogglingId(product._id);
+    try {
+      const { data } = await API.put(`/products/${product._id}`, {
+        isActive: !product.isActive
+      });
+      setProducts(prev => prev.map(p => p._id === data._id ? data : p));
+      toast.success(`Product ${data.isActive ? "activated" : "deactivated"}`);
+    } catch {
+      toast.error("Failed to update status.");
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -338,6 +386,8 @@ const ManageProducts = () => {
                     product={p}
                     index={i}
                     onDelete={setDeleteTarget}
+                    onToggleActive={toggleActiveStatus}
+                    togglingId={togglingId}
                   />
                 ))}
               </div>

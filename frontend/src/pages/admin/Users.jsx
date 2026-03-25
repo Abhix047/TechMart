@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trash2, Search, Shield, User, X, Users as UsersIcon
+  Trash2, Search, Shield, User, X, Users as UsersIcon, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 

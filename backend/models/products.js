@@ -44,6 +44,7 @@ const productSchema = new mongoose.Schema(
     // 🎨 VARIATIONS
     colors: [{ type: String }], 
     isFeatured: { type: Boolean, default: false }, 
+    isActive: { type: Boolean, default: true },
     
     activeOffer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer", default: null },
 

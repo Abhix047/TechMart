@@ -6,10 +6,16 @@ import Product from "../models/products.js";
 // @route   GET /api/products
 // @access  Public
 export const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({});
-
+  const products = await Product.find({ isActive: { $ne: false } });
   res.status(200).json(products);
+});
 
+// @desc    Get all products (Admin)
+// @route   GET /api/products/all
+// @access  Admin
+export const getAllProducts = asyncHandler(async (req, res) => {
+  const products = await Product.find({});
+  res.status(200).json(products);
 });
 
 
@@ -110,6 +116,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   product.countInStock = countInStock ?? product.countInStock;
   product.colors = colors ?? product.colors;
   product.specifications = specifications ?? product.specifications;
+  if (req.body.isActive !== undefined) product.isActive = req.body.isActive;
 
   const updatedProduct = await product.save();
 

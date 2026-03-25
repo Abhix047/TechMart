@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Edit2, Trash2, Tag, X,
-  CheckCircle2, Percent, Package, Search, Zap
+  CheckCircle2, Percent, Package, Search, Zap, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -303,7 +304,8 @@ export default function Offers() {
           transition={{ duration: 0.55, ease }}
         >
           <div>
-            <motion.p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-2.5"
+            <motion.p
+ className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-2.5"
               initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.06, ease }}>
               Admin · Marketing

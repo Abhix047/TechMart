@@ -19,6 +19,10 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
   const totalRevenue = revenueData[0]?.total || 0;
 
+  const confirmedOrders  = await Order.countDocuments({ isConfirmed: true, isShipped: false });
+  const pendingOrders    = await Order.countDocuments({ isConfirmed: false, isCancelled: false });
+  const shippedOrders    = await Order.countDocuments({ isShipped: true, isDelivered: false });
+
   const recentOrders = await Order.find()
     .populate("user", "name")
     .sort({ createdAt: -1 })
@@ -29,6 +33,9 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     totalUsers,
     totalOrders,
     totalRevenue,
+    confirmedOrders,
+    pendingOrders,
+    shippedOrders,
     recentOrders
   });
 });

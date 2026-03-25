@@ -113,9 +113,15 @@ function StatusBadge({ order }) {
         <Truck size={11} /> Shipped
       </span>
     );
+  if (order.isConfirmed)
+    return (
+      <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
+        <CheckCircle2 size={11} /> Confirmed
+      </span>
+    );
   return (
-    <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
-      <Clock size={11} /> Pending
+    <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-orange-700 bg-orange-50 border border-orange-200/60 px-2.5 py-1 rounded-full animate-pulse">
+      <Clock size={11} /> Processing
     </span>
   );
 }
@@ -140,9 +146,9 @@ const Dashboard = () => {
 
   const STAT_CARDS = [
     { title: "Total Revenue",  rawValue: stats.totalRevenue,  icon: IndianRupee,   delay: 0.08, accent: "bg-emerald-400", link: "/admin/orders"   },
-    { title: "Total Orders",   rawValue: stats.totalOrders,   icon: ShoppingCart,  delay: 0.14, accent: "bg-blue-400",    link: "/admin/orders"   },
-    { title: "Total Products", rawValue: stats.totalProducts, icon: Package,       delay: 0.20, accent: "bg-violet-400",  link: "/admin/products" },
-    { title: "Customers",      rawValue: stats.totalUsers,    icon: Users,         delay: 0.26, accent: "bg-amber-400",   link: "/admin/users"    },
+    { title: "Pending Orders", rawValue: stats.pendingOrders, icon: Clock,         delay: 0.14, accent: "bg-orange-400",  link: "/admin/orders"   },
+    { title: "Confirmed Orders", rawValue: stats.confirmedOrders, icon: CheckCircle2, delay: 0.20, accent: "bg-amber-400",   link: "/admin/orders"   },
+    { title: "Shipped Orders", rawValue: stats.shippedOrders, icon: Truck,        delay: 0.26, accent: "bg-blue-400",    link: "/admin/orders"   },
   ];
 
   if (loading) return (

@@ -229,6 +229,18 @@ export default function OrderDetail() {
                 </p>
               </div>
 
+              {order.expectedDeliveryDate && (
+                <>
+                  <div className="w-px h-12 bg-white/10" />
+                  <div>
+                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.2em] text-white/28 mb-2">Expected Delivery</p>
+                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[14px] font-semibold text-emerald-400 leading-none">
+                      {new Date(order.expectedDeliveryDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                </>
+              )}
+
               <div className="w-px h-12 bg-white/10" />
 
               {/* Status */}

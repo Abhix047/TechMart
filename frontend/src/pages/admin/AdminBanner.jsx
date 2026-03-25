@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, ImageIcon, Film, X, Zap, Trash2,
-  Pencil, PlusCircle, ChevronRight, ToggleLeft, ToggleRight
+  Pencil, PlusCircle, ChevronRight, ToggleLeft, ToggleRight, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -306,7 +307,6 @@ const AdminBanner = () => {
 
       <div className="max-w-[880px] mx-auto px-6 sm:px-10 pt-10">
 
-        {/* ══ HEADER ══ */}
         <motion.div className="mb-8 pb-7 border-b border-black/[0.08]"
           initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease }}>

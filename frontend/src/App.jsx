@@ -28,6 +28,7 @@ const Orders = lazy(() => import("./pages/admin/Orders"));
 const Users = lazy(() => import("./pages/admin/Users"));
 const Banner = lazy(() => import("./pages/admin/AdminBanner"));
 const AdminOffers = lazy(() => import("./pages/admin/Offers"));
+const AdminOrderDetail = lazy(() => import("./pages/admin/AdminOrderDetail"));
 function RouteFallback() {
   return (
     <div className="min-h-[40vh] bg-white px-5 py-16 md:px-10">
@@ -86,6 +87,7 @@ function App() {
             <Route path="Users" element={<Users />} />
             <Route path="banner" element={<Banner />} />
             <Route path="offers" element={<AdminOffers />} />
+            <Route path="orders/:id" element={<AdminOrderDetail />} />
           </Route>
 
           <Route path="/product/:id" element={<ProductDetail />} />

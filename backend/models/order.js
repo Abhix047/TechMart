@@ -101,6 +101,10 @@ const orderSchema = new mongoose.Schema(
   cancelledAt: {
     type: Date,
   },
+  
+  expectedDeliveryDate: {
+    type: Date,
+  },
 
 },
 {

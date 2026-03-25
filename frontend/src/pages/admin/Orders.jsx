@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Package, Truck, CheckCircle2, Clock,
+  ShoppingCart, Truck, CheckCircle2, Clock,
   CreditCard, Search, ExternalLink, X,
-  ChevronRight, XCircle
+  ChevronRight, XCircle, ArrowLeft
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -98,15 +99,19 @@ function ActionButtons({ order, onAction }) {
   if (order.isCancelled) return (
     <span className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/28">—</span>
   );
-  if (order.isDelivered) return (
-    <motion.a href={`/admin/orders/${order._id}`}
-      className="flex items-center gap-1 font-[family-name:'DM_Sans',sans-serif] text-[11.5px] font-medium text-black/38 hover:text-[#0f0f0f] transition-colors"
-      whileTap={{ scale: 0.95 }}>
-      View <ExternalLink size={11} strokeWidth={1.5} />
-    </motion.a>
-  );
   return (
-    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+    <div className="flex items-center gap-3 flex-wrap justify-end">
+      {/* ── ALWAYS SHOW VIEW ── */}
+      <Link to={`/admin/orders/${order._id}`}
+        className="flex items-center gap-1 font-[family-name:'DM_Sans',sans-serif] text-[11.5px] font-medium text-black/35 hover:text-[#0f0f0f] transition-colors group px-2 py-1 rounded-lg"
+      >
+        <span className="group-hover:mr-1 transition-all">Details</span>
+        <ChevronRight size={13} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
+      </Link>
+
+      <div className="h-4 w-px bg-black/5 mx-1" />
+
+      {/* ── STATUS ACTIONS ── */}
       {!order.isConfirmed && (
         <motion.button onClick={() => onAction({ type: "confirm", id: order._id })}
           className="font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-1.5 rounded-xl hover:bg-amber-100 transition-colors"
@@ -128,6 +133,9 @@ function ActionButtons({ order, onAction }) {
           Deliver
         </motion.button>
       )}
+      {order.isDelivered && (
+         <span className="font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1.5 rounded-xl italic">Completed</span>
+      )}
     </div>
   );
 }
@@ -137,6 +145,7 @@ const AdminOrders = () => {
   const [orders,      setOrders]      = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState("");
+  const [filter,      setFilter]      = useState("all"); // all, processing, confirmed, shipped, delivered, cancelled
   const [pendingAction, setPending]   = useState(null);
   const [payLoading,  setPayLoading]  = useState(null); // order id being toggled
 
@@ -185,10 +194,18 @@ const AdminOrders = () => {
     }
   };
 
-  const filtered = orders.filter(o =>
-    o._id.toLowerCase().includes(search.toLowerCase()) ||
-    o.user?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = orders.filter(o => {
+    const matchesSearch = o._id.toLowerCase().includes(search.toLowerCase()) ||
+                          o.user?.name?.toLowerCase().includes(search.toLowerCase());
+    
+    if (filter === "all") return matchesSearch;
+    if (filter === "processing") return matchesSearch && !o.isConfirmed && !o.isCancelled;
+    if (filter === "confirmed")  return matchesSearch && o.isConfirmed && !o.isShipped;
+    if (filter === "shipped")    return matchesSearch && o.isShipped && !o.isDelivered;
+    if (filter === "delivered")  return matchesSearch && o.isDelivered;
+    if (filter === "cancelled")  return matchesSearch && o.isCancelled;
+    return matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-[#f7f5f2] pb-20" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -240,6 +257,32 @@ const AdminOrders = () => {
               </button>
             )}
           </motion.div>
+        </motion.div>
+
+        {/* ══ FILTER TABS ══ */}
+        <motion.div className="flex gap-1 mb-6 border-b border-black/[0.04] pb-px overflow-x-auto no-scrollbar scroll-smooth"
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            {[
+                { id: "all", label: "All Orders" },
+                { id: "processing", label: "Processing" },
+                { id: "confirmed", label: "Confirmed" },
+                { id: "shipped", label: "Shipped" },
+                { id: "delivered", label: "Completed" },
+                { id: "cancelled", label: "Cancelled" },
+            ].map((t) => (
+                <button
+                    key={t.id}
+                    onClick={() => setFilter(t.id)}
+                    className={`px-5 py-3 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap transition-all relative ${
+                        filter === t.id ? "text-black" : "text-black/30 hover:text-black/50"
+                    }`}
+                >
+                    {t.label}
+                    {filter === t.id && (
+                        <motion.div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" layoutId="activeTab" />
+                    )}
+                </button>
+            ))}
         </motion.div>
 
         {/* ══ LOADING ══ */}

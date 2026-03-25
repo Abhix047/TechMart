@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api.js";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Tag, Info, IndianRupee, Boxes, Settings,
   ImageIcon, Palette, Plus, Trash2, CheckCircle2,
-  UploadCloud, X, Zap
+  UploadCloud, X, Zap, ArrowLeft
 } from "lucide-react";
 
 /* ── Fonts ── */

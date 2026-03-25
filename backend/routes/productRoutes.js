@@ -6,6 +6,7 @@ import {
   updateProduct,
   deleteProduct,
   createProductReview,
+  getAllProducts,
 } from "../controllers/productController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -27,6 +28,7 @@ router.post(
   }
 );
 router.get("/", getProducts);
+router.get("/all", protect, admin, getAllProducts);
 router.route("/")
   .get(getProducts)
   .post(protect, admin, validate(validateProductBody), createProduct);
