@@ -15,24 +15,19 @@ const resolveApiUrl = () => {
 
   const runtimeOrigin = trimTrailingSlashes(window.location.origin);
   const runtimeHostname = window.location.hostname;
+  const isRuntimeLocal = isLocalHostname(runtimeHostname);
+
+  if (!isRuntimeLocal) {
+    // In production we prefer same-origin API calls so auth cookies remain
+    // first-party. A platform proxy/rewrite should forward `/api` to backend.
+    return runtimeOrigin;
+  }
 
   if (configuredUrl) {
-    try {
-      const parsedConfiguredUrl = new URL(configuredUrl);
-
-      // Prevent remote builds from accidentally targeting localhost because a
-      // local `.env` value was baked into the bundle.
-      if (!isLocalHostname(runtimeHostname) && isLocalHostname(parsedConfiguredUrl.hostname)) {
-        return runtimeOrigin;
-      }
-    } catch {
-      return configuredUrl;
-    }
-
     return configuredUrl;
   }
 
-  return isLocalHostname(runtimeHostname) ? LOCAL_API_FALLBACK : runtimeOrigin;
+  return LOCAL_API_FALLBACK;
 };
 
 export const API_URL = resolveApiUrl();
