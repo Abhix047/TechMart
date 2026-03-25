@@ -9,13 +9,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
+  const normalizeSessionUser = (payload) => {
+    if (!payload) return null;
+    if (payload.authenticated === false) return null;
+    if (payload.user) return payload.user;
+    if (payload._id || payload.email || payload.name || payload.role) return payload;
+    return null;
+  };
+
+  const fetchUser = async (_force = false) => {
     try {
       const res = await API.get("/auth/session");
-      const sessionUser = res.data?.authenticated ? res.data.user : null;
+      const sessionUser = normalizeSessionUser(res.data);
       setUser(sessionUser);
       return sessionUser;
     } catch (error) {
+      if (error?.response?.status === 404) {
+        try {
+          const fallbackRes = await API.get("/auth/profile");
+          const fallbackUser = normalizeSessionUser(fallbackRes.data);
+          setUser(fallbackUser);
+          return fallbackUser;
+        } catch (fallbackError) {
+          setUser(null);
+          return null;
+        }
+      }
+
       setUser(null);
       return null;
     } finally {
@@ -27,9 +47,17 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  const login = async () => {
+  const login = async (userData) => {
     setLoading(true);
-    return fetchUser();
+    const sessionUser = normalizeSessionUser(userData);
+
+    if (sessionUser) {
+      setUser(sessionUser);
+      setLoading(false);
+      return sessionUser;
+    }
+
+    return fetchUser(true);
   };
 
   const logout = async () => {

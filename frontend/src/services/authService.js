@@ -8,6 +8,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const normalizeSessionUser = (payload) => {
+    if (!payload) return null;
+    if (payload.authenticated === false) return null;
+    if (payload.user) return payload.user;
+    if (payload._id || payload.email || payload.name || payload.role) return payload;
+    return null;
+  };
+
   useEffect(() => {
 
     const fetchUser = async () => {
@@ -16,9 +24,20 @@ export const AuthProvider = ({ children }) => {
 
         const res = await API.get("/auth/session");
 
-        setUser(res.data?.authenticated ? res.data.user : null);
+        setUser(normalizeSessionUser(res.data));
 
       } catch (error) {
+
+        if (error?.response?.status === 404) {
+          try {
+            const fallbackRes = await API.get("/auth/profile");
+            setUser(normalizeSessionUser(fallbackRes.data));
+            return;
+          } catch {
+            setUser(null);
+            return;
+          }
+        }
 
         setUser(null);
 
@@ -34,13 +53,33 @@ export const AuthProvider = ({ children }) => {
 
   }, []);
 
-  const login = async () => {
+  const login = async (userData) => {
     setLoading(true);
+    const sessionUser = normalizeSessionUser(userData);
+    if (sessionUser) {
+      setUser(sessionUser);
+      setLoading(false);
+      return sessionUser;
+    }
     try {
       const res = await API.get("/auth/session");
-      const sessionUser = res.data?.authenticated ? res.data.user : null;
-      setUser(sessionUser);
-      return sessionUser;
+      const resolvedUser = normalizeSessionUser(res.data);
+      setUser(resolvedUser);
+      return resolvedUser;
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        try {
+          const fallbackRes = await API.get("/auth/profile");
+          const fallbackUser = normalizeSessionUser(fallbackRes.data);
+          setUser(fallbackUser);
+          return fallbackUser;
+        } catch {
+          setUser(null);
+          return null;
+        }
+      }
+      setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
