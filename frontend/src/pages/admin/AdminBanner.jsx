@@ -62,8 +62,10 @@ function DeleteModal({ banner, onConfirm, onCancel }) {
 
 /* ── Edit modal ── */
 function EditModal({ banner, onSave, onCancel }) {
-  const [title,   setTitle]   = useState(banner?.title || "");
-  const [file,    setFile]    = useState(null);
+  const [title,      setTitle]      = useState(banner?.title || "");
+  const [subHeading, setSubHeading] = useState(banner?.subHeading || "");
+  const [order,      setOrder]      = useState(banner?.order || 0);
+  const [file,       setFile]       = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dragOver,setDragOver]= useState(false);
@@ -78,6 +80,8 @@ function EditModal({ banner, onSave, onCancel }) {
     setLoading(true);
     const fd = new FormData();
     fd.append("title", title);
+    fd.append("subHeading", subHeading);
+    fd.append("order", order);
     if (file) fd.append("media", file);
     try {
       const { data } = await API.put(`/banners/${banner._id}`, fd);
@@ -122,6 +126,18 @@ function EditModal({ banner, onSave, onCancel }) {
               <label className={lbl}>Banner Title</label>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Summer Sale 2026" className={inp} />
+            </div>
+
+            <div>
+              <label className={lbl}>Sub Heading</label>
+              <input type="text" value={subHeading} onChange={e => setSubHeading(e.target.value)}
+                placeholder="e.g. Up to 50% Off" className={inp} />
+            </div>
+
+            <div>
+              <label className={lbl}>Position / Order</label>
+              <input type="number" value={order} onChange={e => setOrder(e.target.value)}
+                placeholder="0" className={inp} />
             </div>
 
             {/* Media replacement */}
@@ -197,9 +213,11 @@ const AdminBanner = () => {
   /* ── add-form state ── */
   const [file,    setFile]    = useState(null);
   const [preview, setPreview] = useState(null);
-  const [type,    setType]    = useState("image");
-  const [title,   setTitle]   = useState("");
-  const [loading, setLoading] = useState(false);
+  const [type,       setType]       = useState("image");
+  const [title,      setTitle]      = useState("");
+  const [subHeading, setSubHeading] = useState("");
+  const [order,      setOrder]      = useState(0);
+  const [loading,    setLoading]    = useState(false);
   const [dragOver,setDragOver]= useState(false);
 
   /* ── list state ── */
@@ -229,11 +247,13 @@ const AdminBanner = () => {
     fd.append("media", file);
     fd.append("type", type);
     fd.append("title", title);
+    fd.append("subHeading", subHeading);
+    fd.append("order", order);
     try {
       const { data } = await API.post("/banners", fd);
       toast.success("Banner published!");
-      setBanners(prev => [data, ...prev]);
-      clear(); setTitle("");
+      setBanners(prev => [...prev, data].sort((a,b) => a.order - b.order));
+      clear(); setTitle(""); setSubHeading(""); setOrder(0);
     } catch {
       toast.error("Upload failed.");
     } finally {
@@ -274,7 +294,7 @@ const AdminBanner = () => {
 
   /* ── after edit save ── */
   const handleEditSave = (updated) => {
-    setBanners(prev => prev.map(b => b._id === updated._id ? updated : b));
+    setBanners(prev => prev.map(b => b._id === updated._id ? updated : b).sort((a,b) => a.order - b.order));
     setEditTarget(null);
   };
 
@@ -282,7 +302,7 @@ const AdminBanner = () => {
     <div className="min-h-screen bg-[#f7f5f2] pb-20" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       <DeleteModal banner={deleteTarget} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />
-      <EditModal   banner={editTarget}   onSave={handleEditSave}   onCancel={() => setEditTarget(null)} />
+      <EditModal   key={editTarget?._id} banner={editTarget}   onSave={handleEditSave}   onCancel={() => setEditTarget(null)} />
 
       <div className="max-w-[880px] mx-auto px-6 sm:px-10 pt-10">
 
@@ -367,7 +387,15 @@ const AdminBanner = () => {
                         </span>
                         {/* Active indicator */}
                         {b.isActive && (
-                          <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-white" />
+                          <span className="absolute top-2.5 right-2.5 w-max px-2 py-1 rounded-lg bg-emerald-400/90 text-[10px] font-bold text-white shadow-sm flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            Pos: {b.order || 0}
+                          </span>
+                        )}
+                        {!b.isActive && (
+                           <span className="absolute top-2.5 right-2.5 w-max px-2 py-1 rounded-lg bg-black/40 text-[10px] font-bold text-white/70 backdrop-blur-sm">
+                             Pos: {b.order || 0}
+                           </span>
                         )}
                       </div>
 
@@ -375,7 +403,10 @@ const AdminBanner = () => {
                       <div className="px-4 py-3.5 flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium text-[#0f0f0f] truncate">{b.title}</p>
-                          <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] text-black/35 mt-0.5">
+                          {b.subHeading && (
+                            <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/50 truncate mt-0.5">{b.subHeading}</p>
+                          )}
+                          <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] text-black/35 mt-1">
                             {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                           </p>
                         </div>
@@ -448,6 +479,12 @@ const AdminBanner = () => {
               <label className={lbl}>Banner Title</label>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Summer Sale 2026" className={inp} />
+            </div>
+
+            <div>
+              <label className={lbl}>Sub Heading</label>
+              <input type="text" value={subHeading} onChange={e => setSubHeading(e.target.value)}
+                placeholder="e.g. Up to 50% Off" className={inp} />
             </div>
 
             {/* Media type toggle */}

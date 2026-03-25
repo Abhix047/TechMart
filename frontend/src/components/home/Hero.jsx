@@ -293,7 +293,7 @@ const Hero = () => {
           <div
             className="absolute bottom-0 left-0 right-0 z-20 flex flex-wrap items-end justify-between"
             style={{
-              padding: "0 clamp(16px, 2.8vw, 36px) clamp(20px, 3.2vh, 36px)",
+              padding: isMobile ? "0 20px 40px" : "0 clamp(16px, 2.8vw, 36px) clamp(85px, 15vh, 130px)",
               gap: 16,
             }}
           >
@@ -305,7 +305,7 @@ const Hero = () => {
                   <motion.div key={banner._id + "-text"}>
 
                     {/* Subtitle — small spaced caps */}
-                    {banner.subtitle && (
+                    {banner.subHeading && (
                       <motion.p
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -313,15 +313,15 @@ const Hero = () => {
                         transition={{ duration: 0.38, delay: 0.03 }}
                         style={{
                           fontFamily: "'DM Sans', sans-serif",
-                          fontSize: 9.5,
-                          fontWeight: 400,
+                          fontSize: isMobile ? 10.5 : 12,
+                          fontWeight: isMobile ? 400 : 500,
                           letterSpacing: "0.28em",
                           textTransform: "uppercase",
-                          color: "rgba(255,255,255,0.42)",
+                          color: "rgba(255,255,255,0.48)",
                           margin: "0 0 8px 0",
                         }}
                       >
-                        {banner.subtitle}
+                        {banner.subHeading}
                       </motion.p>
                     )}
 
@@ -334,9 +334,10 @@ const Hero = () => {
                         transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
                         style={{
                           fontFamily: "'Cormorant', serif",
-                          fontSize: "clamp(20px, 2.8vw, 42px)",
-                          fontWeight: 300,
-                          fontStyle: "italic",
+                          fontSize: isMobile ? "22px" : "clamp(28px, 4.2vw, 58px)",
+                          fontWeight: isMobile ? 300 : 400,
+                          
+                          
                           color: "white",
                           lineHeight: 1.18,
                           letterSpacing: "0.01em",
