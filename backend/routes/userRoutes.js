@@ -3,6 +3,7 @@ import {
   registerUser,
   loginUser,
   logoutUser,
+  getAuthSession,
   getUserProfile,
   getUsers,
   deleteUser,
@@ -21,6 +22,7 @@ const router = express.Router();
 router.post("/register", authRateLimiter, validate(validateRegisterBody), registerUser);
 router.post("/login", authRateLimiter, validate(validateLoginBody), loginUser);
 router.post("/logout", authRateLimiter, logoutUser);
+router.get("/session", getAuthSession);
 router.get("/profile", protect, getUserProfile);
 router.get("/", protect, admin, getUsers);
 router.delete("/:id", protect, admin, validateObjectIdParam(), deleteUser);

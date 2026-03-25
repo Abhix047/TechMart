@@ -3,17 +3,13 @@ import API from "../services/api";
 import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
-const AUTH_SESSION_HINT = "auth_session_hint";
 
 export const CartProvider = ({ children }) => {
   const [cartCount, setCartCount] = useState(0);
   const { user } = useAuth();
 
   const fetchCartCount = async () => {
-    const token = localStorage.getItem("token");
-    const sessionHint = localStorage.getItem(AUTH_SESSION_HINT);
-
-    if (!user && !token && !sessionHint) {
+    if (!user) {
       setCartCount(0);
       return;
     }

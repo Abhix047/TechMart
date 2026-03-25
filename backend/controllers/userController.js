@@ -1,6 +1,15 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
 import generateToken, { AUTH_COOKIE_NAME, buildAuthCookieOptions } from "../utils/generateToken.js";
+import { resolveAuthenticatedUser } from "../middleware/authMiddleware.js";
+
+const serializeUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  storeName: user.storeName,
+});
 
 export const getUsers = asyncHandler(async (req, res) => {
   const users = await User.find({}).select("-password");
@@ -81,11 +90,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     const token = generateToken(req, res, user._id);
     res.status(201).json({
       token,
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      storeName: user.storeName,
+      ...serializeUser(user),
     });
   } else {
     res.status(400);
@@ -105,11 +110,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     const token = generateToken(req, res, user._id);
     res.status(200).json({
       token,
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      storeName: user.storeName,
+      ...serializeUser(user),
     });
   } else {
     res.status(401);
@@ -125,17 +126,26 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "User successfully logged out" });
 });
+export const getAuthSession = asyncHandler(async (req, res) => {
+  const user = await resolveAuthenticatedUser(req);
+
+  if (!user) {
+    return res.status(200).json({
+      authenticated: false,
+      user: null,
+    });
+  }
+
+  return res.status(200).json({
+    authenticated: true,
+    user: serializeUser(user),
+  });
+});
 export const getUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      storeName: user.storeName,
-    });
+    res.status(200).json(serializeUser(user));
   } else {
     res.status(404);
     throw new Error("User not Found");

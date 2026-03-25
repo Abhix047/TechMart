@@ -3,7 +3,7 @@ import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
 import { AUTH_COOKIE_NAME } from "../utils/generateToken.js";
 
-export const protect = asyncHandler(async (req, res, next) => {
+export const resolveAuthenticatedUser = async (req) => {
   const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
   const authHeader = req.headers.authorization;
   const bearerToken = authHeader?.startsWith("Bearer ")
@@ -21,11 +21,21 @@ export const protect = asyncHandler(async (req, res, next) => {
           continue;
         }
 
-        return next();
+        return req.user;
       } catch (error) {
         // Try the next available auth source before rejecting.
       }
     }
+  }
+
+  req.user = null;
+  return null;
+};
+
+export const protect = asyncHandler(async (req, res, next) => {
+  const user = await resolveAuthenticatedUser(req);
+  if (user) {
+    return next();
   }
 
   res.status(401);
