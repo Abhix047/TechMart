@@ -19,21 +19,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
 
     const fetchUser = async () => {
-
       try {
-
         const res = await API.get("/auth/session");
 
         setUser(normalizeSessionUser(res.data));
 
       } catch (error) {
-
         if (error?.response?.status === 404) {
           try {
             const fallbackRes = await API.get("/auth/profile");
             setUser(normalizeSessionUser(fallbackRes.data));
             return;
-          } catch {
+          } catch (fallbackError) {
             setUser(null);
             return;
           }
