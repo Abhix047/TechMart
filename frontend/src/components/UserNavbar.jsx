@@ -10,6 +10,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useWishlist } from "../context/WishlistContext.jsx";
 import AuthModal from "../controller/AuthModal.jsx";
 import API from "../services/api.js";
+import { getImg } from "../config.js";
 
 /*
   index.css — add:
@@ -224,7 +225,7 @@ const UserNavbar = () => {
               <div style={{ maxHeight: 320, overflowY: "auto", scrollbarWidth: "none" }}>
                 {searchResults.map((p, i) => {
                   const raw = p.images?.[0] ?? "";
-                  const imgURL = raw ? (raw.startsWith("http") ? raw : `${import.meta.env.VITE_API_URL || "http://localhost:5000"}${raw.replace(/\\/g, "/")}`) : "";
+                  const imgURL = getImg(raw?.replace(/\\/g, "/"));
                   return (
                     <button key={p._id} onClick={() => goToProduct(p._id)}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "transparent", border: "none", borderBottom: i < searchResults.length - 1 ? `1px solid ${BORDER}` : "none", cursor: "pointer", textAlign: "left" }}
