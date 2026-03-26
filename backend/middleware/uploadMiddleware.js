@@ -32,7 +32,6 @@ const storage = new CloudinaryStorage({
     return {
       folder: folder,
       resource_type: "auto", // Automatically detect image or video
-      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
     };
   },
 });
