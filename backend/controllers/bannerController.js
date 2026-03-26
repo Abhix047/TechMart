@@ -3,23 +3,29 @@ import Banner from "../models/banner.js";
 // ✅ CREATE
 export const createBanner = async (req, res) => {
   try {
+    console.log("Create Banner Request:", req.body);
+    if (req.file) console.log("File Info:", req.file);
+
     const { title, subHeading, type, order } = req.body;
 
     if (!req.file) {
+      console.error("Upload Error: No file provided");
       return res.status(400).json({ message: "File required" });
     }
 
     const banner = await Banner.create({
-      title,
-      subHeading,
-      type,
+      title: title || "New Banner",
+      subHeading: subHeading || "",
+      type: type || "image",
       order: order ? Number(order) : 0,
       media: req.file.path,
     });
 
+    console.log("Banner Created Success:", banner._id);
     res.status(201).json(banner);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Banner Create Error:", err);
+    res.status(500).json({ message: `Create failed: ${err.message}` });
   }
 };
 
@@ -62,8 +68,24 @@ export const updateBanner = async (req, res) => {
   }
 };
 
+// ✅ GET SINGLE
+export const getBannerById = async (req, res) => {
+  try {
+    const banner = await Banner.findById(req.params.id);
+    if (!banner) return res.status(404).json({ message: "Banner not found" });
+    res.json(banner);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // ✅ DELETE
 export const deleteBanner = async (req, res) => {
-  await Banner.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted" });
+  try {
+    const banner = await Banner.findByIdAndDelete(req.params.id);
+    if (!banner) return res.status(404).json({ message: "Banner not found" });
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };

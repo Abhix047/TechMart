@@ -16,6 +16,9 @@ export const errorHandler = (err, req, res, next) => {
     statusCode = 404;
   }
 
+  // Log the error for diagnostics
+  console.error(`[Server Error] ${message}`, err.stack);
+
   res.status(statusCode).json({
     message,
     // Production mein stack trace hide kar dete hain security ke liye

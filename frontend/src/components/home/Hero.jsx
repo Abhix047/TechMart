@@ -209,6 +209,10 @@ const Hero = () => {
                   alt={banner.title || "Banner"}
                   className="w-full h-full object-cover"
                   draggable={false}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://placehold.co/1200x600/1a1a1a/ffffff?text=TechMart+Banner";
+                  }}
                 />
               )}
             </motion.div>

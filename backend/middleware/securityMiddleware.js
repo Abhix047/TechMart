@@ -1,13 +1,14 @@
 const cspDirectives = [
-  "default-src 'self'",
+  "default-src 'self' *",
   "base-uri 'self'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: res.cloudinary.com *.cloudinary.com",
   "object-src 'none'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "connect-src 'self' *",
+  "font-src 'self' https://fonts.gstatic.com",
 ].join("; ");
 
 export const securityHeaders = (req, res, next) => {

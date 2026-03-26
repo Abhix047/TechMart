@@ -378,7 +378,15 @@ const AdminBanner = () => {
                         {isVideo ? (
                           <video src={mediaUrl} className="w-full h-full object-cover" muted />
                         ) : (
-                          <img src={mediaUrl} alt={b.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                          <img 
+                            src={mediaUrl} 
+                            alt={b.title} 
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" 
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://placehold.co/400x200/f0ede8/999999?text=Broken+Image";
+                            }}
+                          />
                         )}
                         {/* Type pill */}
                         <span className="absolute top-2.5 left-2.5 flex items-center gap-1 font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold text-white bg-black/45 backdrop-blur-sm px-2 py-1 rounded-lg">
