@@ -18,45 +18,22 @@ console.log("Cloudinary Configured:", {
   has_url: !!process.env.CLOUDINARY_URL,
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    const isBanner = req.originalUrl.includes("banners");
-    const isOffer = req.originalUrl.includes("offers");
-    const isProduct = req.originalUrl.includes("products");
-
-    let folder = "techmart/others";
-    if (isBanner) folder = "techmart/banners";
-    if (isOffer) folder = "techmart/offers";
-    if (isProduct) folder = "techmart/products";
-
-    return {
-      folder: folder,
-      resource_type: "auto", // Automatically detect image or video
-    };
-  },
-});
+const storage = multer.memoryStorage();
 
 const checkFileType = (file, cb) => {
   const filetypes = /jpg|jpeg|png|webp|webm|mp4|mov|avi|mkv/;
-
-  const extname = filetypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
-
-  const mimetype =
-    file.mimetype.startsWith("image") ||
-    file.mimetype.startsWith("video");
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = file.mimetype.startsWith("image") || file.mimetype.startsWith("video");
 
   if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb("Only images & videos allowed!");
+    cb(new Error("Only images & videos allowed!"));
   }
 };
 
 export const upload = multer({
   storage,
   fileFilter: (req, file, cb) => checkFileType(file, cb),
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 });

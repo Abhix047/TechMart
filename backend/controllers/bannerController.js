@@ -1,32 +1,37 @@
 import Banner from "../models/banner.js";
-import { v2 as cloudinary } from "cloudinary";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 // ✅ CREATE
 export const createBanner = async (req, res) => {
   try {
-    console.log("Create Banner Request:", req.body);
-    if (req.file) console.log("File Info:", req.file);
-
-    const { title, subHeading, type, order } = req.body;
+    console.log("Create Banner Payload:", { ...req.body, has_file: !!req.file });
 
     if (!req.file) {
-      console.error("Upload Error: No file provided");
-      return res.status(400).json({ message: "File required" });
+      return res.status(400).json({ message: "Media file is required" });
     }
 
+    // Manual Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, "techmart/banners");
+    console.log("Cloudinary Upload Success:", result.secure_url);
+
+    const { title, subHeading, type, order } = req.body;
     const banner = await Banner.create({
-      title: title || "New Banner",
+      title,
       subHeading: subHeading || "",
-      type: type || "image",
-      order: order ? Number(order) : 0,
-      media: req.file.path,
+      media: result.secure_url,
+      type: type || (req.file.mimetype.startsWith("video") ? "video" : "image"),
+      order: Number(order) || 0,
+      isActive: true,
     });
 
-    console.log("Banner Created Success:", banner._id);
     res.status(201).json(banner);
   } catch (err) {
-    console.error("Banner Create Error:", err);
-    res.status(500).json({ message: `Create failed: ${err.message}` });
+    console.error("Banner Create Error Details:", {
+      message: err.message,
+      stack: err.stack,
+      cloudinary_error: err
+    });
+    res.status(500).json({ message: "Server Error: " + err.message });
   }
 };
 
@@ -56,15 +61,19 @@ export const updateBanner = async (req, res) => {
     const banner = await Banner.findById(req.params.id);
     if (!banner) return res.status(404).json({ message: "Banner not found" });
 
-    if (req.body.title !== undefined) banner.title = req.body.title;
-    if (req.body.subHeading !== undefined) banner.subHeading = req.body.subHeading;
-    if (req.body.order !== undefined) banner.order = Number(req.body.order);
-    if (req.body.isActive !== undefined) banner.isActive = req.body.isActive === "true" || req.body.isActive === true;
-    if (req.file) banner.media = req.file.path;
+    const updateData = { ...req.body };
 
-    const updated = await banner.save();
+    // If a new file is uploaded
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, "techmart/banners");
+      updateData.media = result.secure_url;
+      updateData.type = updateData.type || (req.file.mimetype.startsWith("video") ? "video" : "image");
+    }
+
+    const updated = await Banner.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json(updated);
   } catch (err) {
+    console.error("Banner Update Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
