@@ -1,4 +1,5 @@
 import Banner from "../models/banner.js";
+import { v2 as cloudinary } from "cloudinary";
 
 // ✅ CREATE
 export const createBanner = async (req, res) => {
@@ -85,6 +86,29 @@ export const deleteBanner = async (req, res) => {
     const banner = await Banner.findByIdAndDelete(req.params.id);
     if (!banner) return res.status(404).json({ message: "Banner not found" });
     res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ✅ DIAGNOSTICS
+export const getBannerStatus = async (req, res) => {
+  try {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const isCloudConfigured = !!(cloudName && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+    
+    // Check Mongo Connection
+    const mongoStatus = mongoose.connection.readyState === 1 ? "Connected" : "Disconnected";
+
+    res.json({
+      status: "OK",
+      mongodb: mongoStatus,
+      cloudinary: {
+        configured: isCloudConfigured,
+        cloudName: cloudName ? `${cloudName.slice(0, 3)}...` : "Not Found",
+      },
+      environment: process.env.NODE_ENV || "Not Set",
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
