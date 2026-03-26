@@ -88,6 +88,16 @@ app.get("/", (req, res) => {
 // Yahan hum apne Routes lagayenge baad mein...
 
 app.use("/uploads", express.static(path.join(process.cwd(), "/uploads")));
+import Banner from "./models/banner.js";
+app.get("/api/test-db", async (req, res) => {
+  try {
+    const banners = await Banner.find();
+    res.json({ success: true, count: banners.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.use("/api/auth", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin", adminRoutes);
