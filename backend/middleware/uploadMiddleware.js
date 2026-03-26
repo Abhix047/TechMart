@@ -4,16 +4,17 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
+  api_key: (process.env.CLOUDINARY_API_KEY || "").trim(),
+  api_secret: (process.env.CLOUDINARY_API_SECRET || "").trim(),
 });
 
 // Diagnostic log for live server
+const rawSecret = (process.env.CLOUDINARY_API_SECRET || "").trim();
 console.log("Cloudinary Configured:", {
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY ? `${process.env.CLOUDINARY_API_KEY.slice(0, 4)}...` : "MISSING",
-  api_secret: process.env.CLOUDINARY_API_SECRET ? `${process.env.CLOUDINARY_API_SECRET.slice(0, 4)}...` : "MISSING",
+  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
+  api_key_status: process.env.CLOUDINARY_API_KEY ? `Configured (Length: ${process.env.CLOUDINARY_API_KEY.trim().length})` : "MISSING",
+  api_secret_debug: rawSecret ? `Starts with: [${rawSecret[0]}] Ends with: [${rawSecret.slice(-1)}] Length: ${rawSecret.length}` : "MISSING",
   has_url: !!process.env.CLOUDINARY_URL,
 });
 
