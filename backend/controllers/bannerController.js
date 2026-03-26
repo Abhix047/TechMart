@@ -26,12 +26,12 @@ export const createBanner = async (req, res) => {
 
     res.status(201).json(banner);
   } catch (err) {
-    console.error("Banner Create Error Details:", {
-      message: err.message,
-      stack: err.stack,
-      cloudinary_error: err
+    console.error("Banner Create Error Details:", err);
+    res.status(500).json({ 
+      message: "Server Error: " + err.message,
+      error: err,
+      location: "createBanner"
     });
-    res.status(500).json({ message: "Server Error: " + err.message });
   }
 };
 
@@ -74,7 +74,11 @@ export const updateBanner = async (req, res) => {
     res.json(updated);
   } catch (err) {
     console.error("Banner Update Error:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ 
+      message: err.message,
+      error: err,
+      location: "updateBanner"
+    });
   }
 };
 

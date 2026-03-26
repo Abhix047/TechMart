@@ -4,9 +4,9 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 cloudinary.config({
-  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
-  api_key: (process.env.CLOUDINARY_API_KEY || "").trim(),
-  api_secret: (process.env.CLOUDINARY_API_SECRET || "").trim(),
+  cloud_name: String(process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
+  api_key: String(process.env.CLOUDINARY_API_KEY || "").trim(),
+  api_secret: String(process.env.CLOUDINARY_API_SECRET || "").trim(),
 });
 
 // Diagnostic log for live server
