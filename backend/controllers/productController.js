@@ -150,7 +150,7 @@ export const createProductReview = asyncHandler(async (req, res) => {
 
   const rating = Number(req.body.rating);
   const comment = req.body.comment;
-  const image = req.file ? `/uploads/${req.file.filename}` : "";
+  const image = req.file ? req.file.path : "";
 
   // ✅ delivered check
  const order = await Order.findOne({

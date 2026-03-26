@@ -23,7 +23,7 @@ router.post(
   admin,
   upload.array("images", 5),
   (req, res) => {
-    const imagePaths = req.files.map((file) => `/uploads/${file.filename}`);
+    const imagePaths = req.files.map((file) => file.path);
     res.json(imagePaths);
   }
 );

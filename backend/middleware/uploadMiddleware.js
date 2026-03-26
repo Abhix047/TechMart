@@ -1,19 +1,33 @@
 import multer from "multer";
 import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    if (req.originalUrl.includes("banners")) {
-      cb(null, "uploads/banners/");
-    } else {
-      cb(null, "uploads/");
-    }
-  },
-  filename(req, file, cb) {
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    );
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    const isBanner = req.originalUrl.includes("banners");
+    const isOffer = req.originalUrl.includes("offers");
+    const isProduct = req.originalUrl.includes("products");
+
+    let folder = "techmart/others";
+    if (isBanner) folder = "techmart/banners";
+    else if (isOffer) folder = "techmart/offers";
+    else if (isProduct) folder = "techmart/products";
+
+    const resource_type = file.mimetype.startsWith("video") ? "video" : "image";
+
+    return {
+      folder: folder,
+      resource_type: resource_type,
+      allowed_formats: ["jpg", "jpeg", "png", "webp", "webm", "mp4", "mov", "avi", "mkv"],
+    };
   },
 });
 

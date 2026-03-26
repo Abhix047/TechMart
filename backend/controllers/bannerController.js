@@ -14,7 +14,7 @@ export const createBanner = async (req, res) => {
       subHeading,
       type,
       order: order ? Number(order) : 0,
-      media: `/uploads/banners/${req.file.filename}`,
+      media: req.file.path,
     });
 
     res.status(201).json(banner);
@@ -53,7 +53,7 @@ export const updateBanner = async (req, res) => {
     if (req.body.subHeading !== undefined) banner.subHeading = req.body.subHeading;
     if (req.body.order !== undefined) banner.order = Number(req.body.order);
     if (req.body.isActive !== undefined) banner.isActive = req.body.isActive === "true" || req.body.isActive === true;
-    if (req.file) banner.media = `/uploads/banners/${req.file.filename}`;
+    if (req.file) banner.media = req.file.path;
 
     const updated = await banner.save();
     res.json(updated);
