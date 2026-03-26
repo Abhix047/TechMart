@@ -14,6 +14,7 @@ console.log("Cloudinary Configured:", {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY ? `${process.env.CLOUDINARY_API_KEY.slice(0, 4)}...` : "MISSING",
   api_secret: process.env.CLOUDINARY_API_SECRET ? `${process.env.CLOUDINARY_API_SECRET.slice(0, 4)}...` : "MISSING",
+  has_url: !!process.env.CLOUDINARY_URL,
 });
 
 const storage = new CloudinaryStorage({
@@ -25,15 +26,13 @@ const storage = new CloudinaryStorage({
 
     let folder = "techmart/others";
     if (isBanner) folder = "techmart/banners";
-    else if (isOffer) folder = "techmart/offers";
-    else if (isProduct) folder = "techmart/products";
-
-    const resource_type = file.mimetype.startsWith("video") ? "video" : "image";
+    if (isOffer) folder = "techmart/offers";
+    if (isProduct) folder = "techmart/products";
 
     return {
       folder: folder,
-      resource_type: resource_type,
-      allowed_formats: ["jpg", "jpeg", "png", "webp", "webm", "mp4", "mov", "avi", "mkv"],
+      resource_type: "auto", // Automatically detect image or video
+      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
     };
   },
 });

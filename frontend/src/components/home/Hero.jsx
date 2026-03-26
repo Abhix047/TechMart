@@ -340,8 +340,8 @@ const Hero = () => {
                           fontFamily: "'Cormorant', serif",
                           fontSize: isMobile ? "22px" : "clamp(28px, 4.2vw, 58px)",
                           fontWeight: isMobile ? 300 : 400,
-                          
-                          
+
+
                           color: "white",
                           lineHeight: 1.18,
                           letterSpacing: "0.01em",
