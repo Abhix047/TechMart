@@ -89,10 +89,27 @@ app.get("/", (req, res) => {
 
 app.use("/uploads", express.static(path.join(process.cwd(), "/uploads")));
 import Banner from "./models/banner.js";
+import { v2 as cloudinary } from "cloudinary";
 app.get("/api/test-db", async (req, res) => {
   try {
     const banners = await Banner.find();
-    res.json({ success: true, count: banners.length });
+    let cloudStatus = "Not Tested";
+    try {
+      const ping = await cloudinary.api.ping();
+      cloudStatus = ping.status;
+    } catch (ce) {
+      cloudStatus = `Error: ${ce.message}`;
+    }
+    
+    res.json({ 
+      success: true, 
+      count: banners.length, 
+      cloudinary: cloudStatus,
+      env: {
+        node: process.version,
+        env: process.env.NODE_ENV
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
