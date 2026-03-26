@@ -48,7 +48,7 @@ const AddProduct = () => {
   const [form, setForm] = useState({
     name: "", brand: "", category: "", description: "",
     price: "", discountPrice: "", countInStock: "",
-    images: [], colors: "",
+    images: [], colors: [],
   });
   const [specs,       setSpecs]       = useState([{ name: "", value: "" }]);
   const [isUploading, setIsUploading] = useState(false);
@@ -76,8 +76,14 @@ const AddProduct = () => {
     }
   };
 
-  const removeImage = idx =>
-    setForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+  const removeImage = idx => {
+    const imgToRemove = form.images[idx];
+    setForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== idx),
+      colors: prev.colors.map(c => c.image === imgToRemove ? { ...c, image: "" } : c)
+    }));
+  };
 
   const addSpec    = () => setSpecs([...specs, { name: "", value: "" }]);
   const removeSpec = idx => setSpecs(specs.filter((_, i) => i !== idx));
@@ -85,15 +91,35 @@ const AddProduct = () => {
     const u = [...specs]; u[idx][field] = val; setSpecs(u);
   };
 
+  const addColor = () => {
+    setForm(prev => ({
+      ...prev,
+      colors: [...prev.colors, { name: "", hex: "#000000", image: "" }]
+    }));
+  };
+
+  const removeColor = idx => {
+    setForm(prev => ({
+      ...prev,
+      colors: prev.colors.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleColorChange = (idx, field, val) => {
+    const updatedColors = [...form.colors];
+    updatedColors[idx][field] = val;
+    setForm(prev => ({ ...prev, colors: updatedColors }));
+  };
+
   const submitHandler = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setIsPublishing(true);
     const payload = {
       ...form,
       price:        Number(form.price),
       discountPrice: form.discountPrice === "" ? undefined : Number(form.discountPrice),
       countInStock: Number(form.countInStock),
-      colors:       form.colors ? form.colors.split(",").map(c => c.trim()) : [],
+      colors:       form.colors.filter(c => c.name),
       specifications: specs.filter(s => s.name && s.value),
     };
     try {
@@ -374,25 +400,105 @@ const AddProduct = () => {
 
               {/* Inventory & Variants */}
               <Section icon={Boxes} title="Inventory & Variants" delay={0.22}>
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-6">
                   <div>
                     <label className={lbl}>Stock Quantity</label>
                     <input name="countInStock" type="number" placeholder="e.g. 50" onChange={handleChange} className={inp} required />
                   </div>
+
+                  <div className="h-px bg-black/[0.06] -mx-6" />
+
                   <div>
-                    <label className={lbl}>Available Colors</label>
-                    <div className="relative">
-                      <Palette size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/28 pointer-events-none" strokeWidth={1.5} />
-                      <input
-                        name="colors"
-                        placeholder="Black, Silver, Blue"
-                        onChange={handleChange}
-                        className={`${inp} pl-9`}
-                      />
+                    <div className="flex items-center justify-between mb-4">
+                      <label className={lbl}>Product Colors</label>
+                      <button
+                        type="button"
+                        onClick={addColor}
+                        className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-black/45 hover:text-[#0f0f0f] transition-colors"
+                      >
+                        <Plus size={12} /> Add Color
+                      </button>
                     </div>
-                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mt-1.5">
-                      Separate multiple colors with a comma
-                    </p>
+
+                    <div className="flex flex-col gap-3.5">
+                      <AnimatePresence mode="popLayout">
+                        {form.colors.map((c, i) => (
+                          <motion.div
+                            key={i}
+                            className="p-4 rounded-2xl bg-[#fcfbf9] border border-black/[0.05] relative group"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2, ease }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => removeColor(i)}
+                              className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-black/10 rounded-full flex items-center justify-center text-black/30 hover:text-red-500 hover:border-red-200 shadow-sm transition-all"
+                            >
+                              <X size={11} />
+                            </button>
+
+                            <div className="grid grid-cols-1 gap-4">
+                              <div className="grid grid-cols-[1fr_42px] gap-2.5">
+                                <input
+                                  placeholder="Color Name (e.g. Titanium Blue)"
+                                  value={c.name}
+                                  onChange={e => handleColorChange(i, "name", e.target.value)}
+                                  className={inp}
+                                />
+                                <div className="relative group/color overflow-hidden rounded-xl border border-black/8 w-[42px] h-[42px]">
+                                  <input
+                                    type="color"
+                                    value={c.hex}
+                                    onChange={e => handleColorChange(i, "hex", e.target.value)}
+                                    className="absolute inset-[-10px] w-[200%] h-[200%] cursor-pointer border-none p-0"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[9px] font-semibold uppercase tracking-wider text-black/30 mb-2 ml-1">
+                                  Associated Image
+                                </label>
+                                <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                                  {form.images.length === 0 ? (
+                                    <p className="text-[11px] text-black/25 italic px-1">Upload images first to select one</p>
+                                  ) : (
+                                    form.images.map((img, imgIdx) => (
+                                      <button
+                                        key={imgIdx}
+                                        type="button"
+                                        onClick={() => handleColorChange(i, "image", img)}
+                                        className={`relative w-12 h-12 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
+                                          c.image === img ? "border-black shadow-md scale-105" : "border-transparent opacity-60 hover:opacity-100"
+                                        }`}
+                                      >
+                                        <img src={`${BASE_URL}${img}`} className="w-full h-full object-cover p-1 mix-blend-multiply" />
+                                        {c.image === img && (
+                                          <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
+                                            <div className="bg-white rounded-full p-0.5">
+                                              <CheckCircle2 size={10} className="text-black" />
+                                            </div>
+                                          </div>
+                                        )}
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+
+                      {form.colors.length === 0 && (
+                        <div className="py-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-black/10 bg-black/[0.01]">
+                          <Palette size={18} className="text-black/15 mb-2" strokeWidth={1.5} />
+                          <p className="text-[11.5px] text-black/30 font-medium">No colors added yet</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Section>

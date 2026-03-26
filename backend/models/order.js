@@ -15,6 +15,14 @@ const orderItemSchema = new mongoose.Schema(
     ref: "Product",
     required: true,
   },
+  selectedColor: {
+    name: String,
+    hex: String
+  },
+  selectedStorage: {
+    size: String,
+    priceAdd: Number
+  }
 },
 { _id: false }
 );

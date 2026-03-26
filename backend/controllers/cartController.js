@@ -3,38 +3,47 @@ import Product from "../models/products.js";
 
 /* ADD TO CART */
 
-export const addToCart = async(req,res)=>{
+export const addToCart = async (req, res) => {
+  const { productId, quantity, selectedColor, selectedStorage } = req.body;
+  const userId = req.user._id;
 
-const {productId,quantity} = req.body;
+  // Find if exact variant already exists in cart
+  const query = {
+    user: userId,
+    product: productId
+  };
 
-const userId = req.user._id;
+  if (selectedColor) {
+    query["selectedColor.name"] = selectedColor.name;
+  } else {
+    query["selectedColor"] = { $exists: false };
+  }
 
-let cartItem = await Cart.findOne({
-user:userId,
-product:productId
-});
+  if (selectedStorage) {
+    query["selectedStorage.size"] = selectedStorage.size;
+  } else {
+    query["selectedStorage"] = { $exists: false };
+  }
 
-if(cartItem){
+  let cartItem = await Cart.findOne(query);
 
-cartItem.quantity += quantity;
+  if (cartItem) {
+    cartItem.quantity += quantity;
+    await cartItem.save();
+    return res.json(cartItem);
+  }
 
-await cartItem.save();
+  const newCart = await Cart.create({
+    user: userId,
+    product: productId,
+    quantity,
+    selectedColor,
+    selectedStorage
+  });
 
-return res.json(cartItem);
-
-}
-
-const product = await Product.findById(productId);
-
-const newCart = await Cart.create({
-user:userId,
-product:productId,
-quantity
-});
-
-res.json(newCart);
-
-};export const getCart = async(req,res)=>{
+  res.json(newCart);
+};
+export const getCart = async(req,res)=>{
 
 const cart = await Cart.find({user:req.user._id})
 .populate("product");

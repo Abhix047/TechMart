@@ -184,6 +184,14 @@ export default function ProductDetail() {
     load(); loadRelated();
   }, [id]);
 
+  // 🔥 Switch main image when color is selected 🔥
+  useEffect(() => {
+    if (selectedColor?.image && product?.images) {
+      const idx = product.images.findIndex(img => img === selectedColor.image);
+      if (idx !== -1) setActiveImg(idx);
+    }
+  }, [selectedColor, product?.images]);
+
   const handleAddToCart = async () => {
     setIsProcessing(true);
     try {
@@ -193,7 +201,13 @@ export default function ProductDetail() {
         setIsAuthModalOpen(true);
         return;
       }
-      await API.post("/cart", { productId: product._id, quantity: qty });
+      const cartPayload = {
+        productId: product._id,
+        quantity: qty,
+        selectedColor: selectedColor ? { name: selectedColor.name, hex: selectedColor.hex } : undefined,
+        selectedStorage: selectedStorage ? { size: selectedStorage.size, priceAdd: selectedStorage.priceAdd } : undefined
+      };
+      await API.post("/cart", cartPayload);
       setAdded(true);
       showToast("success", "Added to cart!");
       fetchCartCount();
@@ -218,7 +232,13 @@ export default function ProductDetail() {
         setIsAuthModalOpen(true);
         return;
       }
-      await API.post("/cart", { productId: product._id, quantity: qty });
+      const cartPayload = {
+        productId: product._id,
+        quantity: qty,
+        selectedColor: selectedColor ? { name: selectedColor.name, hex: selectedColor.hex } : undefined,
+        selectedStorage: selectedStorage ? { size: selectedStorage.size, priceAdd: selectedStorage.priceAdd } : undefined
+      };
+      await API.post("/cart", cartPayload);
       fetchCartCount();
       navigate("/checkout");
     } catch (error) {
@@ -439,16 +459,15 @@ export default function ProductDetail() {
                     <div className="flex flex-wrap gap-2.5">
                       {p.colors.map((c) => {
                         const colorString = typeof c === 'string' ? c : c.name;
-                        const isSelected = selectedColor === colorString || selectedColor?.name === colorString;
-                        // Attempt to map to CSS color names
-                        const bgValue = typeof c === 'string' ? c.toLowerCase().replace(/\s+/g, '') : c.hex;
+                        const colorHex = typeof c === 'string' ? c.toLowerCase().replace(/\s+/g, '') : c.hex;
+                        const isSelected = (typeof selectedColor === 'string' ? selectedColor : selectedColor?.name) === colorString;
 
                         return (
                           <motion.button
                             key={colorString}
-                            onClick={() => setSelectedColor(colorString)}
-                            style={{ backgroundColor: bgValue }}
-                            className={`w-9 h-9 rounded-full border-2 transition-all ${isSelected ? "border-[#0f0f0f] shadow-md scale-110" : "border-black/10 hover:scale-105"} ${bgValue === 'white' ? 'border-gray-200' : ''}`}
+                            onClick={() => setSelectedColor(c)}
+                            style={{ backgroundColor: colorHex }}
+                            className={`w-9 h-9 rounded-full border-2 transition-all ${isSelected ? "border-[#0f0f0f] shadow-md scale-110" : "border-black/10 hover:scale-105"} ${colorHex === 'white' ? 'border-gray-200' : ''}`}
                             title={colorString}
                             whileTap={{ scale: 0.92 }}
                           >

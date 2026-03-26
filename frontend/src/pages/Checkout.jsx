@@ -101,7 +101,11 @@ export default function Checkout() {
     })();
   }, []);
 
-  const subtotal      = cart.reduce((s, i) => s + (i.product.discountPrice || i.product.price) * i.quantity, 0);
+  const subtotal = cart.reduce((s, i) => {
+    const basePrice = i.product.discountPrice || i.product.price;
+    const variantAdd = i.selectedStorage?.priceAdd || 0;
+    return s + (basePrice + variantAdd) * i.quantity;
+  }, 0);
   const shippingPrice = 50;
   const totalPrice    = subtotal + shippingPrice;
 
@@ -144,8 +148,10 @@ export default function Checkout() {
         name:    item.product.name,
         qty:     item.quantity,
         image:   item.product.images[0],
-        price:   item.product.discountPrice || item.product.price,
+        price:   (item.product.discountPrice || item.product.price) + (item.selectedStorage?.priceAdd || 0),
         product: item.product._id,
+        selectedColor: item.selectedColor,
+        selectedStorage: item.selectedStorage
       }));
       const { data } = await API.post("/orders", {
         orderItems,
@@ -481,6 +487,8 @@ export default function Checkout() {
                         </p>
                         <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] text-black/30 mt-0.5">
                           Qty: {item.quantity}
+                          {item.selectedColor && ` · ${item.selectedColor.name}`}
+                          {item.selectedStorage && ` · ${item.selectedStorage.size}`}
                         </p>
                       </div>
                       <p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-[#0f0f0f] shrink-0">

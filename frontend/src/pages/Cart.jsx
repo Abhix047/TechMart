@@ -94,7 +94,11 @@ export default function CartPage() {
     setUpdatingId(null);
   };
 
-  const subtotal    = cart.reduce((s, i) => s + (i.product.discountPrice || i.product.price) * i.quantity, 0);
+  const subtotal = cart.reduce((s, i) => {
+    const basePrice = i.product.discountPrice || i.product.price;
+    const variantAdd = i.selectedStorage?.priceAdd || 0;
+    return s + (basePrice + variantAdd) * i.quantity;
+  }, 0);
   const deliveryFee = 0;
   const total       = cart.length > 0 ? subtotal + deliveryFee : 0;
 
@@ -192,9 +196,11 @@ export default function CartPage() {
                 >
                   <AnimatePresence initial={false}>
                     {cart.map((item, idx) => {
-                      const itemPrice = item.product.discountPrice || item.product.price;
-                      const rowTotal  = itemPrice * item.quantity;
-                      const imgSrc    = getImg(item.product.images?.[0]);
+                          const basePrice = item.product.discountPrice || item.product.price;
+                          const variantAdd = item.selectedStorage?.priceAdd || 0;
+                          const itemPrice = basePrice + variantAdd;
+                          const rowTotal  = itemPrice * item.quantity;
+                          const imgSrc    = getImg(item.product.images?.[0]);
 
                       return (
                         <motion.div
@@ -230,9 +236,24 @@ export default function CartPage() {
                               >
                                 {item.product.name}
                               </h3>
-                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mb-2">
-                                {item.product.brand || item.product.category || "Standard"}
-                              </p>
+                                <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mb-1">
+                                  {item.product.brand || item.product.category || "Standard"}
+                                </p>
+                                {(item.selectedColor || item.selectedStorage) && (
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+                                    {item.selectedColor && (
+                                      <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45">
+                                        <div className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: item.selectedColor.hex }} />
+                                        {item.selectedColor.name}
+                                      </div>
+                                    )}
+                                    {item.selectedStorage && (
+                                      <div className="font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45 bg-black/[0.04] px-1.5 py-0.5 rounded">
+                                        {item.selectedStorage.size}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               <div className="flex items-center justify-between gap-2">
                                 {/* Qty stepper */}
                                 <div className="flex items-center border border-black/10 rounded-xl overflow-hidden bg-[#f8f7f5]">
@@ -299,9 +320,24 @@ export default function CartPage() {
                                 <h3 className="font-[family-name:'DM_Sans',sans-serif] text-[13.5px] font-medium text-[#0f0f0f] truncate group-hover:text-black/60 transition-colors leading-snug mb-1">
                                   {item.product.name}
                                 </h3>
-                                <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30">
+                                <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mb-1.5">
                                   {item.product.brand || item.product.category || "Standard"}
                                 </p>
+                                {(item.selectedColor || item.selectedStorage) && (
+                                  <div className="flex items-center gap-3">
+                                    {item.selectedColor && (
+                                      <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45">
+                                        <div className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: item.selectedColor.hex }} />
+                                        {item.selectedColor.name}
+                                      </div>
+                                    )}
+                                    {item.selectedStorage && (
+                                      <div className="font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45 bg-black/[0.04] px-1.5 py-0.5 rounded">
+                                        {item.selectedStorage.size}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                                 {item.product.discountPrice > 0 && item.product.discountPrice < item.product.price && (
                                   <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/25 line-through mt-0.5">
                                     ₹{item.product.price.toLocaleString("en-IN")}

@@ -93,7 +93,20 @@ export const validateProductBody = (req) => {
     requireField(errors, Number.isInteger(countInStock) && countInStock >= 0, "Stock must be a non-negative integer");
   }
   if (colors !== undefined) {
-    requireField(errors, isArrayOfStrings(colors), "Colors must be an array of strings");
+    if (!Array.isArray(colors)) {
+      errors.push("Colors must be an array");
+    } else {
+      for (const color of colors) {
+        if (!color || typeof color.name !== "string" || color.name.trim().length === 0) {
+          errors.push("Each color must have a name");
+          break;
+        }
+        if (!color || typeof color.hex !== "string" || color.hex.trim().length === 0) {
+          errors.push("Each color must have a hex code");
+          break;
+        }
+      }
+    }
   }
 
   validateSpecifications(specifications, errors, false);

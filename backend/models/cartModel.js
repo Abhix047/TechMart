@@ -17,6 +17,14 @@ required:true
 quantity:{
 type:Number,
 default:1
+},
+selectedColor: {
+name: String,
+hex: String
+},
+selectedStorage: {
+size: String,
+priceAdd: Number
 }
 
 },{

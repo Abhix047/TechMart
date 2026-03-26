@@ -195,7 +195,20 @@ export default function AdminOrderDetail() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-[14px] font-semibold text-[#0f0f0f] truncate">{item.name}</h4>
-                                    <p className="text-[12px] text-black/40">Qty: {item.qty} × ₹{item.price.toLocaleString("en-IN")}</p>
+                                    <p className="text-[12px] text-black/40 flex flex-wrap items-center gap-x-2">
+                                        Qty: {item.qty} × ₹{item.price.toLocaleString("en-IN")}
+                                        {item.selectedColor && (
+                                            <span className="flex items-center gap-1 border-l border-black/10 pl-2 ml-1">
+                                                <div className="w-2 h-2 rounded-full border border-black/10" style={{ backgroundColor: item.selectedColor.hex }} />
+                                                {item.selectedColor.name}
+                                            </span>
+                                        )}
+                                        {item.selectedStorage && (
+                                            <span className="border-l border-black/10 pl-2 ml-1">
+                                                {item.selectedStorage.size}
+                                            </span>
+                                        )}
+                                    </p>
                                 </div>
                                 <div className="text-right">
                                     <p className="font-[family-name:'Cormorant_Garamond',serif] text-xl font-medium text-[#0f0f0f]">₹{(item.qty * item.price).toLocaleString("en-IN")}</p>

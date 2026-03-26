@@ -42,7 +42,13 @@ const productSchema = new mongoose.Schema(
     countInStock: { type: Number, required: true, default: 0 },
     
     // 🎨 VARIATIONS
-    colors: [{ type: String }], 
+    colors: [
+      {
+        name: { type: String },
+        hex: { type: String },
+        image: { type: String }
+      }
+    ], 
     isFeatured: { type: Boolean, default: false }, 
     isActive: { type: Boolean, default: true },
     

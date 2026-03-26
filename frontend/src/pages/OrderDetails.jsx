@@ -364,8 +364,19 @@ export default function OrderDetail() {
                     <p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium text-[#0f0f0f] truncate leading-snug">
                       {item.name}
                     </p>
-                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11.5px] text-black/40 mt-0.5">
+                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11.5px] text-black/40 mt-0.5 flex flex-wrap items-center gap-x-2">
                       Qty · {item.qty}
+                      {item.selectedColor && (
+                        <span className="flex items-center gap-1 border-l border-black/10 pl-2">
+                          <div className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: item.selectedColor.hex }} />
+                          {item.selectedColor.name}
+                        </span>
+                      )}
+                      {item.selectedStorage && (
+                        <span className="border-l border-black/10 pl-2">
+                          {item.selectedStorage.size}
+                        </span>
+                      )}
                     </p>
                   </div>
 
