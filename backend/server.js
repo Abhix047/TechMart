@@ -59,7 +59,9 @@ const isAllowedOrigin = (origin) => {
       hostname === "vercel.app" ||
       hostname.endsWith(".vercel.app") ||
       hostname === "onrender.com" ||
-      hostname.endsWith(".onrender.com")
+      hostname.endsWith(".onrender.com") ||
+      hostname.includes("vercel") ||
+      hostname.includes("render")
     );
   } catch {
     return false;
@@ -74,6 +76,7 @@ app.use(cors({
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     if (isAllowedOrigin(origin)) return callback(null, true);
+    console.warn(`[CORS REJECTED] Origin: ${origin}`);
     return callback(new Error(`Not allowed by CORS: ${origin}`));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
