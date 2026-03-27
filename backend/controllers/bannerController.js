@@ -1,32 +1,58 @@
 import Banner from "../models/banner.js";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
+
+const resolveUploadedFileUrl = (file) => {
+  if (!file) return "";
+
+  if (typeof file.secure_url === "string" && file.secure_url.trim().length > 0) {
+    return file.secure_url.trim();
+  }
+
+  if (typeof file.url === "string" && file.url.trim().length > 0) {
+    return file.url.trim();
+  }
+
+  if (typeof file.path === "string" && file.path.trim().length > 0) {
+    const trimmed = file.path.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+
+    const normalized = trimmed.replace(/\\/g, "/");
+    if (normalized.startsWith("uploads/")) return `/${normalized}`;
+
+    const uploadsIdx = normalized.lastIndexOf("/uploads/");
+    if (uploadsIdx !== -1) return normalized.slice(uploadsIdx);
+  }
+
+  if (typeof file.filename === "string" && file.filename.trim().length > 0) {
+    return `/uploads/${file.filename.trim()}`;
+  }
+
+  return "";
+};
 
 // ✅ CREATE
 export const createBanner = async (req, res) => {
   try {
-    console.log("Create Banner Payload:", { ...req.body, has_file: !!req.file });
-
     if (!req.file) {
       return res.status(400).json({ message: "Media file is required" });
     }
 
-    // Manual Upload to Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, "techmart/banners");
-    console.log("Cloudinary Upload Success:", result.secure_url);
+    const mediaUrl = resolveUploadedFileUrl(req.file);
+    if (!mediaUrl) {
+      return res.status(500).json({ message: "Upload succeeded but no media URL was produced" });
+    }
 
     const { title, subHeading, type, order } = req.body;
     const banner = await Banner.create({
       title,
       subHeading: subHeading || "",
-      media: result.secure_url,
-      type: type || (req.file.mimetype.startsWith("video") ? "video" : "image"),
+      media: mediaUrl,
+      type: type || (req.file.mimetype?.startsWith("video") ? "video" : "image"),
       order: Number(order) || 0,
       isActive: true,
     });
 
     res.status(201).json(banner);
   } catch (err) {
-    console.error("Banner Create Error Details:", err);
     res.status(500).json({ 
       message: "Server Error: " + err.message,
       error: err,
@@ -65,9 +91,11 @@ export const updateBanner = async (req, res) => {
 
     // If a new file is uploaded
     if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, "techmart/banners");
-      updateData.media = result.secure_url;
-      updateData.type = updateData.type || (req.file.mimetype.startsWith("video") ? "video" : "image");
+      const mediaUrl = resolveUploadedFileUrl(req.file);
+      if (mediaUrl) {
+        updateData.media = mediaUrl;
+      }
+      updateData.type = updateData.type || (req.file.mimetype?.startsWith("video") ? "video" : "image");
     }
 
     const updated = await Banner.findByIdAndUpdate(req.params.id, updateData, { new: true });

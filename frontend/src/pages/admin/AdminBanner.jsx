@@ -88,8 +88,8 @@ function EditModal({ banner, onSave, onCancel }) {
       const { data } = await API.put(`/banners/${banner._id}`, fd);
       toast.success("Banner updated!");
       onSave(data);
-    } catch {
-      toast.error("Update failed.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Update failed.");
     } finally {
       setLoading(false);
     }
@@ -255,8 +255,8 @@ const AdminBanner = () => {
       toast.success("Banner published!");
       setBanners(prev => [...prev, data].sort((a,b) => a.order - b.order));
       clear(); setTitle(""); setSubHeading(""); setOrder(0);
-    } catch {
-      toast.error("Upload failed.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Upload failed.");
     } finally {
       setLoading(false);
     }
@@ -269,8 +269,8 @@ const AdminBanner = () => {
       await API.delete(`/banners/${deleteTarget._id}`);
       setBanners(prev => prev.filter(b => b._id !== deleteTarget._id));
       toast.success("Banner deleted.");
-    } catch {
-      toast.error("Delete failed.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Delete failed.");
     } finally {
       setDeleteTarget(null);
     }
@@ -286,8 +286,8 @@ const AdminBanner = () => {
       const { data } = await API.put(`/banners/${banner._id}`, fd);
       setBanners(prev => prev.map(b => b._id === data._id ? data : b));
       toast.success(data.isActive ? "Banner activated" : "Banner deactivated");
-    } catch {
-      toast.error("Toggle failed.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Toggle failed.");
     } finally {
       setTogglingId(null);
     }
