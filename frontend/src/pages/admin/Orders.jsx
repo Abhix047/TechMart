@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart, Truck, CheckCircle2, Clock,
   CreditCard, Search, ExternalLink, X,
-  ChevronRight, XCircle, ArrowLeft
+  ChevronRight, XCircle, ArrowLeft, Package
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -196,7 +196,7 @@ const AdminOrders = () => {
 
   const filtered = orders.filter(o => {
     const matchesSearch = o._id.toLowerCase().includes(search.toLowerCase()) ||
-                          o.user?.name?.toLowerCase().includes(search.toLowerCase());
+                          (o.user?.name || "Guest").toLowerCase().includes(search.toLowerCase());
     
     if (filter === "all") return matchesSearch;
     if (filter === "processing") return matchesSearch && !o.isConfirmed && !o.isCancelled;
