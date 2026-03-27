@@ -6,8 +6,29 @@ const isLocalHostname = (hostname = "") =>
 
 const trimTrailingSlashes = (value = "") => value.replace(/\/+$/, "");
 
+const toOrigin = (value = "") => {
+  const trimmed = trimTrailingSlashes(String(value || "").trim());
+  if (!trimmed) return "";
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return "";
+  }
+};
+
+const isLocalUrl = (value = "") => {
+  const origin = toOrigin(value);
+  if (!origin) return false;
+  try {
+    return isLocalHostname(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
+};
+
 const resolveApiUrl = () => {
-  const configuredUrl = trimTrailingSlashes(import.meta.env.VITE_API_URL || "");
+  const configuredUrl = toOrigin(import.meta.env.VITE_API_URL || "");
 
   if (typeof window === "undefined") {
     return configuredUrl;
@@ -17,14 +38,18 @@ const resolveApiUrl = () => {
   const runtimeHostname = window.location.hostname;
   const isRuntimeLocal = isLocalHostname(runtimeHostname);
 
+  if (configuredUrl) {
+    // Avoid accidentally shipping localhost API URLs in a deployed frontend.
+    if (!isRuntimeLocal && isLocalUrl(configuredUrl)) {
+      return runtimeOrigin;
+    }
+    return configuredUrl;
+  }
+
   if (!isRuntimeLocal) {
     // In production we prefer same-origin API calls so auth cookies remain
     // first-party. A platform proxy/rewrite should forward `/api` to backend.
     return runtimeOrigin;
-  }
-
-  if (configuredUrl) {
-    return configuredUrl;
   }
 
   return LOCAL_API_FALLBACK;

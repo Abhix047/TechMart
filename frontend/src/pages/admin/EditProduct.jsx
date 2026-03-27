@@ -96,8 +96,8 @@ const EditProduct = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
-    } catch {
-      toast.error("Failed to upload images.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to upload images.");
     } finally {
       setIsUploading(false);
       if (fileRef.current) fileRef.current.value = "";

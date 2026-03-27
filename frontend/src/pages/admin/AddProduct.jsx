@@ -17,7 +17,7 @@ if (typeof document !== "undefined" && !document.getElementById("ap-fonts")) {
   document.head.appendChild(l);
 }
 
-import { BASE_URL } from "../../config";
+import { getImg } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 
 /* ── Shared input styles ── */
@@ -68,8 +68,8 @@ const AddProduct = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
-    } catch {
-      toast.error("Failed to upload images.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to upload images.");
     } finally {
       setIsUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -126,7 +126,7 @@ const AddProduct = () => {
       await API.post("/products", payload);
       toast.success("Product published!");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Error creating product");
+      toast.error(err?.response?.data?.message || err?.message || "Error creating product");
     } finally {
       setIsPublishing(false);
     }
@@ -342,7 +342,7 @@ const AddProduct = () => {
                           transition={{ duration: 0.28, ease }}
                         >
                           <img
-                            src={`${BASE_URL}${img}`}
+                            src={getImg(img)}
                             alt={`Preview ${i + 1}`}
                             className="w-full h-full object-cover mix-blend-multiply p-1"
                           />
@@ -474,7 +474,7 @@ const AddProduct = () => {
                                           c.image === img ? "border-black shadow-md scale-105" : "border-transparent opacity-60 hover:opacity-100"
                                         }`}
                                       >
-                                        <img src={`${BASE_URL}${img}`} className="w-full h-full object-cover p-1 mix-blend-multiply" />
+                                        <img src={getImg(img)} className="w-full h-full object-cover p-1 mix-blend-multiply" />
                                         {c.image === img && (
                                           <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
                                             <div className="bg-white rounded-full p-0.5">

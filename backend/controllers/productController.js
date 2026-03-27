@@ -150,7 +150,29 @@ export const createProductReview = asyncHandler(async (req, res) => {
 
   const rating = Number(req.body.rating);
   const comment = req.body.comment;
-  const image = req.file ? req.file.path : "";
+
+  const resolveUploadedFileUrl = (file) => {
+    if (!file) return "";
+
+    if (typeof file.path === "string" && file.path.trim().length > 0) {
+      const trimmed = file.path.trim();
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+
+      const normalized = trimmed.replace(/\\/g, "/");
+      if (normalized.startsWith("uploads/")) return `/${normalized}`;
+
+      const uploadsIdx = normalized.lastIndexOf("/uploads/");
+      if (uploadsIdx !== -1) return normalized.slice(uploadsIdx);
+    }
+
+    if (typeof file.filename === "string" && file.filename.trim().length > 0) {
+      return `/uploads/${file.filename.trim()}`;
+    }
+
+    return "";
+  };
+
+  const image = resolveUploadedFileUrl(req.file);
 
   // ✅ delivered check
  const order = await Order.findOne({

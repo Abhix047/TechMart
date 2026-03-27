@@ -1,24 +1,59 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
-cloudinary.config({
+const cloudinaryConfig = cloudinary.config({
   cloud_name: String(process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
   api_key: String(process.env.CLOUDINARY_API_KEY || "").trim(),
   api_secret: String(process.env.CLOUDINARY_API_SECRET || "").trim(),
 });
 
-// Diagnostic log for live server
-const rawSecret = (process.env.CLOUDINARY_API_SECRET || "").trim();
-console.log("Cloudinary Configured:", {
-  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || "").trim(),
-  api_key_status: process.env.CLOUDINARY_API_KEY ? `Configured (Length: ${process.env.CLOUDINARY_API_KEY.trim().length})` : "MISSING",
-  api_secret_debug: rawSecret ? `Starts with: [${rawSecret[0]}] Ends with: [${rawSecret.slice(-1)}] Length: ${rawSecret.length}` : "MISSING",
-  has_url: !!process.env.CLOUDINARY_URL,
+const hasCloudinary =
+  Boolean(cloudinaryConfig?.cloud_name) &&
+  Boolean(cloudinaryConfig?.api_key) &&
+  Boolean(cloudinaryConfig?.api_secret);
+
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async () => {
+    const fallbackFolder = "techmart";
+
+    return {
+      folder: String(process.env.CLOUDINARY_FOLDER || fallbackFolder).trim() || fallbackFolder,
+      resource_type: "auto",
+    };
+  },
 });
 
-const storage = multer.memoryStorage();
+const diskStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const uploadDir = path.resolve("uploads");
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    } catch (err) {
+      cb(err);
+    }
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    const base = path
+      .basename(file.originalname || "upload", ext)
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9-_]/g, "")
+      .slice(0, 50);
+
+    const safeBase = base.length > 0 ? base : "upload";
+    cb(null, `${safeBase}-${Date.now()}${ext || ""}`);
+  },
+});
+
+const storage = hasCloudinary ? cloudinaryStorage : diskStorage;
 
 const checkFileType = (file, cb) => {
   const filetypes = /jpg|jpeg|png|webp|webm|mp4|mov|avi|mkv/;

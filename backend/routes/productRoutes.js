@@ -17,13 +17,40 @@ import { validateProductBody } from "../validators/requestValidators.js";
 
 const router = express.Router();
 
+const resolveUploadedFileUrl = (file) => {
+  if (!file) return null;
+
+  if (typeof file.path === "string" && file.path.trim().length > 0) {
+    const trimmed = file.path.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+
+    const normalized = trimmed.replace(/\\/g, "/");
+    if (normalized.startsWith("uploads/")) return `/${normalized}`;
+
+    const uploadsIdx = normalized.lastIndexOf("/uploads/");
+    if (uploadsIdx !== -1) return normalized.slice(uploadsIdx);
+  }
+
+  if (typeof file.filename === "string" && file.filename.trim().length > 0) {
+    return `/uploads/${file.filename.trim()}`;
+  }
+
+  return null;
+};
+
 router.post(
   "/upload",
   protect,
   admin,
   upload.array("images", 5),
   (req, res) => {
-    const imagePaths = req.files.map((file) => file.path);
+    const files = Array.isArray(req.files) ? req.files : [];
+    const imagePaths = files.map(resolveUploadedFileUrl).filter(Boolean);
+
+    if (imagePaths.length === 0) {
+      return res.status(500).json({ message: "Upload succeeded but no file URLs were produced" });
+    }
+
     res.json(imagePaths);
   }
 );
