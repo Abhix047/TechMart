@@ -378,9 +378,9 @@ const EditorialBanner = () => {
               transition={{ delay: 0.38, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
               className="hidden md:flex items-center justify-center py-6 select-none"
             >
-              {product?.images?.[0] ? (
+              {product?.images?.length > 0 ? (
                 <img
-                  src={getImg(product.images[3])}
+                  src={getImg(product.images[0])}
                   alt={product.name}
                   className="w-full max-w-[500px] lg:scale-110 object-contain drop-shadow-2xl mix-blend-multiply transition-transform"
                 />

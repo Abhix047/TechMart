@@ -26,19 +26,19 @@ const getOriginHost = (req) => req?.get("origin") || "";
 export const buildAuthCookieOptions = (req) => {
   const requestHostname = normalizeHostname(getRequestHost(req));
   const originHostname = normalizeHostname(getOriginHost(req));
-  const isLocalRequest =
-    process.env.NODE_ENV === "development" ||
-    isLocalHostname(requestHostname) ||
-    isLocalHostname(originHostname);
-  const isCrossOriginRequest =
-    Boolean(originHostname) &&
-    Boolean(requestHostname) &&
-    originHostname !== requestHostname;
+  
+  // Real Local development (on localhost)
+  const isActuallyLocal = isLocalHostname(requestHostname) && (isLocalHostname(originHostname) || !originHostname);
+  
+  // Cross-site request (frontend on vercel, backend on render)
+  const isCrossOrigin = Boolean(originHostname) && originHostname !== requestHostname;
 
   const options = {
     httpOnly: true,
-    secure: !isLocalRequest,
-    sameSite: isLocalRequest ? "lax" : isCrossOriginRequest ? "none" : "lax",
+    // On Render/Vercel (Production/Live), we MUST use Secure and SameSite: None 
+    // to allow cookies to work across domains.
+    secure: !isActuallyLocal, 
+    sameSite: isActuallyLocal ? "lax" : "none",
     path: "/",
   };
 

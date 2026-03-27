@@ -72,10 +72,17 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(securityHeaders);
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked by CORS: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   optionsSuccessStatus: 204,
 }));
 app.use(apiRateLimiter);
