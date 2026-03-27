@@ -20,6 +20,14 @@ const router = express.Router();
 const resolveUploadedFileUrl = (file) => {
   if (!file) return null;
 
+  if (typeof file.secure_url === "string" && file.secure_url.trim().length > 0) {
+    return file.secure_url.trim();
+  }
+
+  if (typeof file.url === "string" && file.url.trim().length > 0) {
+    return file.url.trim();
+  }
+
   if (typeof file.path === "string" && file.path.trim().length > 0) {
     const trimmed = file.path.trim();
     if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;

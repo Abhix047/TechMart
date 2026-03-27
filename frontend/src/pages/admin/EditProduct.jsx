@@ -92,9 +92,8 @@ const EditProduct = () => {
     const fd = new FormData();
     for (const f of files) fd.append("images", f);
     try {
-      const { data } = await API.post("/products/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Let the browser set the correct multipart boundary header.
+      const { data } = await API.post("/products/upload", fd);
       setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || "Failed to upload images.");
@@ -141,6 +140,14 @@ const EditProduct = () => {
 
   const submitHandler = async (e) => {
     if (e) e.preventDefault();
+    if (isUploading) {
+      toast.error("Please wait for the image upload to finish.");
+      return;
+    }
+    if (form.images.length === 0) {
+      toast.error("Please keep at least one product image.");
+      return;
+    }
     setIsSaving(true);
     const payload = {
       ...form,
@@ -242,7 +249,7 @@ const EditProduct = () => {
             <motion.button
               type="button"
               onClick={submitHandler}
-              disabled={isSaving}
+              disabled={isSaving || isUploading}
               className="flex items-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold px-6 py-2.5 rounded-2xl hover:bg-black/80 disabled:bg-black/20 disabled:text-black/30 transition-all duration-200"
               whileTap={{ scale: 0.97 }}
             >
@@ -568,7 +575,7 @@ const EditProduct = () => {
               <div className="md:hidden flex flex-col gap-3">
                 <motion.button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || isUploading}
                   className="w-full flex items-center justify-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold py-3.5 rounded-2xl hover:bg-black/80 disabled:bg-black/15 disabled:text-black/25 transition-all duration-200"
                   whileTap={{ scale: 0.985 }}
                 >

@@ -64,9 +64,8 @@ const AddProduct = () => {
     const fd = new FormData();
     for (const f of files) fd.append("images", f);
     try {
-      const { data } = await API.post("/products/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Let the browser set the correct multipart boundary header.
+      const { data } = await API.post("/products/upload", fd);
       setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || "Failed to upload images.");
@@ -113,6 +112,14 @@ const AddProduct = () => {
 
   const submitHandler = async (e) => {
     if (e) e.preventDefault();
+    if (isUploading) {
+      toast.error("Please wait for the image upload to finish.");
+      return;
+    }
+    if (form.images.length === 0) {
+      toast.error("Please upload at least one product image.");
+      return;
+    }
     setIsPublishing(true);
     const payload = {
       ...form,
@@ -177,7 +184,7 @@ const AddProduct = () => {
           <motion.button
             type="button"
             onClick={submitHandler}
-            disabled={isPublishing}
+            disabled={isPublishing || isUploading}
             className="hidden md:flex items-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold px-6 py-3 rounded-2xl hover:bg-black/80 disabled:bg-black/20 disabled:text-black/30 transition-all duration-200"
             whileTap={{ scale: 0.97 }}
             initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
@@ -506,7 +513,7 @@ const AddProduct = () => {
               {/* Publish — mobile */}
               <motion.button
                 type="submit"
-                disabled={isPublishing}
+                disabled={isPublishing || isUploading}
                 className="md:hidden w-full flex items-center justify-center gap-2 bg-[#0f0f0f] text-white font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold py-3.5 rounded-2xl hover:bg-black/80 disabled:bg-black/15 disabled:text-black/25 transition-all duration-200"
                 whileTap={{ scale: 0.985 }}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
