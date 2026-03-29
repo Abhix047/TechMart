@@ -15,6 +15,7 @@ import { apiRateLimiter } from "./middleware/rateLimitMiddleware.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
+import queryRoutes from "./routes/queryRoutes.js";
 
 
 connectDB();
@@ -130,6 +131,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/offers", offerRoutes);
+app.use("/api/queries", queryRoutes);
 // Error middlewares hamesha sabse last mein lagte hain
 app.use(notFound);
 app.use(errorHandler);

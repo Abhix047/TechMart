@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   LayoutDashboard, Package, PlusCircle,
   ShoppingCart, Users, AppWindow, Tag,
-  LogOut, ChevronRight, Menu, X
+  LogOut, ChevronRight, Menu, X, MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,6 +26,7 @@ const LINKS = [
   { name: "Users",       path: "/admin/users",       icon: Users           },
   { name: "Banner",      path: "/admin/banner",      icon: AppWindow       },
   { name: "Offers",      path: "/admin/offers",      icon: Tag             },
+  { name: "Queries",     path: "/admin/queries",     icon: MessageSquare   },
 ];
 
 /* ── Sidebar content (shared between desktop + mobile) ── */
