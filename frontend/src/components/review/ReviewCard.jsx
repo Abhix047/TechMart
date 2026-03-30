@@ -1,12 +1,12 @@
-import React from "react";
+import { useState } from "react";
 import { Star, CheckCircle2, ThumbsUp } from "lucide-react";
 import { motion } from "framer-motion";
-
 import { getImg } from "../../config";
+
 const ease = [0.22, 1, 0.36, 1];
 
 const ReviewCard = ({ review, index = 0 }) => {
-  const [helpful, setHelpful] = React.useState(false);
+  const [helpful, setHelpful] = useState(false);
 
   const rating  = review?.rating || 5;
   const name    = review?.name || "Anonymous";

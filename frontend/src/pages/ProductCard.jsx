@@ -11,13 +11,6 @@ import { useWishlist } from "../context/WishlistContext.jsx";
 import { getImg } from "../config";
 const ease = [0.22, 1, 0.36, 1];
 
-if (typeof document !== "undefined" && !document.getElementById("pp-fonts")) {
-  const l = document.createElement("link");
-  l.id = "pp-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 // Removed local getImg in favor of centralized one
 
 /* ── Skeleton ── */

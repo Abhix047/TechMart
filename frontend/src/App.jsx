@@ -85,7 +85,7 @@ function App() {
             <Route path="add-product" element={<AddProduct />} />
             <Route path="products" element={<MyProducts />} />
             <Route path="orders" element={<Orders />} />
-            <Route path="Users" element={<Users />} />
+            <Route path="users" element={<Users />} />
             <Route path="banner" element={<Banner />} />
             <Route path="offers" element={<AdminOffers />} />
             <Route path="orders/:id" element={<AdminOrderDetail />} />

@@ -1,7 +1,7 @@
 import asyncHandler from "express-async-handler";
 import Query from "../models/query.js";
 
-// ─── PUBLIC: Submit a new query ───────────────────────────────────────────────
+// Submit a new query (public, login optional)
 export const submitQuery = asyncHandler(async (req, res) => {
   const { name, email, subject, message } = req.body;
 
@@ -11,10 +11,7 @@ export const submitQuery = asyncHandler(async (req, res) => {
   }
 
   const query = await Query.create({
-    name,
-    email,
-    subject,
-    message,
+    name, email, subject, message,
     user: req.user?._id || null,
   });
 
@@ -25,14 +22,10 @@ export const submitQuery = asyncHandler(async (req, res) => {
   });
 });
 
-// ─── PUBLIC: Get replies for a specific email ─────────────────────────────────
+// Get replies by email (public)
 export const getMyQueries = asyncHandler(async (req, res) => {
   const { email } = req.query;
-
-  if (!email) {
-    res.status(400);
-    throw new Error("Email is required");
-  }
+  if (!email) { res.status(400); throw new Error("Email is required"); }
 
   const queries = await Query.find({ email })
     .sort({ createdAt: -1 })
@@ -41,14 +34,10 @@ export const getMyQueries = asyncHandler(async (req, res) => {
   res.json({ success: true, queries });
 });
 
-// ─── ADMIN: Get all queries ───────────────────────────────────────────────────
+// Admin: get all queries (with optional status filter)
 export const getAllQueries = asyncHandler(async (req, res) => {
   const { status } = req.query;
-
-  const filter = {};
-  if (status && ["pending", "replied", "closed"].includes(status)) {
-    filter.status = status;
-  }
+  const filter = status && ["pending", "replied", "closed"].includes(status) ? { status } : {};
 
   const queries = await Query.find(filter)
     .populate("user", "name email")
@@ -57,52 +46,31 @@ export const getAllQueries = asyncHandler(async (req, res) => {
   res.json({ success: true, queries });
 });
 
-// ─── ADMIN: Get single query ──────────────────────────────────────────────────
+// Admin: get single query
 export const getQueryById = asyncHandler(async (req, res) => {
   const query = await Query.findById(req.params.id).populate("user", "name email");
-
-  if (!query) {
-    res.status(404);
-    throw new Error("Query not found");
-  }
-
+  if (!query) { res.status(404); throw new Error("Query not found"); }
   res.json({ success: true, query });
 });
 
-// ─── ADMIN: Reply to a query ──────────────────────────────────────────────────
+// Admin: reply to query
 export const replyToQuery = asyncHandler(async (req, res) => {
   const { adminReply, status } = req.body;
-
-  if (!adminReply || !adminReply.trim()) {
-    res.status(400);
-    throw new Error("Reply message is required");
-  }
+  if (!adminReply?.trim()) { res.status(400); throw new Error("Reply message is required"); }
 
   const query = await Query.findById(req.params.id);
-
-  if (!query) {
-    res.status(404);
-    throw new Error("Query not found");
-  }
+  if (!query) { res.status(404); throw new Error("Query not found"); }
 
   query.adminReply = adminReply.trim();
   query.status = status || "replied";
   query.repliedAt = new Date();
 
-  await query.save();
-
-  res.json({ success: true, message: "Reply sent successfully", query });
+  res.json({ success: true, message: "Reply sent successfully", query: await query.save() });
 });
 
-// ─── ADMIN: Delete a query ────────────────────────────────────────────────────
+// Admin: delete query
 export const deleteQuery = asyncHandler(async (req, res) => {
-  const query = await Query.findById(req.params.id);
-
-  if (!query) {
-    res.status(404);
-    throw new Error("Query not found");
-  }
-
-  await query.deleteOne();
+  const query = await Query.findByIdAndDelete(req.params.id);
+  if (!query) { res.status(404); throw new Error("Query not found"); }
   res.json({ success: true, message: "Query deleted" });
 });

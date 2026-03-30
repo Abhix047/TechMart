@@ -8,14 +8,6 @@ import {
   CheckCircle2, Clock, Truck, XCircle, TrendingUp
 } from "lucide-react";
 
-/* ── Fonts ── */
-if (typeof document !== "undefined" && !document.getElementById("ad-fonts")) {
-  const l = document.createElement("link");
-  l.id = "ad-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 const ease = [0.22, 1, 0.36, 1];
 
 /* ── Animated counter ── */

@@ -9,14 +9,6 @@ import { API_URL } from "../config.js";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext.jsx";
 
-/* ── Fonts ── */
-if (typeof document !== "undefined" && !document.getElementById("cu-fonts")) {
-  const l = document.createElement("link");
-  l.id = "cu-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 const ease = [0.22, 1, 0.36, 1];
 
 const CONTACT_INFO = [
@@ -529,8 +521,6 @@ export default function ConnectUs() {
           </FadeIn>
         </div>
       </div>
-
-      <style>{`* { -webkit-font-smoothing: antialiased; }`}</style>
     </div>
   );
 }

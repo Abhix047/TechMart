@@ -9,14 +9,6 @@ import {
   UploadCloud, X, ArrowLeft, CheckCircle2
 } from "lucide-react";
 
-/* ── Fonts ── */
-if (typeof document !== "undefined" && !document.getElementById("ep-fonts")) {
-  const l = document.createElement("link");
-  l.id = "ep-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 import { getImg } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 const inp  = "w-full bg-[#f7f5f2] border border-black/[0.08] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[13.5px] text-[#0f0f0f] placeholder:text-black/28 outline-none focus:border-black/25 focus:bg-white transition-all duration-200";

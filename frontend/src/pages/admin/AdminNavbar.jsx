@@ -8,14 +8,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ── Fonts ── */
-if (typeof document !== "undefined" && !document.getElementById("an-fonts")) {
-  const l = document.createElement("link");
-  l.id = "an-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 const ease = [0.22, 1, 0.36, 1];
 
 const LINKS = [
@@ -237,8 +229,6 @@ export default function AdminNavbar() {
           </>
         )}
       </AnimatePresence>
-
-      <style>{`* { -webkit-font-smoothing: antialiased; }`}</style>
     </>
   );
 }

@@ -3,14 +3,6 @@ import { Link } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { ArrowUpRight, Zap, Shield, Heart, Package } from "lucide-react";
 
-/* ── Fonts ── */
-if (typeof document !== "undefined" && !document.getElementById("ab-fonts")) {
-  const l = document.createElement("link");
-  l.id = "ab-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 const ease = [0.22, 1, 0.36, 1];
 
 /* ── Real Unsplash photos (free to use) ── */

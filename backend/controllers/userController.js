@@ -11,6 +11,50 @@ const serializeUser = (user) => ({
   storeName: user.storeName,
 });
 
+export const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (await User.findOne({ email: normalizedEmail })) {
+    res.status(400);
+    throw new Error("Email already registered!");
+  }
+
+  const user = await User.create({ name: name.trim(), email: normalizedEmail, password, role: "customer" });
+  const token = generateToken(req, res, user._id);
+  res.status(201).json({ token, ...serializeUser(user) });
+});
+
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email: email.trim().toLowerCase() });
+
+  if (!user || !(await user.matchPassword(password))) {
+    res.status(401);
+    throw new Error("Wrong email or password!");
+  }
+
+  const token = generateToken(req, res, user._id);
+  res.json({ token, ...serializeUser(user) });
+});
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  res.cookie(AUTH_COOKIE_NAME, "", { ...buildAuthCookieOptions(req), maxAge: 0, expires: new Date(0) });
+  res.json({ message: "User successfully logged out" });
+});
+
+export const getAuthSession = asyncHandler(async (req, res) => {
+  const user = await resolveAuthenticatedUser(req);
+  if (!user) return res.json({ authenticated: false, user: null });
+  return res.json({ authenticated: true, user: serializeUser(user) });
+});
+
+export const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) { res.status(404); throw new Error("User not found"); }
+  res.json(serializeUser(user));
+});
+
 export const getUsers = asyncHandler(async (req, res) => {
   const users = await User.find({}).select("-password");
   res.json(users);
@@ -22,132 +66,28 @@ export const deleteUser = asyncHandler(async (req, res) => {
     throw new Error("You cannot delete your own account from this route");
   }
 
-  const user = await User.findById(req.params.id);
-  if (user) {
-    await user.deleteOne();
-    res.json({ message: "User removed" });
-  } else {
-    res.status(404);
-    throw new Error("User not found");
-  }
+  const user = await User.findByIdAndDelete(req.params.id);
+  if (!user) { res.status(404); throw new Error("User not found"); }
+  res.json({ message: "User removed" });
 });
 
 export const getWishlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).populate("wishlist");
-  if (user) {
-    res.json(user.wishlist);
-  } else {
-    res.status(404);
-    throw new Error("User not found");
-  }
+  if (!user) { res.status(404); throw new Error("User not found"); }
+  res.json(user.wishlist);
 });
 
 export const toggleWishlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
-  if (!user) {
-    res.status(404);
-    throw new Error("User not found");
-  }
+  if (!user) { res.status(404); throw new Error("User not found"); }
 
   const productId = req.params.id;
-  const alreadyAdded = user.wishlist.find((id) => id.toString() === productId.toString());
+  const already = user.wishlist.some(id => id.toString() === productId);
 
-  if (alreadyAdded) {
-    // Remove
-    user.wishlist = user.wishlist.filter((id) => id.toString() !== productId.toString());
-  } else {
-    // Add
-    user.wishlist.push(productId);
-  }
+  user.wishlist = already
+    ? user.wishlist.filter(id => id.toString() !== productId)
+    : [...user.wishlist, productId];
 
   await user.save();
   res.json(user.wishlist);
-});
-export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-
-  if (!name || !email || !password) {
-    res.status(400);
-    throw new Error("Name, email and password are required");
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const userExists = await User.findOne({ email: normalizedEmail });
-
-  if (userExists) {
-    res.status(400);
-    throw new Error("Email already registered!");
-  }
-
-  const user = await User.create({
-    name: name.trim(),
-    email: normalizedEmail,
-    password,
-    role: "customer",
-  });
-
-  if (user) {
-    const token = generateToken(req, res, user._id);
-    res.status(201).json({
-      token,
-      ...serializeUser(user),
-    });
-  } else {
-    res.status(400);
-    throw new Error("Invalid user data received");
-  }
-});
-export const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    res.status(400);
-    throw new Error("Email and password are required");
-  }
-
-  const user = await User.findOne({ email: email.trim().toLowerCase() });
-  if (user && (await user.matchPassword(password))) {
-    const token = generateToken(req, res, user._id);
-    res.status(200).json({
-      token,
-      ...serializeUser(user),
-    });
-  } else {
-    res.status(401);
-    throw new Error("Wrong email or password !");
-  }
-});
-export const logoutUser = asyncHandler(async (req, res) => {
-  res.cookie(AUTH_COOKIE_NAME, "", {
-    ...buildAuthCookieOptions(req),
-    maxAge: 0,
-    expires: new Date(0),
-  });
-
-  res.status(200).json({ message: "User successfully logged out" });
-});
-export const getAuthSession = asyncHandler(async (req, res) => {
-  const user = await resolveAuthenticatedUser(req);
-
-  if (!user) {
-    return res.status(200).json({
-      authenticated: false,
-      user: null,
-    });
-  }
-
-  return res.status(200).json({
-    authenticated: true,
-    user: serializeUser(user),
-  });
-});
-export const getUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-
-  if (user) {
-    res.status(200).json(serializeUser(user));
-  } else {
-    res.status(404);
-    throw new Error("User not Found");
-  }
 });

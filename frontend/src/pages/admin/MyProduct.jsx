@@ -8,14 +8,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-/* ── Fonts ── */
-if (typeof document !== "undefined" && !document.getElementById("mp-fonts")) {
-  const l = document.createElement("link");
-  l.id = "mp-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap";
-  document.head.appendChild(l);
-}
-
 import { getImg } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 

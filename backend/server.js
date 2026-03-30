@@ -1,25 +1,27 @@
 import "dotenv/config";
 import express from "express";
-
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+
 import connectDB from "./config/db.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
-import userRoutes from "./routes/userRoutes.js";
-import productRoutes from "./routes/productRoutes.js";
-import path from "path";
-import adminRoutes from "./routes/adminRoutes.js";
-import orderRoutes from "./routes/orderRoutes.js";
 import { securityHeaders } from "./middleware/securityMiddleware.js";
 import { apiRateLimiter } from "./middleware/rateLimitMiddleware.js";
+
+import userRoutes from "./routes/userRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
 import queryRoutes from "./routes/queryRoutes.js";
 
-
 connectDB();
 const app = express();
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
 
 const rawAllowedOrigins = [
   process.env.CLIENT_URLS,
@@ -28,59 +30,47 @@ const rawAllowedOrigins = [
   process.env.FRONTEND_URLS,
 ]
   .filter(Boolean)
-  .flatMap((value) => value.split(","))
-  .map((origin) => origin.trim())
+  .flatMap((v) => v.split(","))
+  .map((o) => o.trim())
   .filter(Boolean);
 
-const normalizeOrigin = (value) => {
-  try {
-    return new URL(value).origin;
-  } catch {
-    return null;
-  }
+const toOrigin = (value) => {
+  try { return new URL(value).origin; } catch { return null; }
 };
 
 const allowedOrigins = new Set(
-  (rawAllowedOrigins.length > 0 ? rawAllowedOrigins : ["http://localhost:5173"]).map(normalizeOrigin).filter(Boolean)
+  (rawAllowedOrigins.length > 0 ? rawAllowedOrigins : ["http://localhost:5173"])
+    .map(toOrigin)
+    .filter(Boolean)
 );
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
-
-  const normalizedOrigin = normalizeOrigin(origin);
-  if (!normalizedOrigin) return false;
-  if (allowedOrigins.has(normalizedOrigin)) return true;
+  const normalized = toOrigin(origin);
+  if (!normalized) return false;
+  if (allowedOrigins.has(normalized)) return true;
 
   try {
-    const { hostname } = new URL(normalizedOrigin);
+    const { hostname } = new URL(normalized);
     return (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
       hostname.endsWith(".localhost") ||
-      hostname === "vercel.app" ||
       hostname.endsWith(".vercel.app") ||
-      hostname === "onrender.com" ||
-      hostname.endsWith(".onrender.com") ||
-      hostname.includes("vercel") ||
-      hostname.includes("render")
+      hostname.endsWith(".onrender.com")
     );
   } catch {
     return false;
   }
 };
 
+// ── Middleware ─────────────────────────────────────────────────────────────────
+
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(securityHeaders);
 app.use(cors({
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`Blocked by CORS: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: (origin, cb) => isAllowedOrigin(origin) ? cb(null, true) : cb(new Error("Not allowed by CORS")),
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
@@ -90,49 +80,26 @@ app.use(apiRateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-// Yahan hum apne Routes lagayenge baad mein...
+
+// ── Static ────────────────────────────────────────────────────────────────────
 
 app.use("/uploads", express.static(path.join(process.cwd(), "/uploads")));
-import Banner from "./models/banner.js";
-import { v2 as cloudinary } from "cloudinary";
-app.get("/api/test-db", async (req, res) => {
-  try {
-    const banners = await Banner.find();
-    let cloudStatus = "Not Tested";
-    try {
-      const ping = await cloudinary.api.ping();
-      cloudStatus = ping.status;
-    } catch (ce) {
-      cloudStatus = `Error: ${ce.message}`;
-    }
-    
-    res.json({ 
-      success: true, 
-      count: banners.length, 
-      cloudinary: cloudStatus,
-      env: {
-        node: process.version,
-        env: process.env.NODE_ENV
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
-app.use("/api/auth", userRoutes);
+// ── Routes ────────────────────────────────────────────────────────────────────
+
+app.get("/", (req, res) => res.send("API is running..."));
+
+app.use("/api/auth",     userRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/banners", bannerRoutes);
-app.use("/api/offers", offerRoutes);
-app.use("/api/queries", queryRoutes);
-// Error middlewares hamesha sabse last mein lagte hain
+app.use("/api/admin",    adminRoutes);
+app.use("/api/orders",   orderRoutes);
+app.use("/api/cart",     cartRoutes);
+app.use("/api/banners",  bannerRoutes);
+app.use("/api/offers",   offerRoutes);
+app.use("/api/queries",  queryRoutes);
+
+// ── Error handlers ────────────────────────────────────────────────────────────
+
 app.use(notFound);
 app.use(errorHandler);
 
