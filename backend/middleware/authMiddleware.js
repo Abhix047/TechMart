@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
+import BlacklistedToken from "../models/blacklistedToken.js";
 import { AUTH_COOKIE_NAME } from "../utils/generateToken.js";
 
 export const resolveAuthenticatedUser = async (req) => {
@@ -14,6 +15,9 @@ export const resolveAuthenticatedUser = async (req) => {
   if (tokensToTry.length > 0) {
     for (const token of tokensToTry) {
       try {
+        const isBlacklisted = await BlacklistedToken.findOne({ token });
+        if (isBlacklisted) continue;
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = await User.findById(decoded.userId).select("-password");
 

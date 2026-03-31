@@ -1,5 +1,6 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/user.js";
+import BlacklistedToken from "../models/blacklistedToken.js";
 import generateToken, { AUTH_COOKIE_NAME, buildAuthCookieOptions } from "../utils/generateToken.js";
 import { resolveAuthenticatedUser } from "../middleware/authMiddleware.js";
 
@@ -39,6 +40,23 @@ export const loginUser = asyncHandler(async (req, res) => {
 });
 
 export const logoutUser = asyncHandler(async (req, res) => {
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : null;
+
+  const tokensToTry = [bearerToken, cookieToken].filter(Boolean);
+
+  if (tokensToTry.length > 0) {
+    for (const token of tokensToTry) {
+      const exists = await BlacklistedToken.findOne({ token });
+      if (!exists) {
+        await BlacklistedToken.create({ token });
+      }
+    }
+  }
+
   res.cookie(AUTH_COOKIE_NAME, "", { ...buildAuthCookieOptions(req), maxAge: 0, expires: new Date(0) });
   res.json({ message: "User successfully logged out" });
 });
