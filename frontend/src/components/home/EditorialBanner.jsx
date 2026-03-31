@@ -477,4 +477,4 @@ const EditorialBanner = () => {
   );
 };
 
-export default EditorialBanner;n
+export default EditorialBanner;
