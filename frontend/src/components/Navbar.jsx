@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import {
-  Menu, X, LogOut, ShoppingCart, Search,
-  Package, Send, User, Heart, ChevronDown, House,
-} from "lucide-react";
+import { Menu, X, LogOut, ShoppingCart, Search, Package, Send, User, Heart, ChevronDown, House } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
@@ -12,381 +9,284 @@ import AuthModal from "../controller/AuthModal.jsx";
 import API from "../services/api.js";
 import { getImg } from "../config.js";
 
-const BRAND = "#1a1108";
-const CREAM = "rgba(250,248,244,1)";
-const MUTED = "rgba(26,17,8,0.38)";
-const BORDER = "rgba(26,17,8,0.07)";
+// Inject Google Fonts once
+if (!document.getElementById("nb-fonts")) {
+  const l = Object.assign(document.createElement("link"), {
+    id: "nb-fonts", rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap",
+  });
+  document.head.appendChild(l);
+}
 
-const Navbar = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [authOpen, setAuthOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [allProducts, setAllProducts] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+const serif = { fontFamily: "'Cormorant Garamond', serif" };
+const sans  = { fontFamily: "'Outfit', sans-serif" };
+const GOLD  = "#111010";
 
-  const { user, logout } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const profileRef = useRef(null);
-  const searchRef = useRef(null);
-  const searchInputRef = useRef(null);
-  const mobileSearchRef = useRef(null);
-  const progressRef = useRef(null);
-  const scrollFrameRef = useRef(null);
-  const scrolledRef = useRef(false);
-  const { cartCount } = useCart();
+/* ── Badge ── */
+const Badge = ({ count }) => count > 0 && (
+  <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] rounded-full bg-[#111010] border-2 border-[#faf8f4] text-white flex items-center justify-center text-[8px] font-bold" style={sans}>
+    {count}
+  </span>
+);
+
+/* ── Icon button ── */
+const IconBtn = ({ onClick, children, className = "" }) => (
+  <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }} onClick={onClick}
+    className={`relative flex items-center justify-center w-9 h-9 rounded-full bg-transparent border-none cursor-pointer text-stone-400 hover:text-stone-800 transition-colors ${className}`}>
+    {children}
+  </motion.button>
+);
+
+/* ── Nav link with animated underline ── */
+const NavItem = ({ to, children, onClick, isActive: forced }) => {
+  const inner = (active) => (
+    <span className="relative group flex flex-col items-start cursor-pointer">
+      <span className={`text-[10.5px] tracking-[0.18em] uppercase transition-colors duration-300 ${(forced ?? active) ? "text-stone-900" : "text-stone-400"}`} style={sans}>
+        {children}
+      </span>
+      <span className={`absolute -bottom-1 left-0 h-px bg-gradient-to-r from-[#111010] to-stone-800 transition-all duration-500 ${(forced ?? active) ? "w-full" : "w-0 group-hover:w-full"}`} />
+    </span>
+  );
+  return onClick
+    ? <button onClick={onClick} className="bg-transparent border-none p-0">{inner(false)}</button>
+    : <NavLink to={to} className="no-underline">{({ isActive }) => inner(isActive)}</NavLink>;
+};
+
+/* ── Search dropdown ── */
+const SearchDropdown = ({ results, searchTerm, onSelect, onViewAll, isMobile }) => (
+  <AnimatePresence>
+    {searchTerm.trim() && (
+      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+        className={`absolute top-[calc(100%+10px)] ${isMobile ? "left-0 right-0" : "right-0 w-80"} bg-[#faf8f4] border border-[#111010]/20 rounded-2xl shadow-2xl overflow-hidden z-50`}>
+        <div className="h-0.5 bg-gradient-to-r from-[#111010] to-transparent" />
+        {results.length > 0 ? (
+          <>
+            <div className="max-h-72 overflow-y-auto">
+              {results.map((p, i) => (
+                <button key={p._id} onClick={() => onSelect(p._id)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-stone-100/70 border-none bg-transparent cursor-pointer text-left transition-colors"
+                  style={{ borderBottom: i < results.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none" }}>
+                  <div className="w-9 h-9 rounded-lg bg-stone-100 border border-stone-200 p-1 shrink-0 overflow-hidden">
+                    {p.images?.[0] && <img src={getImg(p.images[0].replace(/\\/g, "/"))} className="w-full h-full object-contain mix-blend-multiply" alt="" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-semibold tracking-widest uppercase text-[#111010] mb-0.5" style={sans}>{p.brand || p.category}</p>
+                    <p className="text-[13px] text-stone-800 truncate" style={sans}>{p.name}</p>
+                  </div>
+                  <p className="text-[13px] font-semibold text-stone-800 shrink-0 italic" style={serif}>
+                    ₹{(p.discountPrice || p.price || 0).toLocaleString("en-IN")}
+                  </p>
+                </button>
+              ))}
+            </div>
+            <button onClick={onViewAll}
+              className="w-full py-3 text-[10px] font-semibold tracking-widest uppercase text-[#111010] bg-stone-50 hover:bg-[#111010]/10 border-none border-t border-stone-100 cursor-pointer transition-colors"
+              style={sans}>
+              View all results →
+            </button>
+          </>
+        ) : (
+          <div className="py-6 text-center">
+            <p className="text-[15px] italic text-stone-700 mb-1" style={serif}>No results found</p>
+            <p className="text-[11px] text-stone-400" style={sans}>Try different keywords</p>
+          </div>
+        )}
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+/* ════════════════ MAIN NAVBAR ════════════════ */
+export default function Navbar() {
+  const [mobileOpen, setMobileOpen]     = useState(false);
+  const [profileOpen, setProfileOpen]   = useState(false);
+  const [searchOpen, setSearchOpen]     = useState(false);
+  const [mobileSearch, setMobileSearch] = useState(false);
+  const [searchTerm, setSearchTerm]     = useState("");
+  const [authOpen, setAuthOpen]         = useState(false);
+  const [scrolled, setScrolled]         = useState(false);
+  const [products, setProducts]         = useState([]);
+  const [results, setResults]           = useState([]);
+
+  const { user, logout }  = useAuth();
+  const { cartCount }     = useCart();
   const { wishlistCount } = useWishlist();
+  const location          = useLocation();
+  const navigate          = useNavigate();
+  const profileRef        = useRef(null);
+  const searchRef         = useRef(null);
+  const progressRef       = useRef(null);
 
   useEffect(() => {
-    if ((searchOpen || mobileSearchOpen) && allProducts.length === 0) {
-      API.get("/products").then(r => setAllProducts(r.data)).catch(console.error);
-    }
-  }, [searchOpen, mobileSearchOpen, allProducts.length]);
-
-  useEffect(() => {
-    if (!searchTerm.trim()) { setSearchResults([]); return; }
-    const q = searchTerm.toLowerCase();
-    setSearchResults(allProducts.filter(p =>
-      p.name?.toLowerCase().includes(q) ||
-      p.brand?.toLowerCase().includes(q) ||
-      p.category?.toLowerCase().includes(q)
-    ).slice(0, 6));
-  }, [searchTerm, allProducts]);
-
-  useEffect(() => {
-    const updateScrollState = () => {
-      const nextScrolled = window.scrollY > 10;
-      if (scrolledRef.current !== nextScrolled) {
-        scrolledRef.current = nextScrolled;
-        setScrolled(nextScrolled);
-      }
-
-      if (progressRef.current) {
-        const progress = Math.min(window.scrollY / 500, 1);
-        progressRef.current.style.transform = `scaleX(${progress})`;
-      }
-
-      scrollFrameRef.current = null;
+    const fn = () => {
+      setScrolled(window.scrollY > 24);
     };
-
-    const onScroll = () => {
-      if (scrollFrameRef.current !== null) return;
-      scrollFrameRef.current = window.requestAnimationFrame(updateScrollState);
-    };
-
-    updateScrollState();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (scrollFrameRef.current !== null) {
-        window.cancelAnimationFrame(scrollFrameRef.current);
-      }
-    };
+    fn(); window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
   useEffect(() => {
     const fn = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
-      if (mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) setMobileSearchOpen(false);
     };
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
 
-  useEffect(() => { if (searchOpen) searchInputRef.current?.focus(); }, [searchOpen]);
-  useEffect(() => {
-    if (mobileSearchOpen) mobileSearchRef.current?.querySelector("input")?.focus();
-  }, [mobileSearchOpen]);
+  useEffect(() => { document.body.style.overflow = mobileOpen ? "hidden" : ""; }, [mobileOpen]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [mobileOpen]);
+    if ((searchOpen || mobileSearch) && !products.length)
+      API.get("/products").then(r => setProducts(r.data)).catch(console.error);
+  }, [searchOpen, mobileSearch]);
 
-  const handleSearch = (e) => {
+  useEffect(() => {
+    if (!searchTerm.trim()) { setResults([]); return; }
+    const q = searchTerm.toLowerCase();
+    setResults(products.filter(p => [p.name, p.brand, p.category].some(f => f?.toLowerCase().includes(q))).slice(0, 6));
+  }, [searchTerm, products]);
+
+  const doSearch = (e) => {
     e?.preventDefault?.();
     if (!searchTerm.trim()) return;
     navigate(`/products?search=${searchTerm}`);
-    setMobileOpen(false); setSearchOpen(false); setMobileSearchOpen(false); setSearchTerm("");
+    [setMobileOpen, setSearchOpen, setMobileSearch].forEach(s => s(false));
+    setSearchTerm("");
   };
-
-  const goToProduct = (id) => {
-    navigate(`/product/${id}`);
-    setSearchOpen(false); setMobileSearchOpen(false); setSearchTerm("");
-  };
-
-  const handleLogout = async () => {
-    await logout(); setProfileOpen(false); setMobileOpen(false); navigate("/");
-  };
-
-  const leftLinks = [
-    { name: "Products", path: "/products" },
-    { name: "Featured", path: "/#featured-products", sectionId: "featured-products" },
-  ];
-  const rightLinks = [{ name: "About", path: "/about" }, { name: "Offers", path: "/offers" }];
-  const allLinks = [...leftLinks, ...rightLinks];
-  const dropdownLinks = [
-    { to: "/orders", Icon: Package, label: "My Orders", delay: 0.04 },
-    { to: "/connect-us", Icon: Send, label: "Connect Us", delay: 0.09 },
-  ];
-
-  const scrollToSection = (sectionId) => {
-    const section = document.getElementById(sectionId);
-    if (!section) return false;
-
-    const offset = window.innerWidth < 1024 ? 84 : 112;
-    const top = section.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top, behavior: "smooth" });
-    return true;
-  };
-
-  const handleFeaturedNavigation = () => {
-    setProfileOpen(false);
-    setSearchOpen(false);
-    setMobileSearchOpen(false);
-    setMobileOpen(false);
-
-    if (location.pathname === "/" && location.hash === "#featured-products") {
-      scrollToSection("featured-products");
-      return;
-    }
-
+  const goProduct  = (id) => { navigate(`/product/${id}`); setSearchOpen(false); setMobileSearch(false); setSearchTerm(""); };
+  const doLogout   = async () => { await logout(); setProfileOpen(false); setMobileOpen(false); navigate("/"); };
+  const goFeatured = () => {
+    [setMobileOpen, setSearchOpen].forEach(s => s(false));
+    if (location.pathname === "/") { document.getElementById("featured-products")?.scrollIntoView({ behavior: "smooth" }); return; }
     navigate("/#featured-products");
   };
 
-  const navH = scrolled ? 58 : 96;
-  const taglineO = scrolled ? 0 : 1;
-  const taglineH = scrolled ? 0 : 14;
+  const isFeaturedActive = location.pathname === "/" && location.hash === "#featured-products";
+  const leftLinks  = [{ name: "Products", to: "/products" }, { name: "Featured", featured: true }];
+  const rightLinks = [{ name: "About", to: "/about" }, { name: "Offers", to: "/offers" }];
+  const allLinks   = [...leftLinks, ...rightLinks];
+  const dropLinks  = [{ to: "/orders", Icon: Package, label: "My Orders" }, { to: "/connect-us", Icon: Send, label: "Connect Us" }];
 
-  /* ── Desktop nav link ── */
-  const NavItem = ({ path, name, sectionId }) => {
-    if (sectionId === "featured-products") {
-      const isActive = location.pathname === "/" && location.hash === "#featured-products";
-
-      return (
-        <button type="button" onClick={handleFeaturedNavigation} className="bg-transparent border-none p-0">
-          <div className="relative group py-1.5 cursor-pointer overflow-hidden">
-            <span style={{ display: "block", fontFamily: "'DM Sans',sans-serif", fontSize: 13.5, fontWeight: 400, letterSpacing: "0.14em", textTransform: "uppercase", color: isActive ? BRAND : MUTED, transition: "color 0.3s" }}>{name}</span>
-            <motion.span style={{ position: "absolute", bottom: 0, left: 0, height: 1, background: BRAND }}
-              animate={{ width: isActive ? "100%" : "0%" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </div>
-        </button>
-      );
-    }
-
-    return (
-      <NavLink to={path} className="no-underline">
-        {({ isActive }) => (
-          <div className="relative group py-1.5 cursor-pointer overflow-hidden">
-            <span style={{ display: "block", fontFamily: "'DM Sans',sans-serif", fontSize: 13.5, fontWeight: 400, letterSpacing: "0.14em", textTransform: "uppercase", color: isActive ? BRAND : MUTED, transition: "color 0.3s" }}>{name}</span>
-            <motion.span style={{ position: "absolute", bottom: 0, left: 0, height: 1, background: BRAND }}
-              animate={{ width: isActive ? "100%" : "0%" }} transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </div>
-        )}
-      </NavLink>
-    );
-  };
-
-  /* ── Shared search results panel ── */
-  const SearchResults = ({ isMobile = false }) => (
-    <AnimatePresence>
-      {searchTerm.trim() && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
-          transition={{ duration: 0.18 }}
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            left: isMobile ? 0 : "auto",
-            width: isMobile ? "100%" : 308,
-            background: CREAM,
-            border: `1px solid rgba(26,17,8,0.09)`,
-            borderRadius: 18,
-            boxShadow: "0 16px 48px rgba(26,17,8,0.11), 0 4px 16px rgba(26,17,8,0.05)",
-            zIndex: 400,
-            overflow: "hidden",
-          }}
-        >
-          {searchResults.length > 0 ? (
-            <>
-              <div style={{ maxHeight: 320, overflowY: "auto", scrollbarWidth: "none" }}>
-                {searchResults.map((p, i) => {
-                  const raw = p.images?.[0] ?? "";
-                  const imgURL = getImg(raw?.replace(/\\/g, "/"));
-                  return (
-                    <button key={p._id} onClick={() => goToProduct(p._id)}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "transparent", border: "none", borderBottom: i < searchResults.length - 1 ? `1px solid ${BORDER}` : "none", cursor: "pointer", textAlign: "left" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(26,17,8,0.025)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                    >
-                      <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(26,17,8,0.04)", border: `1px solid ${BORDER}`, padding: 5, flexShrink: 0, overflow: "hidden" }}>
-                        {imgURL && <img src={imgURL} style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "multiply" }} alt="" />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", color: MUTED, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.brand || p.category}</p>
-                        <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500, color: BRAND, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                      </div>
-                      <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 12, fontWeight: 600, color: BRAND, flexShrink: 0 }}>₹{(p.discountPrice || p.price || 0).toLocaleString("en-IN")}</p>
-                    </button>
-                  );
-                })}
-              </div>
-              <button onClick={handleSearch}
-                style={{ width: "100%", padding: "11px", fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.16em", color: BRAND, background: "rgba(26,17,8,0.03)", borderTop: `1px solid ${BORDER}`, border: "none", cursor: "pointer" }}
-              >View all results →</button>
-            </>
-          ) : (
-            <div style={{ padding: "22px 16px", textAlign: "center" }}>
-              <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500, color: BRAND, marginBottom: 4 }}>No results</p>
-              <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: MUTED }}>Try different keywords</p>
-            </div>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
+  const Avatar = ({ size = 28 }) => (
+    <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+      style={{ ...sans, width: size, height: size, fontSize: size * 0.4, background: "linear-gradient(135deg,#111010,#0a0a0a)", boxShadow: "0 2px 8px rgba(17,16,16,.3)" }}>
+      {user?.name?.slice(0, 1).toUpperCase()}
+    </div>
   );
-
-  /* ── Badge dot ── */
-  const Badge = ({ count, top = 7, right = 4 }) => count > 0 ? (
-    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}
-      style={{ position: "absolute", top, right, width: 15, height: 15, borderRadius: "50%", background: BRAND, color: "white", fontSize: 8, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", display: "flex", alignItems: "center", justifyContent: "center" }}
-    >{count}</motion.span>
-  ) : null;
 
   return (
     <>
-      <header
-        className="fixed top-0 left-0 w-full z-[99]"
-        style={{
-          background: scrolled ? "rgba(250,248,244,0.88)" : CREAM,
-          backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
-          borderBottom: `1px solid ${scrolled ? "rgba(26,17,8,0.10)" : BORDER}`,
-          boxShadow: scrolled ? "0 2px 28px rgba(26,17,8,0.07)" : "none",
-          transition: "background 0.5s, box-shadow 0.5s, border-color 0.4s",
-        }}
-      >
+      <header className={`fixed top-0 left-0 w-full z-[99] transition-all duration-500 ${scrolled ? "bg-[#faf8f4]/90 backdrop-blur-xl shadow-sm border-b border-[#111010]/15" : "bg-[#faf8f4] border-b border-stone-100"}`}>
 
-        {/* ══════════════════════════
-            DESKTOP LAYOUT
-        ══════════════════════════ */}
-        <motion.div
-          initial={{ y: -100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 150, damping: 22, delay: 0.06 }}
-          className="relative hidden lg:flex items-center"
-          style={{ height: navH, paddingLeft: "clamp(20px, 5vw, 72px)", paddingRight: "clamp(20px, 5vw, 72px)", transition: "height 0.5s cubic-bezier(0.4,0,0.2,1)" }}
-        >
-          <nav style={{ flex: 1, display: "flex", alignItems: "center", gap: 48 }}>
-            {leftLinks.map(l => <NavItem key={l.path} {...l} />)}
+        {/* ─── DESKTOP ─── */}
+        <motion.div initial={{ y: -70, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 130, damping: 22 }}
+          className="hidden lg:flex items-center relative px-[clamp(24px,5vw,80px)] transition-all duration-500"
+          style={{ height: scrolled ? 60 : 88 }}>
+
+          <nav className="flex items-center gap-10 flex-1">
+            {leftLinks.map(l => l.featured
+              ? <NavItem key="featured" onClick={goFeatured} isActive={isFeaturedActive}>Featured</NavItem>
+              : <NavItem key={l.to} to={l.to}>{l.name}</NavItem>
+            )}
           </nav>
 
-          {/* Center logo */}
-          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", userSelect: "none" }}>
-            <NavLink to="/" className="no-underline block">
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ opacity: taglineO, height: taglineH, overflow: "hidden", marginBottom: scrolled ? 0 : 3, transition: "all 0.45s cubic-bezier(0.4,0,0.2,1)" }}>
-                  <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 7, fontWeight: 400, letterSpacing: "0.34em", textTransform: "uppercase", color: "rgba(26,17,8,0.28)", display: "block" }}>Est. 2026</span>
-                </div>
-                <motion.span animate={{ fontSize: scrolled ? 25 : 32 }} transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
-                  style={{ fontFamily: "'Playfair Display',serif", fontWeight: 800, letterSpacing: "0.08em", color: BRAND, lineHeight: 1, display: "block" }}
-                >TechMart</motion.span>
-                <div style={{ opacity: taglineO, height: taglineH, overflow: "hidden", marginTop: scrolled ? 0 : 5, transition: "all 0.45s cubic-bezier(0.4,0,0.2,1)", display: "flex", alignItems: "center", gap: 7 }}>
-                  <span style={{ width: 14, height: 0.5, background: "rgba(26,17,8,0.16)", display: "block" }} />
-                  <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 6.5, letterSpacing: "0.38em", textTransform: "uppercase", color: "rgba(26,17,8,0.26)" }}>Collection</span>
-                  <span style={{ width: 14, height: 0.5, background: "rgba(26,17,8,0.16)", display: "block" }} />
-                </div>
-              </div>
-            </NavLink>
-          </div>
+          {/* logo */}
+          <NavLink to="/" className="no-underline absolute left-1/2 -translate-x-1/2">
+            <div className="flex flex-col items-center">
+              <AnimatePresence>
+                {!scrolled && (
+                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                    className="text-[7.5px] tracking-[0.42em] uppercase text-[#111010] mb-1" style={sans}>Est. 2026</motion.p>
+                )}
+              </AnimatePresence>
+              <motion.span animate={{ fontSize: scrolled ? 22 : 30 }} transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                className="block text-stone-900 leading-none tracking-[0.12em]" style={serif}>TechMart</motion.span>
+              <AnimatePresence>
+                {!scrolled && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                    className="flex items-center gap-2 mt-1.5">
+                    <span className="w-4 h-px bg-[#111010]/40" />
+                    <span className="text-[6.5px] tracking-[0.44em] uppercase text-stone-400" style={sans}>Collection</span>
+                    <span className="w-4 h-px bg-[#111010]/40" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </NavLink>
 
-          {/* Right */}
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
-            <nav style={{ display: "flex", alignItems: "center", gap: 40, marginRight: 16 }}>
-              {rightLinks.map(l => <NavItem key={l.path} {...l} />)}
+          {/* right */}
+          <div className="flex items-center justify-end gap-1 flex-1">
+            <nav className="flex items-center gap-10 mr-5">
+              {rightLinks.map(l => <NavItem key={l.to} to={l.to}>{l.name}</NavItem>)}
             </nav>
-            <div style={{ width: 1, height: 14, background: "rgba(26,17,8,0.10)", margin: "0 8px" }} />
+            <div className="w-px h-4 bg-stone-200 mx-1.5" />
 
-            {/* Desktop search */}
-            <div ref={searchRef} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+            {/* search */}
+            <div ref={searchRef} className="relative flex items-center">
               <AnimatePresence mode="wait">
                 {searchOpen ? (
-                  <motion.div key="sf" initial={{ width: 36, opacity: 0 }} animate={{ width: 280, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                    style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "flex-end" }}
-                  >
-                    <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center", gap: 8, height: 34, paddingLeft: 12, paddingRight: 10, background: "rgba(26,17,8,0.05)", border: `1px solid rgba(26,17,8,0.10)`, borderRadius: 17, width: "100%", overflow: "hidden" }}>
-                      <Search size={14} style={{ color: MUTED, flexShrink: 0 }} />
-                      <input ref={searchInputRef} type="text" placeholder="Search…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                        style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontFamily: "'DM Sans',sans-serif", fontSize: 12.5, color: BRAND }}
-                      />
-                      <button type="button" onClick={() => { setSearchOpen(false); setSearchTerm(""); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: MUTED, display: "flex" }}
-                      ><X size={11} /></button>
+                  <motion.div key="open" initial={{ width: 36, opacity: 0 }} animate={{ width: 260, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 280, damping: 26 }} className="relative">
+                    <form onSubmit={doSearch} className="flex items-center gap-2 h-9 px-3 bg-stone-100 border border-[#111010]/25 rounded-full">
+                      <Search size={13} className="text-[#111010] shrink-0" />
+                      <input autoFocus type="text" placeholder="Search…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                        className="bg-transparent border-none outline-none w-full text-[12.5px] text-stone-800" style={sans} />
+                      <button type="button" onClick={() => { setSearchOpen(false); setSearchTerm(""); }} className="bg-transparent border-none cursor-pointer text-stone-400">
+                        <X size={11} />
+                      </button>
                     </form>
-                    <SearchResults />
+                    <SearchDropdown results={results} searchTerm={searchTerm} onSelect={goProduct} onViewAll={doSearch} />
                   </motion.div>
                 ) : (
-                  <motion.button key="si" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.88 }} onClick={() => setSearchOpen(true)}
-                    style={{ background: "none", border: "none", cursor: "pointer", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  ><Search size={19} strokeWidth={1.4} style={{ color: "rgba(26,17,8,0.48)" }} /></motion.button>
+                  <IconBtn key="closed" onClick={() => setSearchOpen(true)}><Search size={17} strokeWidth={1.6} /></IconBtn>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Desktop user */}
+            {/* user */}
             {!user ? (
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.88 }} onClick={() => setAuthOpen(true)}
-                style={{ background: "none", border: "none", cursor: "pointer", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}
-              ><User size={19} strokeWidth={1.4} style={{ color: "rgba(26,17,8,0.48)" }} /></motion.button>
+              <IconBtn onClick={() => setAuthOpen(true)}><User size={17} strokeWidth={1.6} /></IconBtn>
             ) : (
-              <div ref={profileRef} style={{ position: "relative" }}>
+              <div ref={profileRef} className="relative">
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} onClick={() => setProfileOpen(!profileOpen)}
-                  style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: "4px" }}
-                >
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: BRAND, color: "white", fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{user.name?.slice(0, 1).toUpperCase()}</div>
-                  <ChevronDown size={11} strokeWidth={1.8} style={{ color: MUTED, transform: profileOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.25s" }} />
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-2xl border-none cursor-pointer bg-transparent hover:bg-stone-100 transition-colors">
+                  <Avatar />
+                  <ChevronDown size={11} strokeWidth={2} className={`text-stone-400 transition-transform duration-250 ${profileOpen ? "rotate-180" : ""}`} />
                 </motion.button>
                 <AnimatePresence>
                   {profileOpen && (
-                    <motion.div initial={{ opacity: 0, y: 8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 5, scale: 0.97 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                      style={{ position: "absolute", right: 0, top: "calc(100% + 12px)", width: 212, background: "rgba(250,248,244,0.98)", backdropFilter: "blur(20px)", border: `1px solid ${BORDER}`, boxShadow: "0 20px 60px rgba(26,17,8,0.12)", borderRadius: 16, overflow: "hidden" }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: `1px solid ${BORDER}`, background: "rgba(26,17,8,0.02)" }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: BRAND, color: "white", fontFamily: "'DM Sans',sans-serif", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{user.name?.slice(0, 1).toUpperCase()}</div>
+                    <motion.div initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                      transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                      className="absolute right-0 top-[calc(100%+14px)] w-52 bg-[#faf8f4] border border-[#111010]/20 rounded-2xl shadow-2xl overflow-hidden">
+                      <div className="h-0.5 bg-gradient-to-r from-[#111010] to-transparent" />
+                      <div className="flex items-center gap-3 px-4 py-3.5 bg-stone-50 border-b border-stone-100">
+                        <Avatar size={34} />
                         <div>
-                          <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 8.5, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED, marginBottom: 2 }}>My Account</p>
-                          <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500, color: BRAND }}>{user.name}</p>
+                          <p className="text-[8.5px] tracking-[0.14em] uppercase text-[#111010] mb-0.5" style={sans}>My Account</p>
+                          <p className="text-[15px] text-stone-800" style={serif}>{user.name}</p>
                         </div>
                       </div>
-                      <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 2 }}>
-                        {dropdownLinks.map(({ to, Icon, label, delay }) => (
-                          <motion.div key={to} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ delay }}>
-                            <NavLink to={to} onClick={() => setProfileOpen(false)} className="no-underline"
-                              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "rgba(26,17,8,0.55)", borderRadius: 10 }}
-                              onMouseEnter={e => e.currentTarget.style.background = "rgba(26,17,8,0.04)"}
-                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                            >
-                              <span style={{ width: 24, height: 24, background: "rgba(26,17,8,0.05)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={11} style={{ color: BRAND }} /></span>
-                              <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 12.5 }}>{label}</span>
-                            </NavLink>
-                          </motion.div>
+                      <div className="p-2 flex flex-col gap-1">
+                        {dropLinks.map(({ to, Icon, label }) => (
+                          <NavLink key={to} to={to} onClick={() => setProfileOpen(false)} className="no-underline">
+                            {({ isActive }) => (
+                              <div className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${isActive ? "bg-stone-100" : "hover:bg-stone-100/70"}`}>
+                                <span className="w-6 h-6 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center">
+                                  <Icon size={11} className="text-stone-700" />
+                                </span>
+                                <span className="text-[12.5px] text-stone-700" style={sans}>{label}</span>
+                              </div>
+                            )}
+                          </NavLink>
                         ))}
-                        <div style={{ height: 1, background: BORDER, margin: "4px 8px" }} />
-                        <button onClick={handleLogout} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", cursor: "pointer", color: "#b83232", borderRadius: 10 }}
-                          onMouseEnter={e => e.currentTarget.style.background = "rgba(184,50,50,0.05)"}
-                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                        >
-                          <span style={{ width: 24, height: 24, background: "rgba(184,50,50,0.07)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}><LogOut size={11} style={{ color: "#b83232" }} /></span>
-                          <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 12.5 }}>Logout</span>
+                        <div className="h-px bg-stone-100 my-1" />
+                        <button onClick={doLogout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-transparent border-none cursor-pointer hover:bg-red-50 transition-colors">
+                          <span className="w-6 h-6 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center">
+                            <LogOut size={11} className="text-red-500" />
+                          </span>
+                          <span className="text-[12.5px] text-red-500" style={sans}>Logout</span>
                         </button>
                       </div>
                     </motion.div>
@@ -395,217 +295,122 @@ const Navbar = () => {
               </div>
             )}
 
-            <NavLink to="/wishlist" className="no-underline">
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.88 }}
-                style={{ background: "none", border: "none", cursor: "pointer", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}
-              >
-                <Heart size={19} strokeWidth={1.4} style={{ color: "rgba(26,17,8,0.48)" }} />
-                <Badge count={wishlistCount} />
-              </motion.button>
-            </NavLink>
-
-            <NavLink to="/cart" className="no-underline">
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.88 }}
-                style={{ cursor: "pointer", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}
-              >
-                <ShoppingCart size={19} strokeWidth={1.4} style={{ color: "rgba(26,17,8,0.48)" }} />
-                <Badge count={cartCount} />
-              </motion.div>
-            </NavLink>
+            <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={17} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
+            <NavLink to="/cart"     className="no-underline"><IconBtn><ShoppingCart size={17} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
           </div>
         </motion.div>
 
-        {/* ══════════════════════════════════════════════
-            MOBILE TOP BAR — Clean & Simple
-        ══════════════════════════════════════════════ */}
-        <div
-          className="flex lg:hidden flex-col"
-          style={{ transition: "height 0.4s cubic-bezier(0.4,0,0.2,1)", background: scrolled ? "transparent" : CREAM }}
-        >
-          {/* Main Row */}
-          <div className="flex items-center justify-between px-3 w-full" style={{ height: scrolled ? 54 : 66 }}>
-            {/* Left: Hamburger + Search */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setMobileOpen(true)}
-                className="flex items-center justify-center bg-transparent border-none cursor-pointer w-10 h-10"
-              >
-                <Menu size={22} strokeWidth={1.5} style={{ color: BRAND }} />
-              </button>
-              <button
-                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-                className="flex items-center justify-center bg-transparent border-none cursor-pointer w-10 h-10"
-              >
-                <Search size={20} strokeWidth={1.5} style={{ color: BRAND }} />
-              </button>
+        {/* ─── MOBILE ─── */}
+        <div className="flex lg:hidden flex-col">
+          <div className={`flex items-center justify-between px-2 w-full transition-all duration-300 ${scrolled ? "h-14" : "h-16"}`}>
+            <div className="flex items-center">
+              <IconBtn onClick={() => setMobileOpen(true)}><Menu size={20} strokeWidth={1.6} /></IconBtn>
+              <IconBtn onClick={() => setMobileSearch(!mobileSearch)}><Search size={18} strokeWidth={1.6} /></IconBtn>
             </div>
-
-            {/* Center: Logo */}
-            <NavLink to="/" className="flex-1 text-center no-underline px-2" style={{ minWidth: 0 }}>
-              <span className="truncate block" style={{ fontFamily: "'Playfair Display',serif", fontWeight: 800, fontSize: scrolled ? 21 : 25, letterSpacing: "0.04em", color: BRAND, transition: "font-size 0.3s" }}>
-                TechMart
-              </span>
+            <NavLink to="/" className="no-underline">
+              <span className={`block tracking-[0.1em] text-stone-900 transition-all duration-300 ${scrolled ? "text-[20px]" : "text-[24px]"}`} style={serif}>TechMart</span>
             </NavLink>
-
-            {/* Right: Home + Wishlist + Cart */}
-            <div className="flex items-center gap-1">
-              <NavLink to="/" className="flex items-center justify-center relative w-10 h-10 no-underline">
-                <House size={20} strokeWidth={1.5} style={{ color: BRAND }} />
-              </NavLink>
-              <NavLink to="/wishlist" className="flex items-center justify-center relative w-10 h-10 no-underline">
-                <Heart size={20} strokeWidth={1.5} style={{ color: BRAND }} />
-                <Badge count={wishlistCount} top={6} right={4} />
-              </NavLink>
-              <NavLink to="/cart" className="flex items-center justify-center relative w-10 h-10 no-underline">
-                <ShoppingCart size={20} strokeWidth={1.5} style={{ color: BRAND }} />
-                <Badge count={cartCount} top={6} right={4} />
-              </NavLink>
+            <div className="flex items-center">
+              <NavLink to="/"         className="no-underline"><IconBtn><House size={18} strokeWidth={1.6} /></IconBtn></NavLink>
+              <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={18} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
+              <NavLink to="/cart"     className="no-underline"><IconBtn><ShoppingCart size={18} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
             </div>
           </div>
-
-          {/* Search Bar Row (If Open) */}
           <AnimatePresence>
-            {mobileSearchOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden px-4"
-              >
-                <div className="pb-3 pt-1">
-                  <form onSubmit={handleSearch} className="flex items-center gap-2 bg-black/5 px-3 py-2.5 rounded-xl border border-black/10">
-                    <Search size={16} className="text-black/40" />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      className="bg-transparent border-none outline-none w-full text-[14px] font-[family-name:'DM_Sans'] text-black"
-                    />
-                    {searchTerm && (
-                      <X
-                        size={14}
-                        className="text-black/50 cursor-pointer flex-shrink-0"
-                        onClick={() => setSearchTerm("")}
-                      />
-                    )}
+            {mobileSearch && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden px-4">
+                <div className="pt-1 pb-3 relative">
+                  <form onSubmit={doSearch} className="flex items-center gap-2 px-3.5 py-2.5 bg-stone-100 border border-[#111010]/25 rounded-xl">
+                    <Search size={14} className="text-[#111010] shrink-0" />
+                    <input type="text" placeholder="Search products…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                      className="bg-transparent border-none outline-none w-full text-[13.5px] text-stone-800" style={sans} />
+                    {searchTerm && <X size={13} className="text-stone-400 cursor-pointer shrink-0" onClick={() => setSearchTerm("")} />}
                   </form>
-
-                  {/* Dropdown under search using identical results component */}
-                  <div className="relative z-50">
-                    <SearchResults isMobile />
-                  </div>
+                  <div className="relative"><SearchDropdown results={results} searchTerm={searchTerm} onSelect={goProduct} onViewAll={doSearch} isMobile /></div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Scroll progress line */}
-        <div
-          ref={progressRef}
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 1.5,
-            background: "rgba(26,17,8,0.09)",
-            transform: "scaleX(0)",
-            transformOrigin: "left center",
-            willChange: "transform",
-          }}
-        />
       </header>
 
-      {/* ══════════════════════════════════════════════
-          MOBILE DRAWER — Clean & Simple
-      ══════════════════════════════════════════════ */}
+      {/* ─── MOBILE DRAWER ─── */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[200] lg:hidden bg-black/50 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-          >
-            <motion.aside
-              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] lg:hidden bg-stone-900/50 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}>
+            <motion.aside initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 220 }}
               onClick={e => e.stopPropagation()}
               className="absolute left-0 top-0 bottom-0 bg-[#faf8f4] flex flex-col shadow-2xl overflow-y-auto"
-              style={{ width: "80%", maxWidth: 320 }}
-            >
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between px-5 py-5 border-b border-black/5">
-                <span className="truncate" style={{ fontFamily: "'Playfair Display',serif", fontWeight: 800, fontSize: 22, color: BRAND }}>TechMart</span>
-                <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center bg-black/5 rounded-full border-none cursor-pointer flex-shrink-0">
-                  <X size={16} style={{ color: BRAND }} />
+              style={{ width: "82%", maxWidth: 320 }}>
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#111010] to-transparent" />
+
+              <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
+                <div>
+                  <p className="text-[7.5px] tracking-[0.4em] uppercase text-[#111010] mb-1" style={sans}>Est. 2026</p>
+                  <span className="text-[22px] tracking-[0.08em] text-stone-900" style={serif}>TechMart</span>
+                </div>
+                <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 border-none cursor-pointer">
+                  <X size={15} className="text-stone-800" />
                 </button>
               </div>
 
-              {/* Drawer Links */}
-              <div className="flex-1 py-4 px-5 flex flex-col gap-2">
-                <p className="text-[10px] font-bold tracking-widest text-black/40 uppercase mb-2" style={{ fontFamily: "'DM Sans',sans-serif" }}>Menu</p>
-                {allLinks.map((link) => (
-                  link.sectionId === "featured-products" ? (
-                    <button
-                      key={link.name}
-                      type="button"
-                      onClick={handleFeaturedNavigation}
-                      className="w-full bg-transparent border-none p-0 text-left"
-                    >
-                      <div className={`py-3 px-4 rounded-xl flex items-center justify-between transition-colors ${location.pathname === "/" && location.hash === "#featured-products" ? 'bg-black/5' : 'bg-transparent'}`}>
-                        <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: location.pathname === "/" && location.hash === "#featured-products" ? 600 : 400, color: BRAND }}>
-                          {link.name}
-                        </span>
-                        {location.pathname === "/" && location.hash === "#featured-products" ? <div className="w-1.5 h-1.5 rounded-full bg-black/80 flex-shrink-0" /> : null}
+              <div className="flex-1 px-5 py-5 flex flex-col">
+                <p className="text-[8.5px] font-semibold tracking-[0.2em] uppercase text-[#111010] mb-3" style={sans}>Navigation</p>
+                <div className="flex flex-col gap-1">
+                  {allLinks.map(l => l.featured ? (
+                    <button key="feat" onClick={goFeatured} className="w-full bg-transparent border-none p-0 text-left">
+                      <div className={`px-4 py-3 rounded-xl flex items-center justify-between transition-colors ${isFeaturedActive ? "bg-stone-100" : "hover:bg-stone-100/70"}`}>
+                        <span className="text-[14.5px] text-stone-800" style={sans}>Featured</span>
+                        {isFeaturedActive && <span className="w-1.5 h-1.5 rounded-full bg-[#111010]" />}
                       </div>
                     </button>
                   ) : (
-                    <NavLink key={link.path} to={link.path} onClick={() => setMobileOpen(false)} className="no-underline">
+                    <NavLink key={l.to} to={l.to} onClick={() => setMobileOpen(false)} className="no-underline">
                       {({ isActive }) => (
-                        <div className={`py-3 px-4 rounded-xl flex items-center justify-between transition-colors ${isActive ? 'bg-black/5' : 'bg-transparent'}`}>
-                          <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: isActive ? 600 : 400, color: BRAND }}>
-                            {link.name}
-                          </span>
-                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-black/80 flex-shrink-0" />}
+                        <div className={`px-4 py-3 rounded-xl flex items-center justify-between transition-colors ${isActive ? "bg-stone-100" : "hover:bg-stone-100/70"}`}>
+                          <span className={`text-[14.5px] text-stone-800 ${isActive ? "font-medium" : "font-normal"}`} style={sans}>{l.name}</span>
+                          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#111010]" />}
                         </div>
                       )}
                     </NavLink>
-                  )
-                ))}
+                  ))}
+                </div>
 
-                {/* User Section inside Drawer */}
-                <div className="mt-6 pt-6 border-t border-black/5">
+                <div className="mt-7 pt-6 border-t border-stone-100">
+                  <p className="text-[8.5px] font-semibold tracking-[0.2em] uppercase text-[#111010] mb-4" style={sans}>Account</p>
                   {!user ? (
-                    <button onClick={() => { setMobileOpen(false); setAuthOpen(true); }} className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#1a1108] text-white rounded-xl border-none cursor-pointer text-[13px] font-semibold tracking-wide" style={{ fontFamily: "'DM Sans',sans-serif" }}>
-                      <User size={16} /> Sign In
+                    <button onClick={() => { setMobileOpen(false); setAuthOpen(true); }}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-none cursor-pointer text-white text-[12px] tracking-[0.14em] uppercase font-medium"
+                      style={{ ...sans, background: "#0f0d0a" }}>
+                      <User size={15} /> Sign In
                     </button>
                   ) : (
                     <div className="flex flex-col gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center text-sm font-bold text-black border border-black/5 flex-shrink-0" style={{ fontFamily: "'DM Sans',sans-serif" }}>
-                          {user.name?.slice(0, 1).toUpperCase()}
-                        </div>
-                        <div className="flex-1 truncate">
-                          <p className="text-[10px] text-black/50 uppercase tracking-widest" style={{ fontFamily: "'DM Sans',sans-serif" }}>Signed In</p>
-                          <p className="text-[14px] font-semibold text-black truncate" style={{ fontFamily: "'DM Sans',sans-serif" }}>{user.name}</p>
+                        <Avatar size={40} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[9px] tracking-widest uppercase text-[#111010] mb-0.5" style={sans}>Signed In</p>
+                          <p className="text-[16px] text-stone-800 truncate" style={serif}>{user.name}</p>
                         </div>
                       </div>
-
-                      <div className="flex flex-col gap-1 mt-2">
-                        {dropdownLinks.map(({ to, Icon, label }) => (
+                      <div className="flex flex-col gap-1">
+                        {dropLinks.map(({ to, Icon, label }) => (
                           <NavLink key={to} to={to} onClick={() => setMobileOpen(false)} className="no-underline">
-                            <div className="flex items-center gap-3 py-3 px-3 rounded-lg hover:bg-black/5 transition-colors">
-                              <Icon size={16} className="text-black/60 flex-shrink-0" />
-                              <span className="text-[13px] font-medium text-black/80" style={{ fontFamily: "'DM Sans',sans-serif" }}>{label}</span>
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-stone-100/70 transition-colors cursor-pointer">
+                              <Icon size={15} className="text-stone-500 shrink-0" />
+                              <span className="text-[13.5px] text-stone-700" style={sans}>{label}</span>
                             </div>
                           </NavLink>
                         ))}
-                        <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="w-full flex items-center gap-3 py-3 px-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors bg-transparent border-none cursor-pointer mt-1">
-                          <LogOut size={16} className="flex-shrink-0" />
-                          <span className="text-[13px] font-medium text-left" style={{ fontFamily: "'DM Sans',sans-serif" }}>Logout</span>
+                        <button onClick={() => { doLogout(); setMobileOpen(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-transparent border-none cursor-pointer hover:bg-red-50 transition-colors">
+                          <LogOut size={15} className="text-red-500 shrink-0" />
+                          <span className="text-[13.5px] text-red-500" style={sans}>Logout</span>
                         </button>
                       </div>
                     </div>
@@ -613,12 +418,14 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* Drawer Footer */}
-              <div className="p-5 border-t border-black/5 text-center mt-auto">
-                <p className="text-[10px] tracking-widest uppercase text-black/30" style={{ fontFamily: "'DM Sans',sans-serif" }}>TechMart Collection</p>
-                <p className="text-[9px] text-black/20 mt-1" style={{ fontFamily: "'DM Sans',sans-serif" }}>Est. 2026</p>
+              <div className="px-6 py-4 border-t border-stone-100 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="w-4 h-px bg-[#111010]/40" />
+                  <p className="text-[8.5px] tracking-[0.3em] uppercase text-stone-400" style={sans}>TechMart Collection</p>
+                  <span className="w-4 h-px bg-[#111010]/40" />
+                </div>
+                <p className="text-[10px] italic text-stone-300" style={serif}>Est. 2026</p>
               </div>
-
             </motion.aside>
           </motion.div>
         )}
@@ -627,6 +434,4 @@ const Navbar = () => {
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
-};
-
-export default Navbar;
+}
