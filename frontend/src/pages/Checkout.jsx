@@ -31,6 +31,17 @@ const itemVariants = {
   show:   { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
 };
 
+function loadRazorpayScript(src) {
+  return new Promise((resolve) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve(true);
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 /* ── Reusable field wrapper ── */
 function Field({ label, error, children }) {
   return (
@@ -153,7 +164,7 @@ export default function Checkout() {
         selectedColor: item.selectedColor,
         selectedStorage: item.selectedStorage
       }));
-      const { data } = await API.post("/orders", {
+      const { data: orderData } = await API.post("/orders", {
         orderItems,
         shippingAddress: {
           address: address.address,
@@ -166,9 +177,61 @@ export default function Checkout() {
         shippingPrice,
         totalPrice,
       });
-      fetchCartCount();
-      showMessage("success", "Order placed! Redirecting…");
-      setTimeout(() => navigate(`/order/${data._id}`), 1500);
+
+      if (paymentMethod === "Online") {
+        const res = await loadRazorpayScript("https://checkout.razorpay.com/v1/checkout.js");
+        if (!res) {
+          showMessage("error", "Razorpay SDK failed to load. Are you online?");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const { data: rpOrderData } = await API.post("/payment/razorpay/order", { amount: totalPrice });
+        const { data: keyData } = await API.get("/payment/razorpay/key");
+
+        const options = {
+          key: keyData.key,
+          amount: rpOrderData.amount,
+          currency: rpOrderData.currency,
+          name: "TechMart",
+          description: "Order Payment",
+          order_id: rpOrderData.id,
+          handler: async function (response) {
+            try {
+              await API.post("/payment/razorpay/verify", {
+                ...response,
+                orderId: orderData._id
+              });
+              fetchCartCount();
+              showMessage("success", "Payment successful! Redirecting…");
+              setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+            } catch (err) {
+              fetchCartCount();
+              showMessage("error", "Payment verification failed.");
+              setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+            }
+          },
+          prefill: {
+            name: address.name,
+            contact: address.phone,
+          },
+          theme: { color: "#0f0f0f" },
+          modal: {
+            ondismiss: function () {
+              fetchCartCount();
+              showMessage("error", "Payment Cancelled.");
+              setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+            }
+          }
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.open();
+      } else {
+        fetchCartCount();
+        showMessage("success", "Order placed! Redirecting…");
+        setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+      }
     } catch (err) {
       showMessage("error", err.response?.data?.message || "Failed to place order.");
       setIsSubmitting(false);

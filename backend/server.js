@@ -17,6 +17,7 @@ import cartRoutes from "./routes/cartRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
 import queryRoutes from "./routes/queryRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 connectDB();
 const app = express();
@@ -97,6 +98,7 @@ app.use("/api/cart",     cartRoutes);
 app.use("/api/banners",  bannerRoutes);
 app.use("/api/offers",   offerRoutes);
 app.use("/api/queries",  queryRoutes);
+app.use("/api/payment",  paymentRoutes);
 
 // ── Error handlers ────────────────────────────────────────────────────────────
 

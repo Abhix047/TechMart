@@ -13,6 +13,17 @@ import toast from "react-hot-toast";
 import { getImg, BASE_URL } from "../config";
 const ease = [0.22, 1, 0.36, 1];
 
+function loadRazorpayScript(src) {
+  return new Promise((resolve) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve(true);
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 const STEPS = [
   { key: "placed", label: "Order Placed", sub: "We received your order", Icon: Receipt },
   { key: "confirmed", label: "Confirmed", sub: "Payment verified", Icon: CheckCircle2 },
@@ -37,6 +48,7 @@ export default function OrderDetail() {
   const [reviewedIds, setReviewedIds] = useState([]);
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     API.get(`/orders/${id}`).then(({ data }) => setOrder(data));
@@ -53,6 +65,59 @@ export default function OrderDetail() {
       toast.error("Failed to cancel order.");
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handlePayNow = async () => {
+    setPaying(true);
+    try {
+      const res = await loadRazorpayScript("https://checkout.razorpay.com/v1/checkout.js");
+      if (!res) {
+        toast.error("Razorpay SDK failed to load. Are you online?");
+        setPaying(false);
+        return;
+      }
+
+      const { data: rpOrderData } = await API.post("/payment/razorpay/order", { amount: order.totalPrice });
+      const { data: keyData } = await API.get("/payment/razorpay/key");
+
+      const options = {
+        key: keyData.key,
+        amount: rpOrderData.amount,
+        currency: rpOrderData.currency,
+        name: "TechMart",
+        description: "Order Payment",
+        order_id: rpOrderData.id,
+        handler: async function (response) {
+          try {
+            await API.post("/payment/razorpay/verify", {
+              ...response,
+              orderId: order._id
+            });
+            setOrder(prev => ({ ...prev, isPaid: true, paidAt: Date.now() }));
+            toast.success("Payment successful!");
+          } catch (err) {
+            toast.error("Payment verification failed.");
+          }
+        },
+        prefill: {
+          name: order.shippingAddress.name || "Customer",
+          contact: order.shippingAddress.phone || "9999999999",
+        },
+        theme: { color: "#0f0f0f" },
+        modal: {
+          ondismiss: function () {
+            toast.error("Payment Cancelled.");
+          }
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to initiate payment.");
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -433,12 +498,34 @@ export default function OrderDetail() {
               {/* Total */}
               <div className="flex justify-between items-baseline py-5">
                 <span className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold text-[#0f0f0f]">
-                  Total Paid
+                  Total {order.isPaid ? "Paid" : "Due"}
                 </span>
                 <span className="font-[family-name:'Cormorant_Garamond',serif] text-[28px] font-[500] text-[#0f0f0f] leading-none">
                   ₹{order.totalPrice?.toLocaleString("en-IN")}
                 </span>
               </div>
+
+              {/* Pay Now Button */}
+              {!order.isPaid && order.paymentMethod === "Online" && !order.isCancelled && (
+                <motion.button
+                  onClick={handlePayNow}
+                  disabled={paying}
+                  className="mt-2 w-full py-3.5 rounded-xl font-[family-name:'DM_Sans',sans-serif] text-[13px] font-semibold flex items-center justify-center gap-2 bg-[#0f0f0f] text-white hover:bg-black/80 transition-colors duration-200"
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {paying ? (
+                    <motion.span
+                      className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }}
+                    />
+                  ) : (
+                    <>
+                      <Zap size={14} /> Pay ₹{order.totalPrice?.toLocaleString("en-IN")} Now
+                    </>
+                  )}
+                </motion.button>
+              )}
             </div>
           </motion.div>
 
