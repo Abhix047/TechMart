@@ -33,7 +33,7 @@ import { getImg } from "../../config";
 */
 
 const DURATION = 15000;
-const NAVBAR_H = 88;
+const NAVBAR_H = 96;
 
 /* ── Magnetic button hook ── */
 function useMagnetic(strength = 0.35) {

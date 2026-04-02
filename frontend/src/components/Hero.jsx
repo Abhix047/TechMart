@@ -12,7 +12,7 @@ import { getImg } from "../../config";
 */
 
 const DURATION = 15000;
-const NAVBAR_H = 88;
+const NAVBAR_H = 96;
 
 const Hero = () => {
   const [banners, setBanners] = useState([]);

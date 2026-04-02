@@ -180,8 +180,8 @@ export default function Navbar() {
       <header
         className={`fixed top-0 left-0 w-full z-[99] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] 
           ${scrolled
-            ? "h-20 bg-white/50 backdrop-blur-2xl shadow-[0_2px_15px_rgba(0,0,0,0.02)]"
-            : "h-24 bg-transparent"
+            ? "h-20 bg-white/70 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-black/[0.04]"
+            : "h-24 bg-[#faf9f8] shadow-sm"
           }`}
       >
         {/* ─── DESKTOP ─── */}

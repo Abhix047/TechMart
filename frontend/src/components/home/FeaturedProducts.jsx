@@ -6,8 +6,8 @@ import API from "../../services/api";
 import { getImg } from "../../config";
 
 const serif = { fontFamily: "'Cormorant Garamond', serif" };
-const sans  = { fontFamily: "'Outfit', sans-serif" };
-const PER   = 4;
+const sans = { fontFamily: "'Outfit', sans-serif" };
+const PER = 4;
 
 /* ── Magnetic hook ── */
 function useMagnetic(s = 0.35) {
@@ -53,12 +53,12 @@ const Card = ({ product, index, onClick, inView }) => {
   const [loaded, setLoaded] = useState(false);
   const tilt = useTilt(5);
 
-  const name  = product?.name || "—";
+  const name = product?.name || "—";
   const brand = product?.brand || product?.category || "";
   const price = product?.price || 0;
-  const disc  = product?.discountPrice;
+  const disc = product?.discountPrice;
   const badge = product?.badge || (product?.isNew ? "New" : product?.isSale ? "Sale" : null);
-  const img   = product?.images?.[0] ? getImg(product.images[0]) : null;
+  const img = product?.images?.[0] ? getImg(product.images[0]) : null;
 
   return (
     <motion.article
@@ -79,13 +79,13 @@ const Card = ({ product, index, onClick, inView }) => {
           {img && !loaded && <Shimmer />}
           {img
             ? <motion.img src={img} alt={name} draggable={false} onLoad={() => setLoaded(true)}
-                className="w-full h-full object-contain p-6 mix-blend-multiply"
-                style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s" }}
-                animate={{ scale: hov ? 0.88 : 1 }}
-                transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }} />
+              className="w-full h-full object-contain p-6 mix-blend-multiply"
+              style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s" }}
+              animate={{ scale: hov ? 0.88 : 1 }}
+              transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }} />
             : <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] tracking-[0.3em] uppercase text-black/20" style={sans}>No Image</span>
-              </div>
+              <span className="text-[10px] tracking-[0.3em] uppercase text-black/20" style={sans}>No Image</span>
+            </div>
           }
 
           {/* badge */}
@@ -166,13 +166,13 @@ const Arrow = ({ dir, onClick, mag }) => (
 
 /* ══ MAIN ══ */
 export default function FeaturedProducts() {
-  const navigate   = useNavigate();
-  const ref        = useRef(null);
-  const inView     = useInView(ref, { once: true, margin: "-80px" });
-  const [items, setItems]     = useState([]);
+  const navigate = useNavigate();
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [page, setPage]       = useState(0);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
   const magL = useMagnetic(0.45), magR = useMagnetic(0.45);
 
   useEffect(() => {
@@ -184,7 +184,7 @@ export default function FeaturedProducts() {
 
   const total = Math.max(1, Math.ceil(items.length / PER));
   const slice = items.slice(page * PER, page * PER + PER);
-  const go    = useCallback(p => setPage(Math.max(0, Math.min(p, total - 1))), [total]);
+  const go = useCallback(p => setPage(Math.max(0, Math.min(p, total - 1))), [total]);
 
   useEffect(() => {
     if (total <= 1 || loading) return;
