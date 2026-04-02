@@ -1,480 +1,346 @@
 import { useRef, useState, useEffect } from "react";
-import { getImg, BASE_URL } from "../../config";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { getImg } from "../../config";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
-/* ─────────────────────────────────────────────────
-   LIGHT THEME TOKENS
-───────────────────────────────────────────────── */
-const T = {
-  bg: "#faf8f4",          // warm off-white
-  bgDeep: "#f2ede4",          // slightly darker warm cream
-  ink: "#1a1108",          // warm near-black
-  inkMid: "rgba(26,17,8,0.45)",
-  inkSoft: "rgba(26,17,8,0.28)",
-  inkFaint: "rgba(26,17,8,0.08)",
-  accent: "#1a1108",          // CTA button = ink
-  border: "rgba(26,17,8,0.08)",
-  borderMid: "rgba(26,17,8,0.13)",
+const THEME = {
+  bg: "#111111",  // Obsidian black for TechMart luxury
+  bgDark: "#0a0a0a", // Deeper black for image container
+  textPrimary: "#ffffff",
+  textSecondary: "rgba(255,255,255,0.55)",
+  border: "rgba(255,255,255,0.08)",
 };
 
-/* ─── Animated number counter ── */
-const Counter = ({ to, suffix = "", inView }) => {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    if (!inView) return;
-    let v = 0;
-    const step = to / 42;
-    const t = setInterval(() => {
-      v += step;
-      if (v >= to) { setVal(to); clearInterval(t); }
-      else setVal(Math.floor(v));
-    }, 26);
-    return () => clearInterval(t);
-  }, [inView, to]);
-  return <>{val.toLocaleString()}{suffix}</>;
-};
+const EASE = [0.19, 1, 0.22, 1];
 
-/* ─── Stat ── */
-const Stat = ({ value, suffix, label, delay, inView }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 14 }}
-    animate={inView ? { opacity: 1, y: 0 } : {}}
-    transition={{ delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    className="flex flex-col gap-1.5"
-  >
-    <span
-      className="leading-none"
-      style={{
-        fontFamily: "'Cormorant Garamond', serif",
-        fontSize: "clamp(26px, 2.8vw, 40px)",
-        fontWeight: 500,
-        color: T.ink,
-        letterSpacing: "-0.02em",
-      }}
-    >
-      <Counter to={value} suffix={suffix} inView={inView} />
-    </span>
-    <span
-      style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: 9,
-        fontWeight: 400,
-        letterSpacing: "0.22em",
-        textTransform: "uppercase",
-        color: T.inkSoft,
-      }}
-    >
-      {label}
-    </span>
-  </motion.div>
-);
-
-/* ═══════════════════════════════════════════════════
-   MAIN COMPONENT
-═══════════════════════════════════════════════════ */
-const EditorialBanner = () => {
+export default function EditorialBanner() {
   const navigate = useNavigate();
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const [hovered, setHovered] = useState(false);
-  const [cursor, setCursor] = useState({ x: 50, y: 50 });
+  const containerRef = useRef(null);
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
     API.get("/products")
       .then((res) => {
-        const products = Array.isArray(res.data) ? res.data : [];
-        const s26 = products.find(p => p.name.toLowerCase().includes("s26 ultra"));
-        if (s26) setProduct(s26);
+        const p = Array.isArray(res.data) ? res.data : [];
+        // Look specifically for the Samsung Galaxy Z Fold, or fallback to another premium device
+        const f = p.find(x => x.name.toLowerCase().includes("fold")) || 
+                  p.find(x => x.name.toLowerCase().includes("z fold")) || 
+                  p.find(x => x.name.toLowerCase().match(/watch|headphone|ultra|pro/)) || 
+                  p[0];
+        if (f) setProduct(f);
       })
       .catch(console.error);
   }, []);
 
   const handleNavigate = () => {
-    if (product) {
-      navigate(`/product/${product._id}`);
-    } else {
-      navigate("/featured");
-    }
+    if (product) navigate(`/product/${product._id}`);
+    else navigate("/featured");
   };
 
-  /* Dual-direction parallax */
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const leftY = useTransform(scrollYProgress, [0, 1], ["-5%", "5%"]);
-  const rightY = useTransform(scrollYProgress, [0, 1], ["5%", "-5%"]);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
 
-  /* Cursor spotlight */
-  const onMouseMove = (e) => {
-    const r = ref.current?.getBoundingClientRect();
-    if (!r) return;
-    setCursor({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-  };
+  // Massive container sweeps
+  const cardScale = useTransform(scrollYProgress, [0, 0.35, 0.65, 1], [0.9, 1, 1, 0.9]);
+  const cardOpacity = useTransform(scrollYProgress, [0, 0.25, 0.75, 1], [0, 1, 1, 0]);
+  const cardY = useTransform(scrollYProgress, [0, 0.35, 0.65, 1], [100, 0, 0, -100]);
 
-  /* Animation variants */
-  const wrapV = {
+  // Internal visual parallax
+  const numberY = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]);
+  const imageY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+
+  // Stagger wrapper for header text
+  const headerVariants = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.09, delayChildren: 0.12 } },
+    show: { transition: { staggerChildren: 0.15 } }
   };
-  const lineReveal = {
+  const lineVariants = {
     hidden: { y: "110%", opacity: 0 },
-    show: { y: "0%", opacity: 1, transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] } },
-  };
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16, filter: "blur(3px)" },
-    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+    show: { y: "0%", opacity: 1, transition: { duration: 1.2, ease: EASE } }
   };
 
   return (
-    <section ref={ref} className="px-4 sm:px-8 lg:px-14 xl:px-16 py-12 md:py-16">
-
+    <section ref={containerRef} className="px-4 py-6 md:py-8 lg:py-10 bg-[#faf9f8] overflow-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 28 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onMouseMove={onMouseMove}
-        onClick={handleNavigate}
-        className="relative overflow-hidden cursor-pointer"
-        style={{
-          background: T.bg,
-          border: `1px solid ${T.borderMid}`,
-          boxShadow: hovered
-            ? `0 32px 80px rgba(26,17,8,0.12), 0 0 0 1px ${T.borderMid}`
-            : `0 8px 40px rgba(26,17,8,0.07)`,
-          transition: "box-shadow 0.5s ease",
+        className="w-full max-w-[1500px] mx-auto overflow-hidden rounded-sm shadow-2xl"
+        style={{ 
+          background: THEME.bg,
+          scale: cardScale, 
+          opacity: cardOpacity, 
+          y: cardY,
+          willChange: "transform, opacity"
         }}
       >
-
-        {/* ── Cursor warm spotlight ── */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          animate={{
-            background: hovered
-              ? `radial-gradient(480px circle at ${cursor.x}% ${cursor.y}%, rgba(26,17,8,0.025) 0%, transparent 70%)`
-              : "none",
-          }}
-          transition={{ duration: 0.12 }}
-        />
-
-        {/* ── Subtle grid pattern ── */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.025]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(26,17,8,1) 1px,transparent 1px),linear-gradient(90deg,rgba(26,17,8,1) 1px,transparent 1px)",
-            backgroundSize: "52px 52px",
-          }}
-        />
-
-        {/* ════════════════════════════════════════════
-            SPLIT: LEFT text  |  RIGHT visual panel
-        ════════════════════════════════════════════ */}
-        <div className="flex flex-col lg:flex-row">
-
-          {/* ── LEFT PANEL ── */}
-          <motion.div
-            className="relative z-10 flex flex-col flex-1"
-            style={{
-              padding: "clamp(44px,6.5vh,80px) clamp(24px,5vw,68px)",
-              borderRight: `1px solid ${T.border}`,
-              y: leftY,
-            }}
+        {/* TOP HEADER SECTION */}
+        <div className="relative px-6 md:px-12 pt-6 pb-4 flex flex-col md:flex-row justify-between items-start md:items-end overflow-hidden">
+          
+          <motion.div 
+            variants={headerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-100px" }}
+            className="flex flex-col relative z-10"
           >
-            {/* Label */}
-            <motion.div
-              initial={{ opacity: 0, x: -14 }}
-              animate={isInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.1, duration: 0.55 }}
-              className="flex items-center gap-3 mb-10"
-            >
-              <span className="block w-6 h-px" style={{ background: T.borderMid }} />
-              <span
-                style={{
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 9,
-                  fontWeight: 400,
-                  letterSpacing: "0.3em",
-                  textTransform: "uppercase",
-                  color: T.inkSoft,
-                }}
+            <div className="overflow-hidden pb-1">
+              <motion.h1 
+                variants={lineVariants}
+                className="m-0 font-['Outfit',sans-serif] tracking-tighter whitespace-nowrap"
+                style={{ fontSize: "clamp(32px, 5vw, 64px)", lineHeight: 1.1, color: THEME.textPrimary, fontWeight: 500 }}
               >
-                Editor's Selection
-              </span>
-            </motion.div>
-
-            {/* Headline — theatrical line reveal */}
-            <motion.div
-              variants={wrapV}
-              initial="hidden"
-              animate={isInView ? "show" : "hidden"}
-              className="mb-8"
-            >
-              <div className="overflow-hidden mb-0.5">
-                <motion.h2
-                  variants={lineReveal}
-                  className="m-0 leading-[0.94] truncate"
-                  style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: product ? "clamp(34px, 4vw, 56px)" : "clamp(44px, 5.2vw, 76px)",
-                    fontWeight: 300,
-                    fontStyle: "italic",
-                    color: T.inkMid,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {product ? product.brand : "Technology,"}
-                </motion.h2>
-              </div>
-              <div className="overflow-hidden">
-                <motion.h2
-                  variants={lineReveal}
-                  className="m-0 leading-[0.94] line-clamp-2 pr-6"
-                  style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: product ? "clamp(34px, 4vw, 56px)" : "clamp(44px, 5.2vw, 76px)",
-                    fontWeight: 600,
-                    fontStyle: "normal",
-                    color: T.ink,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {product ? product.name : "refined."}
-                </motion.h2>
-              </div>
-            </motion.div>
-
-            {/* Body */}
-            <motion.p
-              variants={fadeUp}
-              initial="hidden"
-              animate={isInView ? "show" : "hidden"}
-              className="mb-10 leading-[1.85] line-clamp-3"
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 13,
-                fontWeight: 300,
-                color: T.inkMid,
-                maxWidth: 360,
-              }}
-            >
-              {product?.description || "Handpicked gear for those who demand more — precision-crafted peripherals and audio engineered for the modern workspace."}
-            </motion.p>
-
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <motion.button
-                onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="group relative inline-flex items-center gap-0 border-none cursor-pointer overflow-hidden"
-                style={{ background: "transparent", padding: 0 }}
-              >
-                <div
-                  className="relative flex items-center gap-3 overflow-hidden"
-                  style={{ padding: "13px 28px", background: T.ink }}
-                >
-                  {/* Hover sweep */}
-                  <motion.div
-                    className="absolute inset-0"
-                    initial={{ x: "-101%" }}
-                    whileHover={{ x: "0%" }}
-                    transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ background: "#2d2015" }}
-                  />
-                  <span
-                    className="relative z-10 whitespace-nowrap"
-                    style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 10.5,
-                      fontWeight: 500,
-                      letterSpacing: "0.26em",
-                      textTransform: "uppercase",
-                      color: "white",
-                    }}
-                  >
-                    {product ? "View Details" : "Explore Featured"}
-                  </span>
-                  <motion.div
-                    className="relative z-10"
-                    whileHover={{ x: 3, y: -3 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ArrowUpRight size={13} strokeWidth={1.8} className="text-white" />
-                  </motion.div>
-                </div>
-              </motion.button>
-            </motion.div>
-
+                TechMart Exclusives.
+              </motion.h1>
+            </div>
           </motion.div>
-
-          {/* ── RIGHT PANEL ── */}
-          <motion.div
-            className="relative lg:w-[42%] flex flex-col justify-between overflow-hidden"
-            style={{
-              padding: "clamp(36px,5vh,64px) clamp(28px,4vw,56px)",
-              background: T.bgDeep,
-              borderLeft: `1px solid ${T.border}`,
-              y: rightY,
-            }}
-          >
-
-            {/* Top row */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.28, duration: 0.5 }}
-              className="flex items-center justify-between mb-6"
+          
+          {/* Right Content: Number + CTA */}
+          <div className="flex flex-col items-start md:items-end gap-6 relative z-10 w-full md:w-auto mt-6 md:mt-0">
+            <motion.span 
+              className="absolute right-[-4vw] top-[-100px] md:right-0 md:top-[-130px] font-['Outfit',sans-serif] tracking-tighter select-none pointer-events-none"
+              style={{ fontSize: "clamp(100px, 12vw, 160px)", lineHeight: 0.8, color: "rgba(255,255,255,0.03)", fontWeight: 500, y: numberY }}
             >
-              {/* "Live" badge */}
-              <div
-                className="flex items-center gap-2 px-3 py-1.5"
-                style={{
-                  background: "white",
-                  border: `1px solid ${T.border}`,
-                }}
+              03
+            </motion.span>
+            
+            <motion.button 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5, duration: 0.8, ease: EASE }}
+              onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
+              className="font-['Outfit',sans-serif] text-[13px] md:text-[14px] tracking-[0.2em] uppercase cursor-pointer transition-all border border-white/20 hover:border-white hover:bg-white hover:text-black py-4 px-8 rounded-full flex items-center gap-3 group bg-transparent text-white relative z-20"
+            >
+              <span className="transition-opacity">Discover Now</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* THIN HORIZONTAL DIVIDER */}
+        <motion.div 
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.5, ease: EASE }}
+          className="w-full h-[1px] origin-left" 
+          style={{ background: THEME.border }} 
+        />
+
+        {/* BOTTOM GRID STRUCTURE */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 min-h-[450px]">
+          
+          {/* COLUMN 1: Context & Navigation */}
+          <div className="p-8 md:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/5 relative bg-white/[0.01]">
+            <div className="flex flex-col gap-2 relative z-10">
+              <motion.span 
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2, duration: 0.8, ease: EASE }}
+                className="font-['Outfit',sans-serif] text-[11px] tracking-[0.2em] uppercase text-white/50" 
               >
-                <span
-                  className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: "#4a8c44" }}
-                />
-                <span
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: 8.5,
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    color: T.inkSoft,
-                  }}
-                >
-                  Now Available
+                Curated Selection
+              </motion.span>
+              <motion.span 
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.25, duration: 0.8, ease: EASE }}
+                className="font-['Outfit',sans-serif] text-[20px] font-medium text-white/90" 
+              >
+                Vol. IV
+              </motion.span>
+            </div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.8, ease: EASE }}
+              className="mt-20 lg:mt-0 relative z-10"
+            >
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
+                className="font-['Outfit',sans-serif] text-[12px] tracking-[0.2em] uppercase cursor-pointer text-left transition-all pb-2 w-fit group flex items-center gap-3 text-white/80 hover:text-white"
+                style={{ borderBottom: `1px solid ${THEME.border}` }}
+              >
+                <span className="transition-opacity">Discover Series</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-2 transition-transform text-white/40"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </button>
+            </motion.div>
+            
+            {/* Aesthetic Tech Lines in BG */}
+            <div className="absolute right-4 bottom-4 opacity-10 pointer-events-none flex gap-1">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="w-[1px] h-4 bg-white" style={{ height: `${Math.random() * 20 + 5}px` }}></div>
+              ))}
+            </div>
+          </div>
+
+          {/* COLUMN 2: Product Identifiers & Details */}
+          <div className="p-8 md:p-12 border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col justify-between relative">
+            <div className="flex-1 flex flex-col">
+              <motion.p 
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, duration: 0.8, ease: EASE }}
+                className="font-['Outfit',sans-serif] text-[10px] tracking-[0.25em] uppercase mb-6 flex items-center justify-between text-white/50" 
+              >
+                <span>{product?.brand || "Exclusive"}</span>
+                <span className="border border-white/10 px-2 py-1 object-contain rounded-full bg-white/5">{product?.category || "Artifact"}</span>
+              </motion.p>
+              
+              <motion.h3 
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5, duration: 0.8, ease: EASE }}
+                className="font-['Outfit',sans-serif] text-[32px] md:text-[38px] font-medium leading-[1.05] tracking-tight mb-6 text-white" 
+              >
+                {product?.name || "Engineering Masterpiece"}
+              </motion.h3>
+
+              <motion.p 
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.6, duration: 0.8, ease: EASE }}
+                className="font-['Outfit',sans-serif] text-[14px] md:text-[15px] font-light leading-[1.8] mt-auto text-white/60" 
+              >
+                {product?.description?.substring(0, 160) || 
+                 "Prioritizing uncompromising structural integrity, phenomenal core performance, and an absolute minimalist direction for modern aesthetics."}
+                {product?.description?.length > 160 ? "..." : ""}
+              </motion.p>
+            </div>
+            
+            {/* Minimal Stock Status */}
+            <motion.div
+              initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.7 }}
+              className="mt-8 flex items-center gap-3 pt-6 border-t border-white/5"
+            >
+              <div className="relative flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-green-500/80"></div>
+                <div className="w-2 h-2 rounded-full bg-green-500/50 absolute animate-ping"></div>
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.25em] font-['Outfit'] text-white/40 font-medium">Verified Active</span>
+            </motion.div>
+          </div>
+
+          {/* COLUMN 3: Abstract Specifications */}
+          <div className="p-8 md:p-12 border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col justify-between bg-white/[0.01]">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.8, ease: EASE }}
+              className="w-full"
+            >
+              <div className="flex justify-between items-end border-b border-white/10 pb-4 mb-8">
+                <span className="font-['Outfit',sans-serif] text-[11px] tracking-[0.2em] uppercase text-white/50">
+                  Hardware Index
+                </span>
+                <span className="font-['Outfit',sans-serif] text-[9px] tracking-widest text-white/20">
+                  SYS.INF
                 </span>
               </div>
-
-              <span
-                style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: 11,
-                  fontWeight: 300,
-                  color: T.inkFaint,
-                  letterSpacing: "0.12em",
-                }}
-              >
-                SS 2025
-              </span>
+              
+              <div className="flex flex-col gap-6">
+                {[
+                  { label: "Core Element", val: "Aero-Grade Material" },
+                  { label: "Architecture", val: "Quantum Precision" },
+                  { label: "Performance", val: "High-Fidelity Output" },
+                  { label: "Integration", val: "Seamless Ecosystem" }
+                ].map((spec, idx) => (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, x: -10 }} 
+                    whileInView={{ opacity: 1, x: 0 }} 
+                    viewport={{ once: true }} 
+                    transition={{ delay: 0.7 + (idx * 0.1), duration: 0.8, ease: EASE }}
+                    className="flex flex-col gap-1 group cursor-default"
+                  >
+                    <span className="font-['Outfit',sans-serif] text-[9px] tracking-[0.15em] uppercase text-white/30 group-hover:text-white/50 transition-colors">
+                      {spec.label}
+                    </span>
+                    <span className="font-['Outfit',sans-serif] text-[15px] font-medium tracking-wide text-white/90">
+                      {spec.val}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
 
-            {/* Ghost letterform or Product Image */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.88 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ delay: 0.38, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-              className="hidden md:flex items-center justify-center py-6 select-none"
+              initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 1 }}
+              className="mt-8 pt-6 border-t border-white/5 flex gap-4 w-full"
             >
-              {product?.images?.length > 0 ? (
-                <img
-                  src={getImg(product.images[0])}
-                  alt={product.name}
-                  className="w-full max-w-[500px] lg:scale-110 object-contain drop-shadow-2xl mix-blend-multiply transition-transform"
+               <div className="flex-1">
+                 <div className="text-[8px] uppercase tracking-[0.2em] text-white/30 mb-1">Rating</div>
+                 <div className="text-[13px] text-white/80 font-medium font-['Outfit']">4.9/5 RVS</div>
+               </div>
+               <div className="w-[1px] bg-white/5"></div>
+               <div className="flex-1 pl-4">
+                 <div className="text-[8px] uppercase tracking-[0.2em] text-white/30 mb-1">Warranty</div>
+                 <div className="text-[13px] text-white/80 font-medium font-['Outfit']">2 YRS PRO</div>
+               </div>
+            </motion.div>
+          </div>
+
+          {/* COLUMN 4: Image Visuals with extreme parallax */}
+          <div className="relative p-8 flex items-center justify-center overflow-hidden min-h-[350px] lg:min-h-full group" style={{ background: THEME.bgDark }}>
+            {/* Dynamic aesthetic glow behind image */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 0.15, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.8, duration: 1.5, ease: EASE }}
+              className="absolute inset-0 bg-white blur-[90px] rounded-full z-0 w-3/4 h-3/4 m-auto mix-blend-screen" 
+            />
+            
+            {/* Scanline CRT Effect for extra Tech-Luxe feel */}
+            <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] pointer-events-none z-20 opacity-30 group-hover:opacity-40 transition-opacity" />
+
+            <motion.div style={{ y: imageY, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }} className="relative z-10">
+              {product?.images?.[0] ? (
+                <motion.img 
+                  initial={{ opacity: 0, scale: 0.9, filter: "brightness(0.5) blur(4px)" }}
+                  whileInView={{ opacity: 1, scale: 1, filter: "brightness(1) blur(0px)" }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5, duration: 1.2, ease: EASE }}
+                  src={getImg(product.images[0])} 
+                  className="w-full max-w-[340px] lg:scale-[1.15] object-contain drop-shadow-2xl hover:scale-[1.25] transition-transform duration-700 ease-out" 
+                  alt={product?.name || "Product"}
                 />
               ) : (
-                <span
-                  style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: "clamp(88px, 13vw, 160px)",
-                    fontWeight: 300,
-                    fontStyle: "italic",
-                    color: "transparent",
-                    letterSpacing: "-0.04em",
-                    lineHeight: 0.88,
-                    WebkitTextStroke: `1px ${T.inkFaint}`,
-                  }}
-                >
-                  TM
-                </span>
+                <span className="font-['Outfit',sans-serif] tracking-tighter opacity-5 text-[120px] font-medium text-white italic">TM.</span>
               )}
             </motion.div>
 
-            {/* Stats */}
-            <div
-              className="grid grid-cols-3 mt-auto"
-              style={{
-                borderTop: `1px solid ${T.border}`,
-                paddingTop: 22,
-                gap: "clamp(10px, 2.5vw, 28px)",
-              }}
-            >
-              <Stat value={50} suffix="k+" label="Customers" delay={0.48} inView={isInView} />
-              <Stat value={1200} suffix="+" label="Products" delay={0.6} inView={isInView} />
-              <Stat value={4} suffix=".9★" label="Rating" delay={0.72} inView={isInView} />
-            </div>
+            {/* Price Overlay */}
+            {product?.price && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1, duration: 0.8, ease: EASE }}
+                className="absolute bottom-6 right-6 lg:bottom-10 lg:right-10 z-20 flex flex-col items-end backdrop-blur-md bg-black/20 p-4 border border-white/10 rounded-sm"
+              >
+                <span className="font-['Outfit',sans-serif] text-[9px] tracking-[0.2em] uppercase text-white/50 mb-1">
+                  Valuation
+                </span>
+                <span className="font-['Outfit',sans-serif] text-[22px] tracking-tight text-white font-medium">
+                  ₹{product.price.toLocaleString('en-IN')}
+                </span>
+              </motion.div>
+            )}
+          </div>
 
-          </motion.div>
         </div>
-
-        {/* ── Bottom ticker ── */}
-        <div
-          className="overflow-hidden"
-          style={{
-            borderTop: `1px solid ${T.border}`,
-            padding: "11px 0",
-            background: T.bgDeep,
-          }}
-        >
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
-            className="flex whitespace-nowrap"
-          >
-            {[0, 1].map((r) => (
-              <div key={r} className="flex items-center">
-                {["Premium Peripherals", "Curated Audio", "Workspace Essentials", "Editor's Picks", "Free Delivery on ₹999+", "2 Year Warranty"].map((t, i) => (
-                  <span key={i} className="flex items-center">
-                    <span
-                      className="px-8"
-                      style={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontSize: 9.5,
-                        letterSpacing: "0.22em",
-                        textTransform: "uppercase",
-                        color: T.inkSoft,
-                      }}
-                    >
-                      {t}
-                    </span>
-                    <span style={{ color: T.inkFaint, fontSize: 7 }}>◆</span>
-                  </span>
-                ))}
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* ── Top-right corner arrow ── */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ delay: 0.55, duration: 0.45 }}
-          className="absolute top-4 right-4 flex items-center justify-center"
-          style={{
-            width: 32, height: 32,
-            border: `1px solid ${T.border}`,
-            background: "white",
-          }}
-        >
-          <ArrowUpRight size={13} strokeWidth={1.5} style={{ color: T.inkSoft }} />
-        </motion.div>
 
       </motion.div>
     </section>
   );
-};
-
-export default EditorialBanner;
+}

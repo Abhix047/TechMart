@@ -13,14 +13,14 @@ import { getImg } from "../config.js";
 if (!document.getElementById("nb-fonts")) {
   const l = Object.assign(document.createElement("link"), {
     id: "nb-fonts", rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap",
   });
   document.head.appendChild(l);
 }
 
 const serif = { fontFamily: "'Cormorant Garamond', serif" };
-const sans  = { fontFamily: "'Outfit', sans-serif" };
-const GOLD  = "#111010";
+const sans = { fontFamily: "'Outfit', sans-serif" };
+const GOLD = "#111010";
 
 /* ── Badge ── */
 const Badge = ({ count }) => count > 0 && (
@@ -32,7 +32,7 @@ const Badge = ({ count }) => count > 0 && (
 /* ── Icon button ── */
 const IconBtn = ({ onClick, children, className = "" }) => (
   <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }} onClick={onClick}
-    className={`relative flex items-center justify-center w-9 h-9 rounded-full bg-transparent border-none cursor-pointer text-stone-400 hover:text-stone-800 transition-colors ${className}`}>
+    className={`relative flex items-center justify-center w-9 h-9 rounded-full bg-transparent border-none cursor-pointer text-[#111010]/70 hover:text-[#111010] transition-colors ${className}`}>
     {children}
   </motion.button>
 );
@@ -41,7 +41,7 @@ const IconBtn = ({ onClick, children, className = "" }) => (
 const NavItem = ({ to, children, onClick, isActive: forced }) => {
   const inner = (active) => (
     <span className="relative group flex flex-col items-start cursor-pointer">
-      <span className={`text-[10.5px] tracking-[0.18em] uppercase transition-colors duration-300 ${(forced ?? active) ? "text-stone-900" : "text-stone-400"}`} style={sans}>
+      <span className={`text-[10.5px] tracking-[0.18em] uppercase transition-colors duration-300 ${(forced ?? active) ? "text-[#111010]" : "text-[#111010]/60"}`} style={sans}>
         {children}
       </span>
       <span className={`absolute -bottom-1 left-0 h-px bg-gradient-to-r from-[#111010] to-stone-800 transition-all duration-500 ${(forced ?? active) ? "w-full" : "w-0 group-hover:w-full"}`} />
@@ -70,10 +70,10 @@ const SearchDropdown = ({ results, searchTerm, onSelect, onViewAll, isMobile }) 
                     {p.images?.[0] && <img src={getImg(p.images[0].replace(/\\/g, "/"))} className="w-full h-full object-contain mix-blend-multiply" alt="" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-semibold tracking-widest uppercase text-[#111010] mb-0.5" style={sans}>{p.brand || p.category}</p>
-                    <p className="text-[13px] text-stone-800 truncate" style={sans}>{p.name}</p>
+                    <p className="text-[9px] font-semibold tracking-widest uppercase text-[#111010]/60 mb-0.5" style={sans}>{p.brand || p.category}</p>
+                    <p className="text-[13px] text-[#111010]" style={sans}>{p.name}</p>
                   </div>
-                  <p className="text-[13px] font-semibold text-stone-800 shrink-0 italic" style={serif}>
+                  <p className="text-[13px] font-semibold text-[#111010] shrink-0 italic" style={serif}>
                     ₹{(p.discountPrice || p.price || 0).toLocaleString("en-IN")}
                   </p>
                 </button>
@@ -98,24 +98,24 @@ const SearchDropdown = ({ results, searchTerm, onSelect, onViewAll, isMobile }) 
 
 /* ════════════════ MAIN NAVBAR ════════════════ */
 export default function Navbar() {
-  const [mobileOpen, setMobileOpen]     = useState(false);
-  const [profileOpen, setProfileOpen]   = useState(false);
-  const [searchOpen, setSearchOpen]     = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileSearch, setMobileSearch] = useState(false);
-  const [searchTerm, setSearchTerm]     = useState("");
-  const [authOpen, setAuthOpen]         = useState(false);
-  const [scrolled, setScrolled]         = useState(false);
-  const [products, setProducts]         = useState([]);
-  const [results, setResults]           = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [results, setResults] = useState([]);
 
-  const { user, logout }  = useAuth();
-  const { cartCount }     = useCart();
+  const { user, logout } = useAuth();
+  const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const location          = useLocation();
-  const navigate          = useNavigate();
-  const profileRef        = useRef(null);
-  const searchRef         = useRef(null);
-  const progressRef       = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const profileRef = useRef(null);
+  const searchRef = useRef(null);
+  const progressRef = useRef(null);
 
   useEffect(() => {
     const fn = () => {
@@ -154,8 +154,8 @@ export default function Navbar() {
     [setMobileOpen, setSearchOpen, setMobileSearch].forEach(s => s(false));
     setSearchTerm("");
   };
-  const goProduct  = (id) => { navigate(`/product/${id}`); setSearchOpen(false); setMobileSearch(false); setSearchTerm(""); };
-  const doLogout   = async () => { await logout(); setProfileOpen(false); setMobileOpen(false); navigate("/"); };
+  const goProduct = (id) => { navigate(`/product/${id}`); setSearchOpen(false); setMobileSearch(false); setSearchTerm(""); };
+  const doLogout = async () => { await logout(); setProfileOpen(false); setMobileOpen(false); navigate("/"); };
   const goFeatured = () => {
     [setMobileOpen, setSearchOpen].forEach(s => s(false));
     if (location.pathname === "/") { document.getElementById("featured-products")?.scrollIntoView({ behavior: "smooth" }); return; }
@@ -163,10 +163,10 @@ export default function Navbar() {
   };
 
   const isFeaturedActive = location.pathname === "/" && location.hash === "#featured-products";
-  const leftLinks  = [{ name: "Products", to: "/products" }, { name: "Featured", featured: true }];
+  const leftLinks = [{ name: "Products", to: "/products" }, { name: "Featured", featured: true }];
   const rightLinks = [{ name: "About", to: "/about" }, { name: "Offers", to: "/offers" }];
-  const allLinks   = [...leftLinks, ...rightLinks];
-  const dropLinks  = [{ to: "/orders", Icon: Package, label: "My Orders" }, { to: "/connect-us", Icon: Send, label: "Connect Us" }];
+  const allLinks = [...leftLinks, ...rightLinks];
+  const dropLinks = [{ to: "/orders", Icon: Package, label: "My Orders" }, { to: "/connect-us", Icon: Send, label: "Connect Us" }];
 
   const Avatar = ({ size = 28 }) => (
     <div className="rounded-full flex items-center justify-center text-white font-semibold shrink-0"
@@ -177,51 +177,46 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 w-full z-[99] transition-all duration-500 ${scrolled ? "bg-[#faf8f4]/90 backdrop-blur-xl shadow-sm border-b border-[#111010]/15" : "bg-[#faf8f4] border-b border-stone-100"}`}>
-
+      <header
+        className={`fixed top-0 left-0 w-full z-[99] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] 
+          ${scrolled
+            ? "h-20 bg-white/50 backdrop-blur-2xl shadow-[0_2px_15px_rgba(0,0,0,0.02)]"
+            : "h-24 bg-transparent"
+          }`}
+      >
         {/* ─── DESKTOP ─── */}
-        <motion.div initial={{ y: -70, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        <motion.div
+          initial={{ y: -70, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 130, damping: 22 }}
-          className="hidden lg:flex items-center relative px-[clamp(24px,5vw,80px)] transition-all duration-500"
-          style={{ height: scrolled ? 60 : 88 }}>
+          className="hidden lg:flex items-center relative px-[clamp(24px,5vw,80px)] transition-all duration-500 h-full">
 
-          <nav className="flex items-center gap-10 flex-1">
-            {leftLinks.map(l => l.featured
-              ? <NavItem key="featured" onClick={goFeatured} isActive={isFeaturedActive}>Featured</NavItem>
-              : <NavItem key={l.to} to={l.to}>{l.name}</NavItem>
-            )}
-          </nav>
-
-          {/* logo */}
-          <NavLink to="/" className="no-underline absolute left-1/2 -translate-x-1/2">
-            <div className="flex flex-col items-center">
-              <AnimatePresence>
-                {!scrolled && (
-                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                    className="text-[7.5px] tracking-[0.42em] uppercase text-[#111010] mb-1" style={sans}>Est. 2026</motion.p>
-                )}
-              </AnimatePresence>
-              <motion.span animate={{ fontSize: scrolled ? 22 : 30 }} transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="block text-stone-900 leading-none tracking-[0.12em]" style={serif}>TechMart</motion.span>
-              <AnimatePresence>
-                {!scrolled && (
-                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                    className="flex items-center gap-2 mt-1.5">
-                    <span className="w-4 h-px bg-[#111010]/40" />
-                    <span className="text-[6.5px] tracking-[0.44em] uppercase text-stone-400" style={sans}>Collection</span>
-                    <span className="w-4 h-px bg-[#111010]/40" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          <NavLink to="/" className="no-underline pr-8 transition-all duration-500">
+            <div className="flex flex-col items-start leading-none">
+              <motion.span
+                animate={{
+                  fontSize: scrolled ? "clamp(22px, 2.5vw, 26px)" : "clamp(28px, 3.5vw, 34px)",
+                  letterSpacing: "-0.02em"
+                }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="block text-[#1a1a2e] italic leading-[1.05] "
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                TechMart
+              </motion.span>
             </div>
           </NavLink>
 
-          {/* right */}
-          <div className="flex items-center justify-end gap-1 flex-1">
-            <nav className="flex items-center gap-10 mr-5">
-              {rightLinks.map(l => <NavItem key={l.to} to={l.to}>{l.name}</NavItem>)}
+          {/* --- Navigation + Icons Right --- */}
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <nav className="flex items-center gap-10 mr-8">
+              {allLinks.map(l => l.featured
+                ? <NavItem key="featured" onClick={goFeatured} isActive={isFeaturedActive}>Featured</NavItem>
+                : <NavItem key={l.to} to={l.to}>{l.name}</NavItem>
+              )}
             </nav>
-            <div className="w-px h-4 bg-stone-200 mx-1.5" />
+
+            <div className="w-px h-4 bg-[#111010]/10 mx-2" />
 
             {/* search */}
             <div ref={searchRef} className="relative flex items-center">
@@ -264,8 +259,8 @@ export default function Navbar() {
                       <div className="flex items-center gap-3 px-4 py-3.5 bg-stone-50 border-b border-stone-100">
                         <Avatar size={34} />
                         <div>
-                          <p className="text-[8.5px] tracking-[0.14em] uppercase text-[#111010] mb-0.5" style={sans}>My Account</p>
-                          <p className="text-[15px] text-stone-800" style={serif}>{user.name}</p>
+                          <p className="text-[8.5px] tracking-[0.14em] uppercase text-[#111010]/60 mb-0.5" style={sans}>My Account</p>
+                          <p className="text-[15px] text-[#111010]" style={serif}>{user.name}</p>
                         </div>
                       </div>
                       <div className="p-2 flex flex-col gap-1">
@@ -296,7 +291,7 @@ export default function Navbar() {
             )}
 
             <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={17} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
-            <NavLink to="/cart"     className="no-underline"><IconBtn><ShoppingCart size={17} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
+            <NavLink to="/cart" className="no-underline"><IconBtn><ShoppingCart size={17} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
           </div>
         </motion.div>
 
@@ -304,16 +299,16 @@ export default function Navbar() {
         <div className="flex lg:hidden flex-col">
           <div className={`flex items-center justify-between px-2 w-full transition-all duration-300 ${scrolled ? "h-14" : "h-16"}`}>
             <div className="flex items-center">
-              <IconBtn onClick={() => setMobileOpen(true)}><Menu size={20} strokeWidth={1.6} /></IconBtn>
-              <IconBtn onClick={() => setMobileSearch(!mobileSearch)}><Search size={18} strokeWidth={1.6} /></IconBtn>
+              <IconBtn onClick={() => setMobileOpen(true)}><Menu size={20} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
+              <IconBtn onClick={() => setMobileSearch(!mobileSearch)}><Search size={18} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
             </div>
             <NavLink to="/" className="no-underline">
-              <span className={`block tracking-[0.1em] text-stone-900 transition-all duration-300 ${scrolled ? "text-[20px]" : "text-[24px]"}`} style={serif}>TechMart</span>
+              <span className={`block tracking-[0.1em] text-[#111010] transition-all duration-300 ${scrolled ? "text-[20px]" : "text-[24px]"}`} style={serif}>TechMart</span>
             </NavLink>
             <div className="flex items-center">
-              <NavLink to="/"         className="no-underline"><IconBtn><House size={18} strokeWidth={1.6} /></IconBtn></NavLink>
+              <NavLink to="/" className="no-underline"><IconBtn><House size={18} strokeWidth={1.6} /></IconBtn></NavLink>
               <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={18} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
-              <NavLink to="/cart"     className="no-underline"><IconBtn><ShoppingCart size={18} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
+              <NavLink to="/cart" className="no-underline"><IconBtn><ShoppingCart size={18} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
             </div>
           </div>
           <AnimatePresence>
@@ -351,11 +346,12 @@ export default function Navbar() {
 
               <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
                 <div>
-                  <p className="text-[7.5px] tracking-[0.4em] uppercase text-[#111010] mb-1" style={sans}>Est. 2026</p>
-                  <span className="text-[22px] tracking-[0.08em] text-stone-900" style={serif}>TechMart</span>
+                  <span className="text-[22px] tracking-[-0.015em] font-light text-[#0a0a0a] leading-[1.05]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    <em className="italic font-normal">techmart</em>
+                  </span>
                 </div>
                 <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 border-none cursor-pointer">
-                  <X size={15} className="text-stone-800" />
+                  <X size={15} className="text-[#0a0a0a]" />
                 </button>
               </div>
 
@@ -365,7 +361,7 @@ export default function Navbar() {
                   {allLinks.map(l => l.featured ? (
                     <button key="feat" onClick={goFeatured} className="w-full bg-transparent border-none p-0 text-left">
                       <div className={`px-4 py-3 rounded-xl flex items-center justify-between transition-colors ${isFeaturedActive ? "bg-stone-100" : "hover:bg-stone-100/70"}`}>
-                        <span className="text-[14.5px] text-stone-800" style={sans}>Featured</span>
+                        <span className="text-[14.5px] text-[#111010]" style={sans}>Featured</span>
                         {isFeaturedActive && <span className="w-1.5 h-1.5 rounded-full bg-[#111010]" />}
                       </div>
                     </button>
@@ -373,7 +369,7 @@ export default function Navbar() {
                     <NavLink key={l.to} to={l.to} onClick={() => setMobileOpen(false)} className="no-underline">
                       {({ isActive }) => (
                         <div className={`px-4 py-3 rounded-xl flex items-center justify-between transition-colors ${isActive ? "bg-stone-100" : "hover:bg-stone-100/70"}`}>
-                          <span className={`text-[14.5px] text-stone-800 ${isActive ? "font-medium" : "font-normal"}`} style={sans}>{l.name}</span>
+                          <span className={`text-[14.5px] text-[#111010] ${isActive ? "font-medium" : "font-normal"}`} style={sans}>{l.name}</span>
                           {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#111010]" />}
                         </div>
                       )}
@@ -394,16 +390,16 @@ export default function Navbar() {
                       <div className="flex items-center gap-3">
                         <Avatar size={40} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[9px] tracking-widest uppercase text-[#111010] mb-0.5" style={sans}>Signed In</p>
-                          <p className="text-[16px] text-stone-800 truncate" style={serif}>{user.name}</p>
+                          <p className="text-[9px] tracking-widest uppercase text-[#111010]/60 mb-0.5" style={sans}>Signed In</p>
+                          <p className="text-[16px] text-[#111010] truncate" style={serif}>{user.name}</p>
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
                         {dropLinks.map(({ to, Icon, label }) => (
                           <NavLink key={to} to={to} onClick={() => setMobileOpen(false)} className="no-underline">
                             <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-stone-100/70 transition-colors cursor-pointer">
-                              <Icon size={15} className="text-stone-500 shrink-0" />
-                              <span className="text-[13.5px] text-stone-700" style={sans}>{label}</span>
+                              <Icon size={15} className="text-[#111010]/70 shrink-0" />
+                              <span className="text-[13.5px] text-[#111010]" style={sans}>{label}</span>
                             </div>
                           </NavLink>
                         ))}

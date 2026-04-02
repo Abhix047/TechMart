@@ -1,312 +1,209 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import { RotateCcw, Shield, Truck, Zap } from "lucide-react";
+import { Zap, ArrowLeftRight, ShieldCheck, Headphones } from "lucide-react";
 
-const GOLD = "#c9a96e";
-const GOLD_LT = "#edd9a3";
-const GOLD_DIM = "rgba(201,169,110,0.18)";
-const DARK = "#1c1710";
-const MUTED_D = "rgba(28,23,16,0.42)";
-const RULE_D = "rgba(28,23,16,0.09)";
-const AUTOPLAY = 2000;
+/* ── Fonts ── */
+if (typeof document !== "undefined" && !document.getElementById("bp-v3-fonts")) {
+  const l = document.createElement("link");
+  l.id = "bp-v3-fonts";
+  l.rel = "stylesheet";
+  l.href =
+    "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap";
+  document.head.appendChild(l);
+}
+
+const AUTOPLAY = 3500;
 const MOBILE_QUERY = "(max-width: 767px)";
-const EASE_OUT = [0.16, 1, 0.3, 1];
+// Ultra-smooth easing curve for luxury tech feel
+const EASE_OUT = [0.19, 1, 0.22, 1];
 
 const PROMISES = [
   {
-    Icon: Truck,
-    roman: "I",
-    title: "Complimentary Delivery",
-    tagline: "White-glove service",
-    desc: "Every order above Rs.999 arrives via premium tracked courier, handled with care.",
-    stat: "999",
-    statSuffix: "+",
-    statLbl: "min. order",
-    statPrefix: "Rs.",
-  },
-  {
-    Icon: RotateCcw,
-    roman: "II",
-    title: "Effortless Returns",
-    tagline: "No questions asked",
-    desc: "A full seven days to reconsider. Our concierge return process is seamless.",
-    stat: "07",
-    statSuffix: " days",
-    statLbl: "return window",
-  },
-  {
-    Icon: Shield,
-    roman: "III",
-    title: "Complete Warranty",
-    tagline: "Peace of mind",
-    desc: "Every product ships with a comprehensive twelve-month manufacturer warranty.",
-    stat: "12",
-    statSuffix: " mo",
-    statLbl: "coverage",
-  },
-  {
     Icon: Zap,
-    roman: "IV",
-    title: "Same-Day Dispatch",
-    tagline: "Swift fulfilment",
-    desc: "Orders confirmed before 2 PM are dispatched the same day, without exception.",
+    roman: "I",
+    title: "Express Dispatch",
+    tagline: "Unmatched Speed",
+    desc: "Orders confirmed before 2 PM are fulfilled and shipped the very same day without exception.",
     stat: "02",
     statSuffix: " PM",
-    statLbl: "cutoff",
+    statLbl: "Daily Cutoff",
+  },
+  {
+    Icon: ArrowLeftRight,
+    roman: "II",
+    title: "Seamless Returns",
+    tagline: "Zero Friction",
+    desc: "Experience a completely hassle-free 7-day return window. No complicated questions asked.",
+    stat: "07",
+    statSuffix: " Days",
+    statLbl: "Return Window",
+  },
+  {
+    Icon: ShieldCheck,
+    roman: "III",
+    title: "Premium Warranty",
+    tagline: "Absolute Trust",
+    desc: "Every product includes a comprehensive 12-month manufacturer guarantee for complete peace of mind.",
+    stat: "12",
+    statSuffix: " Mos",
+    statLbl: "Full Coverage",
+  },
+  {
+    Icon: Headphones,
+    roman: "IV",
+    title: "Dedicated Support",
+    tagline: "Always Online",
+    desc: "Our concierge support team is available 24/7 to provide premium assistance at your fingertips.",
+    stat: "24",
+    statSuffix: "/7",
+    statLbl: "Concierge",
   },
 ];
 
-const CARD_TRANSITION = { duration: 0.85, ease: EASE_OUT };
-const SHORT_TRANSITION = { duration: 0.45 };
-const GLOW_TRANSITION = { duration: 0.6, ease: "easeInOut" };
-const LINE_TRANSITION = { duration: 0.75, ease: EASE_OUT };
-
-const ProgressBar = memo(function ProgressBar({ active, reduceMotion }) {
+const ProgressBar = memo(function ProgressBar({ active }) {
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-black/5">
+    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-black/5">
       {active && (
         <motion.div
           key="progress"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: AUTOPLAY / 1000, ease: "linear" }
-          }
-          className="h-full origin-left"
-          style={{ background: `linear-gradient(to right, ${GOLD_DIM}, ${GOLD})` }}
+          transition={{ duration: AUTOPLAY / 1000, ease: "linear" }}
+          className="h-full origin-left bg-[#0a0a0a]"
         />
       )}
     </div>
   );
 });
 
-const Card = memo(function Card({
-  item,
-  index,
-  inView,
-  isActive,
-  isMobile,
-  reduceMotion,
-}) {
-  const [hovered, setHovered] = useState(false);
-  const lit = hovered || isActive;
-  const { Icon, roman, title, tagline, desc, stat, statSuffix, statLbl, statPrefix } = item;
-  const entranceTransition = reduceMotion
-    ? { duration: 0 }
-    : { ...CARD_TRANSITION, delay: index * 0.1 };
-  const lineTransition = reduceMotion
-    ? { duration: 0 }
-    : { ...LINE_TRANSITION, delay: index * 0.1 + 0.25 };
+const Card = memo(function Card({ item, index, inView, isActive, isMobile, hoveredIndex, setHoveredIndex }) {
+  const { Icon, roman, title, tagline, desc, stat, statSuffix, statLbl } = item;
+  
+  const isHovered = hoveredIndex === index;
+  const isFaded = hoveredIndex !== null && hoveredIndex !== index;
+  // On mobile, focus is based on auto-scroll active state. On desktop, hover.
+  const isFocused = isMobile ? isActive : isHovered;
 
   return (
     <motion.article
-      initial={reduceMotion ? false : { opacity: 0, y: 36 }}
-      animate={inView ? { opacity: 1, y: 0 } : undefined}
-      transition={entranceTransition}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="relative flex cursor-default flex-col overflow-hidden rounded-[3px]"
+      initial="hidden"
+      animate={inView ? (isFocused ? "hovered" : isFaded ? "faded" : "visible") : "hidden"}
+      variants={{
+         hidden: { opacity: 0, y: 40, boxShadow: "0 12px 35px -10px rgba(0,0,0,0)", borderColor: "rgba(0,0,0,0.04)" },
+         visible: { opacity: 1, y: 0, scale: 1, boxShadow: "0 12px 35px -10px rgba(0,0,0,0.06)", borderColor: "rgba(0,0,0,0.04)", transition: { delay: index * 0.1, duration: 1, ease: EASE_OUT } },
+         hovered: { opacity: 1, y: isMobile ? 0 : -8, scale: isMobile ? 1 : 1.02, boxShadow: "0 40px 100px -20px rgba(0,0,0,0.12), 0 20px 40px -20px rgba(0,0,0,0.06)", borderColor: "rgba(0,0,0,0.15)", transition: { duration: 0.75, ease: EASE_OUT } },
+         faded: { opacity: 0.35, y: 0, scale: 1, boxShadow: "0 4px 20px -10px rgba(0,0,0,0.02)", borderColor: "rgba(0,0,0,0.04)", transition: { duration: 0.75, ease: EASE_OUT } }
+      }}
+      onMouseEnter={() => setHoveredIndex(index)}
+      onMouseLeave={() => setHoveredIndex(null)}
+      className="relative flex flex-col overflow-hidden rounded-[8px] bg-white min-h-[340px]"
       style={{
-        padding: isMobile ? "28px 24px 32px" : "clamp(24px,2.5vw,36px) clamp(20px,2vw,32px)",
-        background: lit
-          ? "linear-gradient(150deg, #1e1a13 0%, #0e0c09 100%)"
-          : "#ffffff",
-        transition: reduceMotion ? "none" : "background 0.55s cubic-bezier(0.16,1,0.3,1)",
-        boxShadow: lit
-          ? "0 20px 48px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(201,169,110,0.22)"
-          : "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(28,23,16,0.09)",
+        padding: "clamp(32px, 3vw, 44px)",
+        borderStyle: "solid",
+        borderWidth: 1,
+        zIndex: isFocused ? 20 : 10,
       }}
     >
-      <motion.div
-        animate={{ opacity: lit ? 1 : 0 }}
-        transition={reduceMotion ? { duration: 0 } : GLOW_TRANSITION}
-        className="pointer-events-none absolute right-0 top-0 z-[1]"
-        style={{
-          width: 140,
-          height: 140,
-          background:
-            "radial-gradient(circle at top right, rgba(201,169,110,0.10) 0%, transparent 70%)",
-        }}
-      />
-
+      {/* Huge background Roman numeral */}
       <motion.span
         animate={{
-          opacity: lit ? 0.055 : 0.035,
-          y: lit ? 0 : 8,
-          color: lit ? "#ffffff" : "#1c1710",
+          opacity: isFocused ? 0.04 : 0.015,
+          x: isFocused ? -8 : 0,
+          scale: isFocused ? 1.05 : 1
         }}
-        transition={reduceMotion ? { duration: 0 } : { duration: 0.75, ease: EASE_OUT }}
-        className="pointer-events-none absolute bottom-[-12px] right-[-2px] z-0 select-none font-bold italic leading-none"
-        style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: "clamp(88px, 10vw, 120px)",
-          letterSpacing: "-0.06em",
-        }}
+        transition={{ duration: 0.85, ease: EASE_OUT }}
+        className="pointer-events-none absolute -bottom-4 right-2 z-0 select-none font-['Playfair_Display',serif] font-bold italic leading-none text-black"
+        style={{ fontSize: "140px", letterSpacing: "-0.06em" }}
       >
         {roman}
       </motion.span>
 
-      <div className="relative z-[2] mb-5 flex items-center justify-between">
+      {/* Top Header line */}
+      <div className="relative z-10 flex items-center justify-between mb-8">
         <motion.div
-          animate={{
-            borderColor: lit ? "rgba(201,169,110,0.30)" : RULE_D,
-            background: lit ? "rgba(201,169,110,0.07)" : "rgba(28,23,16,0.03)",
-          }}
-          transition={reduceMotion ? { duration: 0 } : SHORT_TRANSITION}
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
-          style={{ border: `1px solid ${RULE_D}` }}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={inView ? {
+            opacity: 1,
+            backgroundColor: isFocused ? "#0a0a0a" : "#f4f3f1",
+            color: isFocused ? "#ffffff" : "#0a0a0a",
+            scale: isFocused ? 1.05 : 1,
+            rotate: isFocused ? 10 : 0,
+          } : undefined}
+          transition={{ duration: 0.75, delay: index * 0.1, ease: EASE_OUT }}
+          className="flex h-12 w-12 items-center justify-center rounded-full"
         >
-          <motion.div
-            animate={{ rotate: lit ? 360 : 0 }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.65, ease: EASE_OUT }}
-          >
-            <Icon
-              size={15}
-              strokeWidth={1.3}
-              style={{ color: lit ? GOLD : MUTED_D, transition: reduceMotion ? "none" : "color 0.4s" }}
-            />
-          </motion.div>
+          <Icon size={20} strokeWidth={1.5} />
         </motion.div>
-
-        <motion.span
-          animate={{ color: lit ? "rgba(201,169,110,0.55)" : "rgba(28,23,16,0.18)" }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.4 }}
-          className="text-[10px] font-light tracking-[0.28em]"
-          style={{ fontFamily: "'Cormorant Garamond', serif" }}
+        
+        <motion.span 
+          initial={{ opacity: 0, x: 10 }}
+          animate={inView ? { opacity: 1, x: 0 } : undefined}
+          transition={{ duration: 0.75, delay: index * 0.1 + 0.1, ease: EASE_OUT }}
+          className="font-['Outfit',sans-serif] text-[10px] font-medium tracking-[0.2em] text-black/30"
         >
-          {String(index + 1).padStart(2, "0")}
+          0{index + 1}
         </motion.span>
       </div>
 
-      <div className="relative z-[2] mb-4 flex items-center gap-2">
-        <motion.span
-          initial={reduceMotion ? false : { scaleX: 0 }}
-          animate={inView ? { scaleX: 1 } : undefined}
-          transition={lineTransition}
-          className="block h-px flex-1 origin-left"
-          style={{
-            background: lit
-              ? "linear-gradient(to right, transparent, rgba(201,169,110,0.28))"
-              : "linear-gradient(to right, transparent, rgba(28,23,16,0.10))",
-            transition: reduceMotion ? "none" : "background 0.45s",
-          }}
-        />
-        <motion.span
-          animate={{ opacity: lit ? 0.75 : 0.22, color: lit ? GOLD : DARK }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.4 }}
-          style={{ fontSize: 7, lineHeight: 1, color: DARK }}
-        >
-          *
-        </motion.span>
-        <motion.span
-          initial={reduceMotion ? false : { scaleX: 0 }}
-          animate={inView ? { scaleX: 1 } : undefined}
-          transition={lineTransition}
-          className="block h-px flex-1 origin-right"
-          style={{
-            background: lit
-              ? "linear-gradient(to left, transparent, rgba(201,169,110,0.28))"
-              : "linear-gradient(to left, transparent, rgba(28,23,16,0.10))",
-            transition: reduceMotion ? "none" : "background 0.45s",
-          }}
-        />
-      </div>
-
-      <div className="relative z-[2] flex flex-1 flex-col">
-        <motion.p
-          animate={{ color: lit ? GOLD : MUTED_D }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.4 }}
-          className="m-0 mb-2 text-[9px] font-light uppercase tracking-[0.30em]"
-          style={{ fontFamily: "'Cormorant Garamond', serif" }}
+      <div className="relative z-10 flex flex-1 flex-col">
+        <motion.p 
+          initial={{ opacity: 0, y: 15 }}
+          animate={inView ? { opacity: 1, y: 0, color: isFocused ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)" } : undefined}
+          transition={{ duration: 0.8, delay: index * 0.1 + 0.15, ease: EASE_OUT }}
+          className="font-['Outfit',sans-serif] text-[9px] uppercase tracking-[0.3em] mb-3 whitespace-nowrap"
         >
           {tagline}
         </motion.p>
 
-        <motion.h3
-          animate={{ color: lit ? GOLD_LT : DARK }}
-          transition={reduceMotion ? { duration: 0 } : SHORT_TRANSITION}
-          className="m-0 font-medium leading-[1.15]"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: "clamp(19px, 1.9vw, 24px)",
-            letterSpacing: "-0.01em",
-          }}
+        <motion.h3 
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0, x: isFocused ? 4 : 0 } : undefined}
+          transition={{ duration: 0.85, delay: index * 0.1 + 0.25, ease: EASE_OUT }}
+          className="font-['Playfair_Display',serif] text-[24px] font-medium leading-[1.1] text-[#0a0a0a] m-0 mb-2 tracking-[-0.01em]"
         >
           {title}
         </motion.h3>
 
-        <motion.p
-          animate={{ opacity: lit ? 1 : 0, y: lit ? 0 : 10 }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: 0.6, delay: lit ? 0.18 : 0, ease: EASE_OUT }
-          }
-          className="mt-3 max-w-[26ch] overflow-hidden font-light leading-[1.7]"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 13.5,
-            color: "rgba(240,233,220,0.52)",
-            margin: "10px 0 0",
-          }}
-        >
-          {desc}
-        </motion.p>
-
         <motion.div
-          animate={{ opacity: lit ? 1 : 0, y: lit ? 0 : 14 }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: 0.6, delay: lit ? 0.3 : 0, ease: EASE_OUT }
-          }
-          className="mt-auto flex items-end gap-2 pt-5"
+          initial={{ opacity: 0, height: 0, y: 15 }}
+          animate={{ 
+            opacity: isFocused ? 1 : 0, 
+            height: isFocused ? "auto" : 0,
+            y: isFocused ? 0 : 15 
+          }}
+          transition={{ duration: 0.75, ease: EASE_OUT }}
+          className="overflow-hidden"
         >
-          <span
-            className="font-semibold italic leading-none"
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(30px, 3vw, 42px)",
-              color: GOLD,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {statPrefix ? (
-              <span className="mr-1 not-italic opacity-70" style={{ fontSize: "0.46em" }}>
-                {statPrefix}
-              </span>
-            ) : null}
-            {stat}
-            <span className="ml-0.5 not-italic opacity-70" style={{ fontSize: "0.46em" }}>
-              {statSuffix}
-            </span>
-          </span>
-          <span
-            className="pb-1 text-[9px] font-light uppercase tracking-[0.24em]"
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              color: "rgba(201,169,110,0.40)",
-            }}
-          >
-            {statLbl}
-          </span>
+          <p className="font-['Outfit',sans-serif] text-[13px] font-light leading-[1.7] color-black/60 m-0 pt-2 pb-6 max-w-[95%] text-black/60">
+            {desc}
+          </p>
         </motion.div>
 
-        <motion.div
-          animate={{ scaleX: lit ? 1 : 0, opacity: lit ? 1 : 0 }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: 0.5, delay: lit ? 0.1 : 0, ease: EASE_OUT }
-          }
-          className="mt-4 h-px origin-left"
-          style={{ background: `linear-gradient(to right, ${GOLD}, transparent)` }}
-        />
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={inView ? { opacity: 1, y: isFocused ? -4 : 0 } : undefined}
+          transition={{ duration: 0.85, delay: index * 0.1 + 0.45, ease: EASE_OUT }}
+          className="mt-auto pt-4 flex items-baseline gap-1.5"
+        >
+          <span className="font-['Playfair_Display',serif] text-[42px] font-light italic leading-none text-[#0a0a0a] tracking-[-0.02em]">
+            {stat}
+          </span>
+          <span className="font-['Outfit',sans-serif] text-[14px] font-light tracking-[0.05em] text-black/40">
+            {statSuffix}
+          </span>
+        </motion.div>
+        
+        <motion.span 
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1, y: isFocused ? -4 : 0 } : undefined}
+          transition={{ duration: 0.85, delay: index * 0.1 + 0.5, ease: EASE_OUT }}
+          className="font-['Outfit',sans-serif] text-[9px] uppercase tracking-[0.24em] text-black/30 mt-2 block font-medium whitespace-nowrap"
+        >
+          {statLbl}
+        </motion.span>
       </div>
 
-      {isMobile ? <ProgressBar active={isActive} reduceMotion={reduceMotion} /> : null}
+      {isMobile ? <ProgressBar active={isActive} /> : null}
     </motion.article>
   );
 });
@@ -314,162 +211,97 @@ const Card = memo(function Card({
 export default function BrandPromises() {
   const secRef = useRef(null);
   const sliderRef = useRef(null);
-  const inView = useInView(secRef, { once: true, margin: "-60px" });
+  const inView = useInView(secRef, { once: true, margin: "-100px" });
   const reduceMotion = useReducedMotion();
   const [active, setActive] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   const [mobile, setMobile] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
+    if (typeof window === "undefined") return false;
     return window.matchMedia(MOBILE_QUERY).matches;
   });
+
   const showContent = inView || mobile;
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
     const mediaQuery = window.matchMedia(MOBILE_QUERY);
-    const updateMobile = (event) => setMobile(event.matches);
-
+    const updateMobile = (e) => setMobile(e.matches);
     setMobile(mediaQuery.matches);
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", updateMobile);
-      return () => mediaQuery.removeEventListener("change", updateMobile);
-    }
-
-    mediaQuery.addListener(updateMobile);
-    return () => mediaQuery.removeListener(updateMobile);
+    mediaQuery.addEventListener("change", updateMobile);
+    return () => mediaQuery.removeEventListener("change", updateMobile);
   }, []);
 
   useEffect(() => {
-    if (!inView || reduceMotion || mobile) {
-      return undefined;
-    }
-
+    if (!inView || reduceMotion || mobile) return;
     const timer = window.setInterval(() => {
       setActive((prev) => (prev + 1) % PROMISES.length);
     }, AUTOPLAY);
-
     return () => window.clearInterval(timer);
   }, [inView, reduceMotion, mobile]);
 
   useEffect(() => {
     const slider = sliderRef.current;
-    if (!slider || !mobile) {
-      return undefined;
-    }
+    if (!slider || !mobile) return;
 
     const syncActiveCard = () => {
       const sliderCenter = slider.scrollLeft + slider.clientWidth / 2;
       let nearestIndex = 0;
       let nearestDistance = Number.POSITIVE_INFINITY;
-
       Array.from(slider.children).forEach((child, index) => {
         const childCenter = child.offsetLeft + child.clientWidth / 2;
         const distance = Math.abs(childCenter - sliderCenter);
-
         if (distance < nearestDistance) {
           nearestDistance = distance;
           nearestIndex = index;
         }
       });
-
       setActive((prev) => (prev === nearestIndex ? prev : nearestIndex));
     };
 
     let frameId = 0;
     const handleScroll = () => {
       if (frameId) return;
-      frameId = window.requestAnimationFrame(() => {
-        frameId = 0;
-        syncActiveCard();
-      });
+      frameId = window.requestAnimationFrame(() => { frameId = 0; syncActiveCard(); });
     };
 
     slider.addEventListener("scroll", handleScroll, { passive: true });
     syncActiveCard();
-
     return () => {
       slider.removeEventListener("scroll", handleScroll);
-      if (frameId) {
-        window.cancelAnimationFrame(frameId);
-      }
+      if (frameId) window.cancelAnimationFrame(frameId);
     };
   }, [mobile]);
 
   const scrollToCard = (index) => {
     const slider = sliderRef.current;
-    if (!slider || !mobile) {
-      setActive(index);
-      return;
-    }
-
+    if (!slider || !mobile) { setActive(index); return; }
     const card = slider.children[index];
     if (!card) return;
-
-    const targetLeft = Math.max(
-      card.offsetLeft - (slider.clientWidth - card.clientWidth) / 2,
-      0
-    );
-
+    const targetLeft = Math.max(card.offsetLeft - (slider.clientWidth - card.clientWidth) / 2, 0);
     setActive(index);
-    slider.scrollTo({
-      left: targetLeft,
-      behavior: reduceMotion ? "auto" : "smooth",
-    });
+    slider.scrollTo({ left: targetLeft, behavior: reduceMotion ? "auto" : "smooth" });
   };
 
   return (
-    <section
-      ref={secRef}
-      className="bg-white px-5 pb-[clamp(36px,4vw,60px)] pt-0 md:px-[clamp(20px,5vw,68px)]"
-    >
+    <section ref={secRef} className="bg-[#faf9f8] px-5 py-[clamp(80px,8vw,120px)] md:px-[clamp(20px,5vw,68px)]">
+      
+      {/* Sleek Animated Heading */}
       <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-        animate={inView ? { opacity: 1, y: 0 } : undefined}
-        transition={reduceMotion ? { duration: 0 } : { duration: 0.8 }}
-        className="mb-8 text-center md:mb-12"
+        initial={reduceMotion ? false : { opacity: 0, filter: "blur(10px)", y: 20 }}
+        animate={inView ? { opacity: 1, filter: "blur(0px)", y: 0 } : undefined}
+        transition={{ duration: 1.2, ease: EASE_OUT }}
+        className="mb-14 text-center"
       >
-        <div className="mb-3 flex items-center justify-center gap-3">
-          <motion.span
-            initial={reduceMotion ? false : { scaleX: 0 }}
-            animate={inView ? { scaleX: 1 } : undefined}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.7, delay: 0.18 }}
-            className="block h-px w-9 origin-right"
-            style={{ background: GOLD, opacity: 0.45 }}
-          />
-          <span
-            className="text-[9.5px] font-light uppercase tracking-[0.36em]"
-            style={{ fontFamily: "'Cormorant Garamond', serif", color: GOLD }}
-          >
-            Our Commitment
-          </span>
-          <motion.span
-            initial={reduceMotion ? false : { scaleX: 0 }}
-            animate={inView ? { scaleX: 1 } : undefined}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.7, delay: 0.18 }}
-            className="block h-px w-9 origin-left"
-            style={{ background: GOLD, opacity: 0.45 }}
-          />
-        </div>
+        <p className="font-['Outfit',sans-serif] text-[10px] uppercase tracking-[0.4em] text-black/40 mb-4 font-medium">
+          TechMart Standard
+        </p>
 
-        <h2
-          className="m-0 font-normal leading-[1.02] tracking-[-0.025em]"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: "clamp(30px, 4.5vw, 58px)",
-            color: DARK,
-          }}
-        >
-          Why Choose <em className="font-bold italic">TechMart</em>
+        <h2 className="font-['Playfair_Display',serif] text-[clamp(42px,5vw,64px)] font-light leading-[1.05] tracking-[-0.01em] text-[#0a0a0a] m-0">
+          Uncompromising <em className="italic font-normal text-black/40">Quality</em>
         </h2>
       </motion.div>
 
-      <div className="hidden grid-cols-4 gap-3 md:grid">
+      {/* Desktop Grid */}
+      <div className="hidden items-start grid-cols-4 gap-6 md:grid max-w-[1400px] mx-auto relative z-10">
         {PROMISES.map((item, index) => (
           <Card
             key={item.title}
@@ -478,48 +310,46 @@ export default function BrandPromises() {
             inView={showContent}
             isActive={active === index}
             isMobile={false}
-            reduceMotion={reduceMotion}
+            hoveredIndex={hoveredIndex}
+            setHoveredIndex={setHoveredIndex}
           />
         ))}
       </div>
 
+      {/* Mobile Scroll */}
       <div
         ref={sliderRef}
-        className="no-sb flex gap-3 overflow-x-auto px-[8vw] md:hidden"
-        style={{ scrollSnapType: "x mandatory", scrollPaddingInline: "8vw" }}
+        className="no-sb items-start flex gap-4 overflow-x-auto px-[5vw] md:hidden pb-4 relative z-10"
+        style={{ scrollSnapType: "x mandatory", scrollPaddingInline: "5vw" }}
       >
         {PROMISES.map((item, index) => (
-          <div
-            key={item.title}
-            className="shrink-0"
-            style={{ width: "84vw", scrollSnapAlign: "center" }}
-          >
+          <div key={item.title} className="shrink-0" style={{ width: "85vw", scrollSnapAlign: "center" }}>
             <Card
               item={item}
               index={index}
               inView={showContent}
               isActive={active === index}
               isMobile
-              reduceMotion={reduceMotion}
+              hoveredIndex={hoveredIndex}
+              setHoveredIndex={setHoveredIndex}
             />
           </div>
         ))}
       </div>
-
-      <div className="mt-6 flex items-center justify-center gap-2">
+      
+      {/* Mobile Indicators */}
+      <div className="mt-8 flex items-center justify-center gap-2 md:hidden">
         {PROMISES.map((item, index) => (
           <motion.button
             key={item.title}
-            type="button"
             aria-label={`Show ${item.title}`}
             onClick={() => scrollToCard(index)}
             animate={{
-              width: index === active ? 24 : 5,
-              background: index === active ? GOLD : "rgba(28,23,16,0.14)",
-              opacity: index === active ? 1 : 0.5,
+              width: index === active ? 28 : 6,
+              backgroundColor: index === active ? "#0a0a0a" : "rgba(10,10,10,0.15)",
             }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease: EASE_OUT }}
-            className="h-[4px] cursor-pointer rounded-full border-none p-0 outline-none"
+            transition={{ duration: 0.6, ease: EASE_OUT }}
+            className="h-1.5 cursor-pointer rounded-full border-none p-0 outline-none"
           />
         ))}
       </div>

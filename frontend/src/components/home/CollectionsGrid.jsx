@@ -22,7 +22,7 @@ const COLLECTIONS = [
     sub: "Premium Collection",
     tag: "01",
     path: "/products?category=Audio",
-    photo: "https://i.pinimg.com/736x/c6/33/1b/c6331b53803351e18e55e8825448a085.jpg",
+    photo: "https://i.pinimg.com/736x/e6/e3/5c/e6e35c07f2075be988be356be233b1c7.jpg",
   },
   {
     key: "workspace",
@@ -30,7 +30,7 @@ const COLLECTIONS = [
     sub: "Productivity Refined",
     tag: "02",
     path: "/products?category=workspace",
-    photo: "https://i.pinimg.com/736x/47/a9/02/47a902c4e91973d4fe6e188ff7a90ed4.jpg",
+    photo: "https://i.pinimg.com/1200x/fc/07/2e/fc072e405dd79489feac86d87ee1ee0d.jpg",
   },
   {
     key: "mobile",
@@ -46,7 +46,7 @@ const COLLECTIONS = [
     sub: "Next Level",
     tag: "04",
     path: "/products?category=Gaming",
-    photo: "https://i.pinimg.com/736x/24/7d/62/247d629d93d532ae6f17f2a573396f1c.jpg",
+    photo: "https://i.pinimg.com/736x/51/c7/42/51c742d40fef752da8f1cb5911479ae6.jpg",
   },
   {
     key: "display",
@@ -54,7 +54,7 @@ const COLLECTIONS = [
     sub: "Visual Mastery",
     tag: "05",
     path: "/products?category=Laptops",
-    photo: "https://i.pinimg.com/1200x/1e/07/df/1e07df67b477213b775883f903d4d022.jpg",
+    photo: "https://i.pinimg.com/736x/b5/59/86/b55986231a2b8c6e8266db6a496bc1c2.jpg",
   },
   {
     key: "accessories",
@@ -62,7 +62,7 @@ const COLLECTIONS = [
     sub: "Essential Upgrades",
     tag: "06",
     path: "/products?category=accessories",
-    photo: "https://i.pinimg.com/1200x/00/22/a9/0022a9eb283ba672c92cdc2db32de556.jpg",
+    photo: "https://i.pinimg.com/736x/dd/9d/5c/dd9d5c2602a4d5e6b0307adf6c155024.jpg",
   },
 ];
 
@@ -71,46 +71,50 @@ const COLLECTIONS = [
    — follows mouse inside the grid section
 ══════════════════════════════════════════════════ */
 const MagCursor = ({ hoveredCard }) => {
-  const x = useMotionValue(-200);
-  const y = useMotionValue(-200);
-  const springX = useSpring(x, { stiffness: 180, damping: 22 });
-  const springY = useSpring(y, { stiffness: 180, damping: 22 });
+  const mouseX = useMotionValue(-100);
+  const mouseY = useMotionValue(-100);
+  
+  const springX = useSpring(mouseX, { stiffness: 400, damping: 30 });
+  const springY = useSpring(mouseY, { stiffness: 400, damping: 30 });
 
   useEffect(() => {
-    const move = (e) => { x.set(e.clientX); y.set(e.clientY); };
+    const move = (e) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
-  }, []);
+  }, [mouseX, mouseY]);
 
   return (
-    <AnimatePresence>
-      {hoveredCard && (
-        <motion.div
-          className="fixed top-0 left-0 z-[999] pointer-events-none flex items-center justify-center"
-          style={{
-            x: springX, y: springY,
-            translateX: "-50%", translateY: "-50%",
-          }}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    <motion.div
+      className="fixed top-0 left-0 z-[10000] pointer-events-none flex items-center justify-center"
+      style={{
+        x: springX,
+        y: springY,
+        translateX: "-50%",
+        translateY: "-50%",
+        scale: hoveredCard ? 1 : 0,
+        opacity: hoveredCard ? 1 : 0,
+      }}
+      transition={{ 
+        scale: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+        opacity: { duration: 0.3 }
+      }}
+    >
+      <div
+        className="w-20 h-20 rounded-full flex flex-col items-center justify-center gap-0.5"
+        style={{ background: "#1a1108", boxShadow: "0 15px 35px rgba(0,0,0,0.2)" }}
+      >
+        <ArrowUpRight size={18} strokeWidth={1.5} className="text-white" />
+        <span
+          className="text-white/70 leading-none"
+          style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase" }}
         >
-          <div
-            className="w-20 h-20 rounded-full flex flex-col items-center justify-center gap-0.5"
-            style={{ background: "#1a1108" }}
-          >
-            <ArrowUpRight size={16} strokeWidth={1.5} className="text-white" />
-            <span
-              className="text-white/70 leading-none"
-              style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase" }}
-            >
-              View
-            </span>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          View
+        </span>
+      </div>
+    </motion.div>
   );
 };
 
@@ -133,7 +137,7 @@ const CollectionCard = ({ collection, index, size, onHover }) => {
   return (
     <motion.article
       ref={ref}
-      className="flex flex-col cursor-none select-none"
+      className="flex flex-col lg:cursor-none select-none"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onClick={() => navigate(collection.path)}

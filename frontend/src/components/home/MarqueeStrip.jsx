@@ -38,7 +38,7 @@ const Strip = ({ items, direction = 1, paused, speed = 28 }) => (
                                     style={{ opacity: 0.35 }}
                                 >
                                     <Icon
-                                        size={11}
+                                        size={14}
                                         strokeWidth={1.5}
                                         style={{ color: "white" }}
                                     />
@@ -46,7 +46,7 @@ const Strip = ({ items, direction = 1, paused, speed = 28 }) => (
                                 <span
                                     style={{
                                         fontFamily: "'DM Sans', sans-serif",
-                                        fontSize: 9.5,
+                                        fontSize: 12.5,
                                         fontWeight: 300,
                                         letterSpacing: "0.28em",
                                         textTransform: "uppercase",
@@ -60,7 +60,7 @@ const Strip = ({ items, direction = 1, paused, speed = 28 }) => (
                             {/* Separator */}
                             <span
                                 className="block w-px mx-1 shrink-0"
-                                style={{ height: 10, background: "rgba(255,255,255,0.08)" }}
+                                style={{ height: 14, background: "rgba(255,255,255,0.08)" }}
                             />
                         </span>
                     ))}
@@ -95,14 +95,14 @@ const MarqueeStrip = () => {
 
             {/* ── Strip 1 — left ── */}
             <div
-                className="py-3"
+                className="py-4.5"
                 style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
             >
                 <Strip items={ITEMS} direction={1} paused={paused} speed={30} />
             </div>
 
             {/* ── Strip 2 — right (reverse direction, slightly slower) ── */}
-            <div className="py-3">
+            <div className="py-4.5">
                 <Strip items={ITEMS_REV} direction={-1} paused={paused} speed={36} />
             </div>
 
