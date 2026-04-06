@@ -6,8 +6,8 @@ import API from "../../services/api";
 import { getImg } from "../../config";
 
 const serif = { fontFamily: "'Cormorant Garamond', serif" };
-const sans = { fontFamily: "'Outfit', sans-serif" };
-const PER = 4;
+const sans  = { fontFamily: "'Outfit', sans-serif" };
+const PER   = 4;
 
 /* ── Magnetic hook ── */
 function useMagnetic(s = 0.35) {
@@ -47,18 +47,154 @@ const Shimmer = () => (
     transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }} />
 );
 
+/* ══ BACKGROUND EFFECTS ══ */
+
+/* Floating orb — large soft blurred circle that drifts slowly */
+const FloatingOrb = ({ style, animate, duration }) => (
+  <motion.div
+    className="absolute rounded-full pointer-events-none"
+    style={{ filter: "blur(80px)", ...style }}
+    animate={animate}
+    transition={{ duration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+  />
+);
+
+/* Tiny drifting particle */
+const Particle = ({ x, y, delay, size }) => (
+  <motion.div
+    className="absolute rounded-full pointer-events-none"
+    style={{
+      left: `${x}%`,
+      top:  `${y}%`,
+      width: size,
+      height: size,
+      background: "rgba(0,0,0,0.1)",
+    }}
+    animate={{
+      y: [0, -18, 0],
+      x: [0, 6, 0],
+      opacity: [0, 0.5, 0],
+    }}
+    transition={{
+      duration: 5 + Math.random() * 4,
+      delay,
+      repeat: Infinity,
+      ease: "easeInOut",
+    }}
+  />
+);
+
+/* SVG grain overlay — static noise texture at very low opacity */
+const GrainOverlay = () => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.025, mixBlendMode: "multiply" }}>
+    <filter id="grain-fp">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#grain-fp)" />
+  </svg>
+);
+
+/* Thin diagonal lines — very subtle, barely visible grid feel */
+const DiagonalLines = () => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.018 }}>
+    <defs>
+      <pattern id="diag-fp" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+        <line x1="0" y1="0" x2="0" y2="40" stroke="#000" strokeWidth="0.5" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#diag-fp)" />
+  </svg>
+);
+
+/* All background layers composed together */
+const SectionBackground = () => {
+  const particles = [
+    { x: 12,  y: 25, delay: 0,   size: 2 },
+    { x: 28,  y: 68, delay: 1.2, size: 1.5 },
+    { x: 45,  y: 15, delay: 2.8, size: 2.5 },
+    { x: 60,  y: 80, delay: 0.6, size: 1.5 },
+    { x: 72,  y: 40, delay: 3.5, size: 2 },
+    { x: 85,  y: 20, delay: 1.8, size: 1.5 },
+    { x: 92,  y: 60, delay: 4.2, size: 2 },
+    { x: 35,  y: 50, delay: 2.1, size: 1.5 },
+  ];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Base gradient — warm stone tone */}
+      <div className="absolute inset-0" style={{
+        background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(248,246,242,1) 0%, transparent 100%)",
+      }} />
+
+      {/* Orb 1 — top-left warm blush */}
+      <FloatingOrb
+        style={{
+          width: 520, height: 520,
+          top: "-12%", left: "-8%",
+          background: "radial-gradient(circle, rgba(210,195,180,0.22) 0%, transparent 70%)",
+        }}
+        animate={{ x: [0, 28, 0], y: [0, 18, 0] }}
+        duration={18}
+      />
+
+      {/* Orb 2 — bottom-right cool stone */}
+      <FloatingOrb
+        style={{
+          width: 480, height: 480,
+          bottom: "-15%", right: "-6%",
+          background: "radial-gradient(circle, rgba(190,185,175,0.18) 0%, transparent 70%)",
+        }}
+        animate={{ x: [0, -22, 0], y: [0, -20, 0] }}
+        duration={22}
+      />
+
+      {/* Orb 3 — centre accent, very faint warm cream */}
+      <FloatingOrb
+        style={{
+          width: 360, height: 280,
+          top: "30%", left: "35%",
+          background: "radial-gradient(ellipse, rgba(230,220,205,0.14) 0%, transparent 70%)",
+        }}
+        animate={{ x: [0, 16, 0], y: [0, -12, 0], scale: [1, 1.06, 1] }}
+        duration={26}
+      />
+
+      {/* Orb 4 — top-right, very subtle */}
+      <FloatingOrb
+        style={{
+          width: 300, height: 300,
+          top: "-5%", right: "15%",
+          background: "radial-gradient(circle, rgba(200,192,180,0.12) 0%, transparent 70%)",
+        }}
+        animate={{ x: [0, -14, 0], y: [0, 22, 0] }}
+        duration={20}
+      />
+
+      {/* Diagonal line texture */}
+      <DiagonalLines />
+
+      {/* Floating micro particles */}
+      {particles.map((p, i) => <Particle key={i} {...p} />)}
+
+      {/* Grain noise on top */}
+      <GrainOverlay />
+    </div>
+  );
+};
+
 /* ══ PRODUCT CARD ══ */
 const Card = ({ product, index, onClick, inView }) => {
   const [hov, setHov] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const tilt = useTilt(5);
 
-  const name = product?.name || "—";
+  const name  = product?.name  || "—";
   const brand = product?.brand || product?.category || "";
   const price = product?.price || 0;
-  const disc = product?.discountPrice;
+  const disc  = product?.discountPrice;
   const badge = product?.badge || (product?.isNew ? "New" : product?.isSale ? "Sale" : null);
-  const img = product?.images?.[0] ? getImg(product.images[0]) : null;
+  const img   = product?.images?.[0] ? getImg(product.images[0]) : null;
 
   return (
     <motion.article
@@ -79,13 +215,13 @@ const Card = ({ product, index, onClick, inView }) => {
           {img && !loaded && <Shimmer />}
           {img
             ? <motion.img src={img} alt={name} draggable={false} onLoad={() => setLoaded(true)}
-              className="w-full h-full object-contain p-6 mix-blend-multiply"
-              style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s" }}
-              animate={{ scale: hov ? 0.88 : 1 }}
-              transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }} />
+                className="w-full h-full object-contain p-6 mix-blend-multiply"
+                style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s" }}
+                animate={{ scale: hov ? 0.88 : 1 }}
+                transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }} />
             : <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[10px] tracking-[0.3em] uppercase text-black/20" style={sans}>No Image</span>
-            </div>
+                <span className="text-[10px] tracking-[0.3em] uppercase text-black/20" style={sans}>No Image</span>
+              </div>
           }
 
           {/* badge */}
@@ -167,12 +303,12 @@ const Arrow = ({ dir, onClick, mag }) => (
 /* ══ MAIN ══ */
 export default function FeaturedProducts() {
   const navigate = useNavigate();
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-  const [items, setItems] = useState([]);
+  const ref      = useRef(null);
+  const inView   = useInView(ref, { once: true, margin: "-80px" });
+  const [items, setItems]     = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(0);
+  const [error, setError]     = useState(null);
+  const [page, setPage]       = useState(0);
   const magL = useMagnetic(0.45), magR = useMagnetic(0.45);
 
   useEffect(() => {
@@ -184,7 +320,7 @@ export default function FeaturedProducts() {
 
   const total = Math.max(1, Math.ceil(items.length / PER));
   const slice = items.slice(page * PER, page * PER + PER);
-  const go = useCallback(p => setPage(Math.max(0, Math.min(p, total - 1))), [total]);
+  const go    = useCallback(p => setPage(Math.max(0, Math.min(p, total - 1))), [total]);
 
   useEffect(() => {
     if (total <= 1 || loading) return;
@@ -193,15 +329,19 @@ export default function FeaturedProducts() {
   }, [total, loading]);
 
   return (
-    <motion.section id="featured-products" ref={ref}
-      className="py-20 md:py-28 overflow-hidden relative">
+    <motion.section
+      id="featured-products"
+      ref={ref}
+      className="py-20 md:py-28 overflow-hidden relative"
 
-      {/* subtle noise bg */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(ellipse at 15% 50%,rgba(0,0,0,0.016) 0%,transparent 55%),radial-gradient(ellipse at 85% 15%,rgba(0,0,0,0.012) 0%,transparent 50%)" }} />
+      style={{ background: "#f9f7f4" }}
+    >
+
+      {/* ══ BACKGROUND LAYERS ══ */}
+      <SectionBackground />
 
       {/* ── HEADER ── */}
-      <div className="flex items-end justify-between mb-14 md:mb-20 px-5 sm:px-10 lg:px-16 xl:px-[72px]">
+      <div className="relative z-10 flex items-end justify-between mb-14 md:mb-20 px-5 sm:px-10 lg:px-16 xl:px-[72px]">
         <div>
           {/* eyebrow */}
           <motion.div initial={{ opacity: 0, x: -10 }} animate={inView ? { opacity: 1, x: 0 } : {}}
@@ -213,7 +353,8 @@ export default function FeaturedProducts() {
           </motion.div>
 
           {/* headline */}
-          <h2 className="m-0 flex flex-wrap gap-x-[0.22em]" style={{ ...serif, fontSize: "clamp(30px,4vw,54px)", fontWeight: 500, letterSpacing: "-0.01em", color: "#0a0a0a", lineHeight: 1.05 }}>
+          <h2 className="m-0 flex flex-wrap gap-x-[0.22em]"
+            style={{ ...serif, fontSize: "clamp(30px,4vw,54px)", fontWeight: 500, letterSpacing: "-0.01em", color: "#0a0a0a", lineHeight: 1.05 }}>
             {"Featured Products".split(" ").map((w, i) => (
               <motion.span key={i} initial={{ opacity: 0, y: 22, filter: "blur(5px)" }}
                 animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
@@ -228,22 +369,22 @@ export default function FeaturedProducts() {
           initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.5 }}
           whileTap={{ scale: 0.96 }} onClick={() => navigate("/products")}
           className="hidden sm:flex items-center gap-2 bg-transparent border-none cursor-pointer group/btn">
-          <motion.span whileHover={{ x: 0 }} className="text-[10px] tracking-[0.2em] uppercase text-black/35 group-hover/btn:text-black/70 transition-colors duration-200" style={sans}>
+          <span className="text-[10px] tracking-[0.2em] uppercase text-black/35 group-hover/btn:text-black/70 transition-colors duration-200" style={sans}>
             View All
-          </motion.span>
-          <motion.div className="group-hover/btn:translate-x-0.5 transition-transform duration-200">
+          </span>
+          <div className="group-hover/btn:translate-x-0.5 transition-transform duration-200">
             <ArrowRight size={12} strokeWidth={1.5} className="text-black/30 group-hover/btn:text-black/60 transition-colors duration-200" />
-          </motion.div>
+          </div>
         </motion.button>
       </div>
 
       {error && (
-        <p className="text-center py-20 text-[13px] text-black/30" style={sans}>Could not load products.</p>
+        <p className="relative z-10 text-center py-20 text-[13px] text-black/30" style={sans}>Could not load products.</p>
       )}
 
       {/* ══ DESKTOP GRID ══ */}
       {!error && (
-        <div className="hidden lg:block relative group px-5 sm:px-10 lg:px-16 xl:px-[72px]">
+        <div className="relative z-10 hidden lg:block relative group px-5 sm:px-10 lg:px-16 xl:px-[72px]">
           {/* arrows */}
           {!loading && total > 1 && page > 0 && (
             <div className="absolute left-1 xl:left-5 top-[40%] -translate-y-1/2 z-20">
@@ -278,7 +419,8 @@ export default function FeaturedProducts() {
               {Array.from({ length: total }).map((_, i) => (
                 <motion.button key={i} onClick={() => go(i)} whileTap={{ scale: 0.8 }}
                   className="border-none bg-transparent cursor-pointer p-1.5">
-                  <motion.span animate={{ width: i === page ? 28 : 5, background: i === page ? "#0a0a0a" : "rgba(0,0,0,0.14)" }}
+                  <motion.span
+                    animate={{ width: i === page ? 28 : 5, background: i === page ? "#0a0a0a" : "rgba(0,0,0,0.14)" }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     style={{ height: 1.5, borderRadius: 1, display: "block" }} />
                 </motion.button>
@@ -293,7 +435,7 @@ export default function FeaturedProducts() {
 
       {/* ══ MOBILE SCROLL ══ */}
       {!error && (
-        <div className="lg:hidden">
+        <div className="relative z-10 lg:hidden">
           <div id="fp-slider" className="flex gap-4 pb-2 px-5 overflow-x-auto snap-x snap-mandatory scroll-smooth"
             style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
             {loading

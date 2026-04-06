@@ -3,7 +3,7 @@ import Order from "../models/order.js";
 import Cart from "../models/cartModel.js";
 
 export const createOrder = asyncHandler(async (req, res) => {
-  const { orderItems, shippingAddress, paymentMethod, itemsPrice, shippingPrice, totalPrice } = req.body;
+  const { orderItems, shippingAddress, paymentMethod, itemsPrice, shippingPrice, totalPrice, isBuyNow } = req.body;
 
   if (!orderItems?.length) {
     res.status(400);
@@ -16,7 +16,9 @@ export const createOrder = asyncHandler(async (req, res) => {
     itemsPrice, shippingPrice, totalPrice,
   });
 
-  await Cart.deleteMany({ user: req.user._id });
+  if (!isBuyNow) {
+    await Cart.deleteMany({ user: req.user._id });
+  }
   res.status(201).json(order);
 });
 

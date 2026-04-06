@@ -69,6 +69,7 @@ function App() {
       />
       {!isAdminRoute ? <Navbar /> : null}
       <Suspense fallback={<RouteFallback />}>
+    
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -100,6 +101,7 @@ function App() {
           <Route path="/connect-us" element={<ConnectUs />} />
           <Route path="/wishlist" element={<Wishlist />} />
         </Routes>
+      
       </Suspense>
       {!isAdminRoute ? <Footer /> : null}
     </>

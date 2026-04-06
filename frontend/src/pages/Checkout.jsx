@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import {
   CheckCircle2, X, Shield, Truck, RotateCcw, Lock, ChevronRight
@@ -89,6 +89,9 @@ function SectionHeader({ step, title, subtitle }) {
 ════════════════════════════════════════ */
 export default function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem;
+
   const [cart, setCart]               = useState([]);
   const [loading, setLoading]         = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,6 +106,12 @@ export default function Checkout() {
   });
 
   useEffect(() => {
+    if (buyNowItem) {
+      setCart([{ ...buyNowItem }]);
+      setLoading(false);
+      return;
+    }
+    
     (async () => {
       try {
         const { data } = await API.get("/cart");
@@ -110,7 +119,7 @@ export default function Checkout() {
       } catch { showMessage("error", "Failed to load cart."); }
       setLoading(false);
     })();
-  }, []);
+  }, [buyNowItem]);
 
   const subtotal = cart.reduce((s, i) => {
     const basePrice = i.product.discountPrice || i.product.price;
@@ -176,6 +185,7 @@ export default function Checkout() {
         itemsPrice: subtotal,
         shippingPrice,
         totalPrice,
+        isBuyNow: !!buyNowItem
       });
 
       if (paymentMethod === "Online") {

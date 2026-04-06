@@ -180,7 +180,7 @@ export default function Navbar() {
       <header
         className={`fixed top-0 left-0 w-full z-[99] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] 
           ${scrolled
-            ? "h-20 bg-white/70 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-black/[0.04]"
+            ? "h-16 bg-white/50 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-black/[0.04]"
             : "h-24 bg-[#faf9f8] shadow-sm"
           }`}
       >
@@ -195,7 +195,7 @@ export default function Navbar() {
             <div className="flex flex-col items-start leading-none">
               <motion.span
                 animate={{
-                  fontSize: scrolled ? "clamp(22px, 2.5vw, 26px)" : "clamp(28px, 3.5vw, 34px)",
+                  fontSize: scrolled ? "clamp(20px, 2.5vw, 24px)" : "clamp(24px, 3.5vw, 28px)",
                   letterSpacing: "-0.02em"
                 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -297,7 +297,7 @@ export default function Navbar() {
 
         {/* ─── MOBILE ─── */}
         <div className="flex lg:hidden flex-col">
-          <div className={`flex items-center justify-between px-2 w-full transition-all duration-300 ${scrolled ? "h-14" : "h-16"}`}>
+          <div className={`flex items-center justify-between px-2 w-full transition-all duration-300 ${scrolled ? "h-12" : "h-16"}`}>
             <div className="flex items-center">
               <IconBtn onClick={() => setMobileOpen(true)}><Menu size={20} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
               <IconBtn onClick={() => setMobileSearch(!mobileSearch)}><Search size={18} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
