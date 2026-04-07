@@ -7,7 +7,8 @@ import mongoose from "mongoose";
 // @route GET /api/products
 // @access Public
 export const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ isActive: { $ne: false } });
+  // Sort by featured first, then by newest
+  const products = await Product.find({ isActive: { $ne: false } }).sort({ isFeatured: -1, createdAt: -1 });
   res.json(products);
 });
 
@@ -15,7 +16,8 @@ export const getProducts = asyncHandler(async (req, res) => {
 // @route GET /api/products/all
 // @access Admin
 export const getAllProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({});
+  // Sort by newest for admin view
+  const products = await Product.find({}).sort({ createdAt: -1 });
   res.json(products);
 });
 

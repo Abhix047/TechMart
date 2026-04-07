@@ -237,7 +237,10 @@ const ProductsPage = () => {
         setProducts(data);
         setFilteredProducts(data);
         if (data.length > 0) {
-          setFeatured(data[0]);
+          // Since the backend now sorts by isFeatured and createdAt, data[0] is correct,
+          // but we'll explicitly find the first featured one just to be extra sure.
+          const mainFeatured = data.find(p => p.isFeatured) || data[0];
+          setFeatured(mainFeatured);
           const hi = Math.max(...data.map(p => p.discountPrice || p.price));
           setMaxPrice(hi); setPriceRange(hi);
         }
