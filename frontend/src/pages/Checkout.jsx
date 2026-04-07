@@ -163,8 +163,8 @@ export default function Checkout() {
     if (!validateForm()) { showMessage("error", "Please fix the errors below."); return; }
     setIsSubmitting(true);
     setMessage({ type: "", text: "" });
-    try {
-      const orderItems = cart.map((item) => ({
+    const requestBody = {
+      orderItems: cart.map((item) => ({
         name:    item.product.name,
         qty:     item.quantity,
         image:   item.product.images[0],
@@ -172,25 +172,24 @@ export default function Checkout() {
         product: item.product._id,
         selectedColor: item.selectedColor,
         selectedStorage: item.selectedStorage
-      }));
-      const { data: orderData } = await API.post("/orders", {
-        orderItems,
-        shippingAddress: {
-          address: address.address,
-          city: address.city,
-          postalCode: address.pincode,
-          country: "India",
-        },
-        paymentMethod,
-        itemsPrice: subtotal,
-        shippingPrice,
-        totalPrice,
-        isBuyNow: !!buyNowItem
-      });
+      })),
+      shippingAddress: {
+        address: address.address,
+        city: address.city,
+        postalCode: address.pincode,
+        country: "India",
+      },
+      paymentMethod,
+      itemsPrice: subtotal,
+      shippingPrice,
+      totalPrice,
+      isBuyNow: !!buyNowItem
+    };
 
-      if (paymentMethod === "Online") {
-        const res = await loadRazorpayScript("https://checkout.razorpay.com/v1/checkout.js");
-        if (!res) {
+    if (paymentMethod === "Online") {
+      try {
+        const resScript = await loadRazorpayScript("https://checkout.razorpay.com/v1/checkout.js");
+        if (!resScript) {
           showMessage("error", "Razorpay SDK failed to load. Are you online?");
           setIsSubmitting(false);
           return;
@@ -208,43 +207,49 @@ export default function Checkout() {
           order_id: rpOrderData.id,
           handler: async function (response) {
             try {
-              await API.post("/payment/razorpay/verify", {
-                ...response,
-                orderId: orderData._id
+              // Now create the order WITH the payment details
+              const { data: finalOrder } = await API.post("/orders", {
+                ...requestBody,
+                paymentDetails: response, // Send response for backend to verify and mark as paid
+                isPaid: true,
+                paidAt: new Date()
               });
+              
               fetchCartCount();
-              showMessage("success", "Payment successful! Redirecting…");
-              setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+              showMessage("success", "Payment successful! Order placed.");
+              setTimeout(() => navigate(`/order/${finalOrder._id}`), 1500);
             } catch (err) {
-              fetchCartCount();
-              showMessage("error", "Payment verification failed.");
-              setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+              showMessage("error", "Failed to finalize order after payment. Please contact support.");
+              setIsSubmitting(false);
             }
           },
-          prefill: {
-            name: address.name,
-            contact: address.phone,
-          },
+          prefill: { name: address.name, contact: address.phone },
           theme: { color: "#0f0f0f" },
           modal: {
             ondismiss: function () {
-              fetchCartCount();
-              showMessage("error", "Payment Cancelled.");
-              setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+              setIsSubmitting(false);
+              showMessage("error", "Payment Cancelled. No order was placed.");
             }
           }
         };
 
         const paymentObject = new window.Razorpay(options);
         paymentObject.open();
-      } else {
+      } catch (err) {
+        showMessage("error", "Failed to initiate payment. Please try again.");
+        setIsSubmitting(false);
+      }
+    } else {
+      // COD flow - Create order immediately as before
+      try {
+        const { data: orderData } = await API.post("/orders", requestBody);
         fetchCartCount();
         showMessage("success", "Order placed! Redirecting…");
         setTimeout(() => navigate(`/order/${orderData._id}`), 1500);
+      } catch (err) {
+        showMessage("error", err.response?.data?.message || "Failed to place order.");
+        setIsSubmitting(false);
       }
-    } catch (err) {
-      showMessage("error", err.response?.data?.message || "Failed to place order.");
-      setIsSubmitting(false);
     }
   };
 

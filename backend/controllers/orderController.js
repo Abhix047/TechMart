@@ -1,19 +1,43 @@
 import asyncHandler from "express-async-handler";
+import crypto from "crypto";
 import Order from "../models/order.js";
 import Cart from "../models/cartModel.js";
 
 export const createOrder = asyncHandler(async (req, res) => {
-  const { orderItems, shippingAddress, paymentMethod, itemsPrice, shippingPrice, totalPrice, isBuyNow } = req.body;
+  const { orderItems, shippingAddress, paymentMethod, itemsPrice, shippingPrice, totalPrice, isBuyNow, paymentDetails, isPaid, paidAt } = req.body;
 
   if (!orderItems?.length) {
     res.status(400);
     throw new Error("No order items");
   }
 
+  // If it's an online payment being created after success, verify the signature for safety
+  let finalIsPaid = isPaid || false;
+  let finalPaidAt = paidAt || undefined;
+
+  if (paymentMethod === "Online" && paymentDetails) {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = paymentDetails;
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(body.toString())
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      res.status(400);
+      throw new Error("Invalid payment signature. Order not placed.");
+    }
+    finalIsPaid = true;
+    finalPaidAt = Date.now();
+  }
+
   const order = await Order.create({
     user: req.user._id,
     orderItems, shippingAddress, paymentMethod,
     itemsPrice, shippingPrice, totalPrice,
+    isPaid: finalIsPaid,
+    paidAt: finalPaidAt
   });
 
   if (!isBuyNow) {
