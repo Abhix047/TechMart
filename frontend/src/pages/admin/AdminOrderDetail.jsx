@@ -150,7 +150,13 @@ export default function AdminOrderDetail() {
                              <input 
                                 type="date" 
                                 className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[12px] text-white/80 outline-none focus:border-white/25 transition-colors [color-scheme:dark]"
-                                value={order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toISOString().split('T')[0] : ''}
+                                value={(() => {
+                                  try {
+                                    return order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toISOString().split('T')[0] : '';
+                                  } catch {
+                                    return '';
+                                  }
+                                })()}
                                 onChange={(e) => handleDeliveryDateUpdate(e.target.value)}
                                 disabled={updating === 'delivery-date'}
                              />
@@ -310,8 +316,13 @@ export default function AdminOrderDetail() {
                                 <CheckCircle2 size={14} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[11px] font-bold text-emerald-700">Payment Verified</p>
-                                <p className="text-[10px] text-emerald-600/70 truncate">{new Date(order.paidAt).toLocaleDateString()} at {new Date(order.paidAt).toLocaleTimeString()}</p>
+                                 <p className="text-[11px] font-bold text-emerald-700">Payment Verified</p>
+                                <p className="text-[10px] text-emerald-600/70 truncate">
+                                  {order.paidAt && !isNaN(new Date(order.paidAt)) 
+                                    ? `${new Date(order.paidAt).toLocaleDateString()} at ${new Date(order.paidAt).toLocaleTimeString()}`
+                                    : "Date not recorded"
+                                  }
+                                </p>
                             </div>
                         </div>
                     )}

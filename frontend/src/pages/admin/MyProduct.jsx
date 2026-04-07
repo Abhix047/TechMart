@@ -235,10 +235,17 @@ const ManageProducts = () => {
   useEffect(() => {
     // Admin needs to see ALL products to manage status
     API.get("/products/all")
-      .then(({ data }) => setProducts(data))
-      .catch(() => {
-        // Fallback if /all doesn't exist yet
-        API.get("/products").then(({ data }) => setProducts(data));
+      .then(({ data }) => {
+        setProducts(data);
+      })
+      .catch((err) => {
+        // If it's an auth error (401/403), don't fallback, just show error
+        if (err.response?.status === 401 || err.response?.status === 403) {
+           toast.error("You don't have permission to view all products.");
+           return;
+        }
+        // For other errors, we can try the public route as a fallback
+        API.get("/products").then(({ data }) => setProducts(data)).catch(() => toast.error("Failed to load products."));
       })
       .finally(() => setLoading(false));
   }, []);

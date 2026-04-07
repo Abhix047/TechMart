@@ -87,7 +87,7 @@ function StatCard({ title, value, rawValue, icon: Icon, delay, accent, link }) {
 
 /* ── Status badge ── */
 function StatusBadge({ order }) {
-  if (order.isCancelled)
+  if (!order || order.isCancelled)
     return (
       <span className="inline-flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/60 px-2.5 py-1 rounded-full">
         <XCircle size={11} /> Cancelled
@@ -122,11 +122,14 @@ function StatusBadge({ order }) {
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalOrders:   0,
-    totalRevenue:  0,
-    totalUsers:    0,
-    recentOrders:  [],
+    totalProducts:   0,
+    totalOrders:     0,
+    totalRevenue:    0,
+    totalUsers:      0,
+    pendingOrders:   0,
+    confirmedOrders: 0,
+    shippedOrders:   0,
+    recentOrders:    [],
   });
 
   useEffect(() => {
