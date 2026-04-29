@@ -1,466 +1,226 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useInView } from "framer-motion";
-import { ArrowRight, ChevronRight, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Sparkles, ChevronLeft, ChevronRight, Heart, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { getImg } from "../../config";
 
 const serif = { fontFamily: "'Cormorant Garamond', serif" };
 const sans  = { fontFamily: "'Outfit', sans-serif" };
-const PER   = 4;
 
-/* ── Magnetic hook ── */
-function useMagnetic(s = 0.35) {
-  const ref = useRef(null);
-  const x = useMotionValue(0), y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 220, damping: 22 });
-  const sy = useSpring(y, { stiffness: 220, damping: 22 });
-  const onMove = useCallback((e) => {
-    const r = ref.current?.getBoundingClientRect(); if (!r) return;
-    x.set((e.clientX - (r.left + r.width / 2)) * s);
-    y.set((e.clientY - (r.top + r.height / 2)) * s);
-  }, [s, x, y]);
-  const onLeave = useCallback(() => { x.set(0); y.set(0); }, [x, y]);
-  return { ref, sx, sy, onMove, onLeave };
-}
-
-/* ── Tilt hook ── */
-function useTilt(max = 7) {
-  const ref = useRef(null);
-  const rx = useMotionValue(0), ry = useMotionValue(0);
-  const srx = useSpring(rx, { stiffness: 160, damping: 20 });
-  const sry = useSpring(ry, { stiffness: 160, damping: 20 });
-  const onMove = useCallback((e) => {
-    const r = ref.current?.getBoundingClientRect(); if (!r) return;
-    ry.set(((e.clientX - r.left) / r.width * 2 - 1) * max);
-    rx.set(-(((e.clientY - r.top) / r.height * 2 - 1) * max * 0.6));
-  }, [max, rx, ry]);
-  const onLeave = useCallback(() => { rx.set(0); ry.set(0); }, [rx, ry]);
-  return { ref, srx, sry, onMove, onLeave };
-}
-
-/* ── Shimmer ── */
-const Shimmer = () => (
-  <motion.div className="absolute inset-0"
-    style={{ background: "linear-gradient(105deg,transparent 30%,rgba(0,0,0,0.035) 50%,transparent 70%)", backgroundSize: "200% 100%" }}
-    animate={{ backgroundPositionX: ["200%", "-200%"] }}
-    transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }} />
+const PremiumBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+    <div className="absolute inset-0 bg-[#faf9f8]" />
+    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-orange-100/40 blur-[100px]" />
+    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-stone-200/50 blur-[100px]" />
+    <div className="absolute inset-0 opacity-[0.015] mix-blend-multiply" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")' }} />
+  </div>
 );
 
-/* ══ BACKGROUND EFFECTS ══ */
-
-/* Floating orb — large soft blurred circle that drifts slowly */
-const FloatingOrb = ({ style, animate, duration }) => (
-  <motion.div
-    className="absolute rounded-full pointer-events-none"
-    style={{ filter: "blur(80px)", ...style }}
-    animate={animate}
-    transition={{ duration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-  />
-);
-
-/* Tiny drifting particle */
-const Particle = ({ x, y, delay, size }) => (
-  <motion.div
-    className="absolute rounded-full pointer-events-none"
-    style={{
-      left: `${x}%`,
-      top:  `${y}%`,
-      width: size,
-      height: size,
-      background: "rgba(0,0,0,0.1)",
-    }}
-    animate={{
-      y: [0, -18, 0],
-      x: [0, 6, 0],
-      opacity: [0, 0.5, 0],
-    }}
-    transition={{
-      duration: 5 + Math.random() * 4,
-      delay,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-  />
-);
-
-/* SVG grain overlay — static noise texture at very low opacity */
-const GrainOverlay = () => (
-  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.025, mixBlendMode: "multiply" }}>
-    <filter id="grain-fp">
-      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
-      <feColorMatrix type="saturate" values="0" />
-    </filter>
-    <rect width="100%" height="100%" filter="url(#grain-fp)" />
-  </svg>
-);
-
-/* Thin diagonal lines — very subtle, barely visible grid feel */
-const DiagonalLines = () => (
-  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.018 }}>
-    <defs>
-      <pattern id="diag-fp" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
-        <line x1="0" y1="0" x2="0" y2="40" stroke="#000" strokeWidth="0.5" />
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#diag-fp)" />
-  </svg>
-);
-
-/* All background layers composed together */
-const SectionBackground = () => {
-  const particles = [
-    { x: 12,  y: 25, delay: 0,   size: 2 },
-    { x: 28,  y: 68, delay: 1.2, size: 1.5 },
-    { x: 45,  y: 15, delay: 2.8, size: 2.5 },
-    { x: 60,  y: 80, delay: 0.6, size: 1.5 },
-    { x: 72,  y: 40, delay: 3.5, size: 2 },
-    { x: 85,  y: 20, delay: 1.8, size: 1.5 },
-    { x: 92,  y: 60, delay: 4.2, size: 2 },
-    { x: 35,  y: 50, delay: 2.1, size: 1.5 },
-  ];
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Base gradient — warm stone tone */}
-      <div className="absolute inset-0" style={{
-        background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(248,246,242,1) 0%, transparent 100%)",
-      }} />
-
-      {/* Orb 1 — top-left warm blush */}
-      <FloatingOrb
-        style={{
-          width: 520, height: 520,
-          top: "-12%", left: "-8%",
-          background: "radial-gradient(circle, rgba(210,195,180,0.22) 0%, transparent 70%)",
-        }}
-        animate={{ x: [0, 28, 0], y: [0, 18, 0] }}
-        duration={18}
-      />
-
-      {/* Orb 2 — bottom-right cool stone */}
-      <FloatingOrb
-        style={{
-          width: 480, height: 480,
-          bottom: "-15%", right: "-6%",
-          background: "radial-gradient(circle, rgba(190,185,175,0.18) 0%, transparent 70%)",
-        }}
-        animate={{ x: [0, -22, 0], y: [0, -20, 0] }}
-        duration={22}
-      />
-
-      {/* Orb 3 — centre accent, very faint warm cream */}
-      <FloatingOrb
-        style={{
-          width: 360, height: 280,
-          top: "30%", left: "35%",
-          background: "radial-gradient(ellipse, rgba(230,220,205,0.14) 0%, transparent 70%)",
-        }}
-        animate={{ x: [0, 16, 0], y: [0, -12, 0], scale: [1, 1.06, 1] }}
-        duration={26}
-      />
-
-      {/* Orb 4 — top-right, very subtle */}
-      <FloatingOrb
-        style={{
-          width: 300, height: 300,
-          top: "-5%", right: "15%",
-          background: "radial-gradient(circle, rgba(200,192,180,0.12) 0%, transparent 70%)",
-        }}
-        animate={{ x: [0, -14, 0], y: [0, 22, 0] }}
-        duration={20}
-      />
-
-      {/* Diagonal line texture */}
-      <DiagonalLines />
-
-      {/* Floating micro particles */}
-      {particles.map((p, i) => <Particle key={i} {...p} />)}
-
-      {/* Grain noise on top */}
-      <GrainOverlay />
-    </div>
-  );
-};
-
-/* ══ PRODUCT CARD ══ */
-const Card = ({ product, index, onClick, inView }) => {
-  const [hov, setHov] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const tilt = useTilt(5);
-
-  const name  = product?.name  || "—";
-  const brand = product?.brand || product?.category || "";
+const Card = ({ product, isCenter }) => {
+  const img = product?.images?.[0] ? getImg(product.images[0]) : null;
+  const name = product?.name || "—";
+  const brand = product?.brand || product?.category || "TechMart";
   const price = product?.price || 0;
-  const disc  = product?.discountPrice;
-  const badge = product?.badge || (product?.isNew ? "New" : product?.isSale ? "Sale" : null);
-  const img   = product?.images?.[0] ? getImg(product.images[0]) : null;
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
-      animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: index * 0.08 }}
-      className="cursor-pointer select-none group/card"
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      onClick={onClick}
-      style={{ perspective: 1000 }}
+    <motion.div 
+      whileHover={{ scale: 1.02, y: -5 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className={`group w-full h-full rounded-[32px] p-2 sm:p-3 flex flex-col relative transition-all duration-700 bg-[#2c2c2c] ${isCenter ? 'shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)]' : 'shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)]'}`}
     >
-      {/* image */}
-      <motion.div ref={tilt.ref} onMouseMove={tilt.onMove} onMouseLeave={tilt.onLeave}
-        style={{ rotateX: tilt.srx, rotateY: tilt.sry, transformStyle: "preserve-3d", marginBottom: 18 }}
-        className="relative">
-        <div className="relative overflow-hidden" style={{ aspectRatio: "3/4", background: "#f5f4f2" }}>
-          {img && !loaded && <Shimmer />}
-          {img
-            ? <motion.img src={img} alt={name} draggable={false} onLoad={() => setLoaded(true)}
-                className="w-full h-full object-contain p-6 mix-blend-multiply"
-                style={{ opacity: loaded ? 1 : 0, transition: "opacity 0.5s" }}
-                animate={{ scale: hov ? 0.88 : 1 }}
-                transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }} />
-            : <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] tracking-[0.3em] uppercase text-black/20" style={sans}>No Image</span>
-              </div>
-          }
-
-          {/* badge */}
-          {badge && (
-            <motion.span initial={{ opacity: 0, y: -6 }} animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: index * 0.08 + 0.3 }}
-              className="absolute top-4 left-4 px-3 py-1 text-white text-[8px] tracking-[0.24em] uppercase"
-              style={{ ...sans, background: badge === "Sale" ? "#1a3a1a" : "#0a0a0a" }}>
-              {badge}
-            </motion.span>
-          )}
-
-          {/* hover overlay — slides from bottom */}
-          <motion.div
-            initial={{ y: "100%" }} animate={{ y: hov ? "0%" : "100%" }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-x-0 bottom-0 flex items-center justify-between px-5 py-3"
-            style={{ background: "rgba(255,255,255,0.97)", borderTop: "1px solid rgba(0,0,0,0.05)", backdropFilter: "blur(12px)" }}>
-            <span className="text-[9px] tracking-[0.26em] uppercase text-stone-800" style={sans}>Quick View</span>
-            <motion.div animate={{ x: hov ? 0 : -4, opacity: hov ? 1 : 0 }} transition={{ duration: 0.2 }}>
-              <ArrowRight size={12} strokeWidth={1.5} className="text-stone-700" />
-            </motion.div>
-          </motion.div>
-
-          {/* tint */}
-          <motion.div className="absolute inset-0 pointer-events-none bg-black"
-            animate={{ opacity: hov ? 0.025 : 0 }} transition={{ duration: 0.3 }} />
+      
+      {/* Top Image Container */}
+      <div className="relative w-full h-[60%] sm:h-[65%] bg-[#eaeaea] rounded-[24px] flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:bg-[#e0e0e0]">
+        {/* Heart Icon */}
+        <div className="absolute top-3 right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#2c2c2c] flex items-center justify-center cursor-pointer hover:bg-black transition-colors z-10 shadow-md">
+          <Heart size={18} color="white" strokeWidth={2} />
         </div>
-
-        {/* float shadow */}
-        <motion.div
-          animate={{ opacity: hov ? 0.2 : 0.07, scaleX: hov ? 0.78 : 0.68, y: hov ? 10 : 4 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute -bottom-3 left-[11%] right-[11%] h-6 bg-black rounded-full"
-          style={{ filter: "blur(12px)" }} />
-      </motion.div>
-
-      {/* text */}
-      <div>
-        {brand && (
-          <p className="text-[8.5px] tracking-[0.28em] uppercase text-black/30 mb-1.5" style={sans}>{brand}</p>
+        
+        {img ? (
+          <motion.img 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            src={img} 
+            alt={name} 
+            className="w-[85%] h-[85%] object-contain mix-blend-multiply drop-shadow-[0_15px_25px_rgba(0,0,0,0.1)] transition-transform duration-700 group-hover:scale-110 group-hover:drop-shadow-[0_25px_35px_rgba(0,0,0,0.25)]" 
+            loading="lazy" 
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-stone-300 shadow-inner" />
         )}
-        <p className="text-[17px] font-medium text-stone-900 leading-tight mb-2.5" style={serif}>{name}</p>
-        <div className="flex items-center gap-2.5">
-          <p className="text-[13px] text-black/50" style={sans}>
-            ₹{(disc || price).toLocaleString("en-IN")}
-          </p>
-          {disc > 0 && (
-            <p className="text-[11px] text-black/25 line-through" style={sans}>
-              ₹{price.toLocaleString("en-IN")}
-            </p>
-          )}
+      </div>
+
+      {/* Bottom Info Section */}
+      <div className="flex-1 px-2 pt-4 pb-2 flex flex-col justify-between">
+        <div>
+          <h3 className="text-white text-[15px] sm:text-[17px] font-medium leading-tight truncate tracking-wide" style={sans}>{name}</h3>
+          <p className="text-[#a0a0a0] text-[12px] sm:text-[13px] font-normal font-sans mt-1">{brand}</p>
+        </div>
+        
+        <div className="flex justify-between items-end">
+          <span className="text-white text-[24px] sm:text-[28px] font-bold tracking-tight font-sans leading-none">
+            ₹{price.toLocaleString("en-IN")}
+          </span>
+          
+          {/* Action Button */}
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-white rounded-[16px] sm:rounded-[20px] w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center hover:bg-stone-200 transition-colors shadow-sm"
+          >
+            <ShoppingBag size={22} className="text-[#2c2c2c]" strokeWidth={2.2} />
+          </motion.button>
         </div>
       </div>
-    </motion.article>
+    </motion.div>
   );
 };
 
-/* ── Skeleton ── */
-const Skeleton = ({ index }) => (
-  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}>
-    <div className="relative overflow-hidden mb-4" style={{ aspectRatio: "3/4", background: "#f0efed" }}><Shimmer /></div>
-    <div className="h-1.5 bg-black/[0.04] w-1/4 mb-2.5 rounded-full" />
-    <div className="h-3.5 bg-black/[0.06] w-4/5 mb-2 rounded-full" />
-    <div className="h-2.5 bg-black/[0.04] w-1/3 rounded-full" />
-  </motion.div>
-);
-
-/* ── Arrow button ── */
-const Arrow = ({ dir, onClick, mag }) => (
-  <motion.button ref={mag.ref} onMouseMove={mag.onMove} onMouseLeave={mag.onLeave}
-    whileTap={{ scale: 0.88 }} onClick={onClick}
-    className="w-11 h-11 rounded-full bg-white flex items-center justify-center cursor-pointer border-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-    style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 8px 28px rgba(0,0,0,0.09)", x: mag.sx, y: mag.sy }}>
-    {dir === "left" ? <ChevronLeft size={17} strokeWidth={1.4} /> : <ChevronRight size={17} strokeWidth={1.4} />}
-  </motion.button>
-);
-
-/* ══ MAIN ══ */
 export default function FeaturedProducts() {
   const navigate = useNavigate();
-  const ref      = useRef(null);
-  const inView   = useInView(ref, { once: true, margin: "-80px" });
-  const [items, setItems]     = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [page, setPage]       = useState(0);
-  const magL = useMagnetic(0.45), magR = useMagnetic(0.45);
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
     API.get("/products")
-      .then(r => setItems(Array.isArray(r.data) ? r.data : r.data?.products || []))
-      .catch(() => setError(true))
+      .then(r => {
+        let raw = Array.isArray(r.data) ? r.data : r.data?.products || [];
+        raw = raw.slice(0, 8);
+        if (raw.length === 2) raw = [...raw, ...raw, ...raw];
+        if (raw.length === 1) raw = [...raw, ...raw, ...raw, ...raw];
+        if (raw.length === 3) raw = [...raw, ...raw];
+        if (raw.length === 4) raw = [...raw, ...raw];
+        setItems(raw);
+      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const total = Math.max(1, Math.ceil(items.length / PER));
-  const slice = items.slice(page * PER, page * PER + PER);
-  const go    = useCallback(p => setPage(Math.max(0, Math.min(p, total - 1))), [total]);
+  const total = items.length;
 
   useEffect(() => {
     if (total <= 1 || loading) return;
-    const id = setInterval(() => setPage(p => (p + 1) % total), 6000);
+    const id = setInterval(() => setIndex(i => (i + 1) % total), 5000);
     return () => clearInterval(id);
   }, [total, loading]);
 
+  const getPosition = (i) => {
+    if (total === 0) return 0;
+    let dist = i - index;
+    if (dist > total / 2) dist -= total;
+    if (dist < -total / 2) dist += total;
+    return dist;
+  };
+
+  const handlePrev = () => setIndex(i => (i - 1 + total) % total);
+  const handleNext = () => setIndex(i => (i + 1) % total);
+
   return (
-    <motion.section
-      id="featured-products"
-      ref={ref}
-      className="py-20 md:py-28 overflow-hidden relative"
+    <section id="featured-products" className="relative py-5 md:py-10 w-full overflow-hidden bg-[#faf9f8] flex flex-col items-center">
+      <PremiumBackground />
 
-      style={{ background: "#f9f7f4" }}
-    >
+      {/* Header Area */}
+      <div className="relative z-20 flex flex-col items-center text-center px-3 mb-10 md:mb-16 w-full max-w-4xl mx-auto shrink-0">
+        
+        {/* Title */}
+        <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+          className="text-3xl md:text-5xl lg:text-5xl font-semibold text-stone-900 mb-3 tracking-tight leading-tight" style={serif}>
+          TechMart <span className="italic font-normal text-stone-500">Exclusives</span>
+        </motion.h2>
 
-      {/* ══ BACKGROUND LAYERS ══ */}
-      <SectionBackground />
-
-      {/* ── HEADER ── */}
-      <div className="relative z-10 flex items-end justify-between mb-14 md:mb-20 px-5 sm:px-10 lg:px-16 xl:px-[72px]">
-        <div>
-          {/* eyebrow */}
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.5 }} className="flex items-center gap-3 mb-3">
-            <motion.span initial={{ scaleX: 0 }} animate={inView ? { scaleX: 1 } : {}}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              className="block w-7 h-px bg-black/30 origin-left" />
-            <span className="text-[9px] tracking-[0.32em] uppercase text-black/35" style={sans}>Curated Selection</span>
-          </motion.div>
-
-          {/* headline */}
-          <h2 className="m-0 flex flex-wrap gap-x-[0.22em]"
-            style={{ ...serif, fontSize: "clamp(30px,4vw,54px)", fontWeight: 500, letterSpacing: "-0.01em", color: "#0a0a0a", lineHeight: 1.05 }}>
-            {"Featured Products".split(" ").map((w, i) => (
-              <motion.span key={i} initial={{ opacity: 0, y: 22, filter: "blur(5px)" }}
-                animate={inView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 + i * 0.08 }}
-                style={{ display: "inline-block" }}>{w}</motion.span>
-            ))}
-          </h2>
-        </div>
-
-        {/* View All */}
-        <motion.button
-          initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.5 }}
-          whileTap={{ scale: 0.96 }} onClick={() => navigate("/products")}
-          className="hidden sm:flex items-center gap-2 bg-transparent border-none cursor-pointer group/btn">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-black/35 group-hover/btn:text-black/70 transition-colors duration-200" style={sans}>
-            View All
-          </span>
-          <div className="group-hover/btn:translate-x-0.5 transition-transform duration-200">
-            <ArrowRight size={12} strokeWidth={1.5} className="text-black/30 group-hover/btn:text-black/60 transition-colors duration-200" />
-          </div>
-        </motion.button>
+        {/* Subtitle */}
+        <motion.p initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+          className="text-stone-500 text-[13px] md:text-[15px] font-light font-sans max-w-2xl leading-relaxed">
+          Dive into our carefully curated selection of premium devices, designed to deliver exceptional performance, unparalleled aesthetics, and a truly seamless lifestyle. Upgrade your everyday tech experience.
+        </motion.p>
       </div>
 
-      {error && (
-        <p className="relative z-10 text-center py-20 text-[13px] text-black/30" style={sans}>Could not load products.</p>
-      )}
+      {/* 3D Carousel Area */}
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto h-[342px] sm:h-[414px] flex justify-center items-center shrink-0 mb-4" style={{ perspective: "1500px", transformStyle: "preserve-3d" }}>
+        
+        {/* Navigation Arrows */}
+        {!loading && items.length > 1 && (
+          <>
+            <button onClick={handlePrev} 
+              className="absolute left-2 sm:left-6 lg:-left-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-white/80 backdrop-blur-xl rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-white flex items-center justify-center text-stone-700 hover:bg-white hover:text-black hover:scale-110 transition-all cursor-pointer">
+              <ChevronLeft size={24} strokeWidth={1.5} />
+            </button>
+            <button onClick={handleNext} 
+              className="absolute right-2 sm:right-6 lg:-right-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-white/80 backdrop-blur-xl rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-white flex items-center justify-center text-stone-700 hover:bg-white hover:text-black hover:scale-110 transition-all cursor-pointer">
+              <ChevronRight size={24} strokeWidth={1.5} />
+            </button>
+          </>
+        )}
 
-      {/* ══ DESKTOP GRID ══ */}
-      {!error && (
-        <div className="relative z-10 hidden lg:block relative group px-5 sm:px-10 lg:px-16 xl:px-[72px]">
-          {/* arrows */}
-          {!loading && total > 1 && page > 0 && (
-            <div className="absolute left-1 xl:left-5 top-[40%] -translate-y-1/2 z-20">
-              <Arrow dir="left" onClick={() => go(page - 1)} mag={magL} />
-            </div>
-          )}
-          {!loading && total > 1 && page < total - 1 && (
-            <div className="absolute right-1 xl:right-5 top-[40%] -translate-y-1/2 z-20">
-              <Arrow dir="right" onClick={() => go(page + 1)} mag={magR} />
-            </div>
-          )}
+        {loading ? (
+          <div className="w-10 h-10 border-2 border-stone-200 border-t-stone-900 rounded-full animate-spin" />
+        ) : items.length > 0 ? (
+          items.map((product, i) => {
+            const dist = getPosition(i);
+            
+            let x = "0%";
+            let z = 0;
+            let rotateY = 0;
+            let scale = 1;
+            let zIndex = 10;
+            let overlayOpacity = 0;
+            let rootOpacity = Math.abs(dist) > 2 ? 0 : 1;
+            let blurAmount = 0;
 
-          <AnimatePresence mode="wait">
-            <motion.div key={page}
-              initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.06}
-              onDragEnd={(_, { offset }) => { if (offset.x < -60) go(page + 1); else if (offset.x > 60) go(page - 1); }}
-              className="grid gap-8 cursor-grab active:cursor-grabbing select-none"
-              style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
-              {loading
-                ? Array.from({ length: PER }).map((_, i) => <Skeleton key={i} index={i} />)
-                : slice.map((p, i) => <Card key={p._id || i} product={p} index={i} inView={inView} onClick={() => navigate(`/product/${p._id}`)} />)
-              }
-            </motion.div>
-          </AnimatePresence>
-
-          {/* pagination dots */}
-          {!loading && total > 1 && (
-            <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.6 }}
-              className="flex items-center justify-center gap-2 mt-16">
-              {Array.from({ length: total }).map((_, i) => (
-                <motion.button key={i} onClick={() => go(i)} whileTap={{ scale: 0.8 }}
-                  className="border-none bg-transparent cursor-pointer p-1.5">
-                  <motion.span
-                    animate={{ width: i === page ? 28 : 5, background: i === page ? "#0a0a0a" : "rgba(0,0,0,0.14)" }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ height: 1.5, borderRadius: 1, display: "block" }} />
-                </motion.button>
-              ))}
-              <span className="text-[9px] tracking-[0.18em] text-black/22 ml-2 tabular-nums" style={sans}>
-                {String(page + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-              </span>
-            </motion.div>
-          )}
-        </div>
-      )}
-
-      {/* ══ MOBILE SCROLL ══ */}
-      {!error && (
-        <div className="relative z-10 lg:hidden">
-          <div id="fp-slider" className="flex gap-4 pb-2 px-5 overflow-x-auto snap-x snap-mandatory scroll-smooth"
-            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-            {loading
-              ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="shrink-0 w-52"><Skeleton index={i} /></div>)
-              : items.map((p, i) => (
-                <div key={p._id || i} className="shrink-0 snap-start" style={{ width: "clamp(165px,48vw,210px)" }}>
-                  <Card product={p} index={i} inView={inView} onClick={() => navigate(`/product/${p._id}`)} />
-                </div>
-              ))
+            if (dist === 0) {
+              x = "0%"; z = 0; rotateY = 0; scale = 1; zIndex = 30; overlayOpacity = 0; blurAmount = 0;
+            } else if (dist === -1) {
+              x = "-75%"; z = -80; rotateY = 15; scale = 0.85; zIndex = 20; overlayOpacity = 0.2; blurAmount = 0;
+            } else if (dist === 1) {
+              x = "75%"; z = -80; rotateY = -15; scale = 0.85; zIndex = 20; overlayOpacity = 0.2; blurAmount = 0;
+            } else if (dist === -2) {
+              x = "-140%"; z = -160; rotateY = 25; scale = 0.7; zIndex = 10; overlayOpacity = 0.6; blurAmount = 14;
+            } else if (dist === 2) {
+              x = "140%"; z = -160; rotateY = -25; scale = 0.7; zIndex = 10; overlayOpacity = 0.6; blurAmount = 14;
             }
-          </div>
 
-          {!loading && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.4 }}
-              className="flex justify-center mt-8 px-5">
-              <motion.button whileHover={{ backgroundColor: "#0a0a0a", color: "white" }} whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/products")}
-                className="flex items-center gap-3 border border-black/10 bg-transparent cursor-pointer px-8 py-4 w-full justify-center transition-colors duration-250">
-                <span className="text-[9.5px] tracking-[0.26em] uppercase" style={sans}>View All Products</span>
-                <ArrowRight size={12} strokeWidth={1.5} />
-              </motion.button>
-            </motion.div>
-          )}
-        </div>
-      )}
-    </motion.section>
+            const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+            if (isMobile) {
+               if (dist === -1) x = "-60%";
+               if (dist === 1) x = "60%";
+               if (dist === -2) x = "-110%";
+               if (dist === 2) x = "110%";
+            }
+
+            return (
+              <motion.div
+                key={product._id + i}
+                animate={{ x, z, rotateY, scale, opacity: rootOpacity, filter: `blur(${blurAmount}px)` }}
+                initial={false}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute w-[234px] sm:w-[288px] lg:w-[306px] h-[306px] sm:h-[378px] lg:h-[396px] cursor-pointer"
+                style={{ zIndex, transformStyle: "preserve-3d" }}
+                onClick={() => {
+                  if (dist === 0) navigate(`/product/${product._id}`);
+                  else setIndex(i);
+                }}
+              >
+                <Card product={product} isCenter={dist === 0} />
+                
+                {/* Depth Overlay Fog */}
+                <motion.div 
+                  className="absolute inset-0 bg-[#faf9f8] rounded-[24px] pointer-events-none"
+                  animate={{ opacity: overlayOpacity }}
+                  initial={false}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ transform: "translateZ(100px)" }}
+                />
+              </motion.div>
+            );
+          })
+        ) : (
+          <p className="text-stone-400 font-sans text-sm">No products found.</p>
+        )}
+      </div>
+      
+    </section>
   );
 }

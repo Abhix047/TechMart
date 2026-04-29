@@ -181,7 +181,7 @@ export default function Navbar() {
         className={`fixed top-0 left-0 w-full z-[99] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] 
           ${scrolled
             ? "h-16 bg-white/50 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-black/[0.04]"
-            : "h-24 bg-[#faf9f8] shadow-sm"
+            : "h-20 bg-white/50 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-black/[0.04]"
           }`}
       >
         {/* ─── DESKTOP ─── */}
@@ -195,13 +195,12 @@ export default function Navbar() {
             <div className="flex flex-col items-start leading-none">
               <motion.span
                 animate={{
-                  fontSize: scrolled ? "clamp(20px, 2.5vw, 24px)" : "clamp(24px, 3.5vw, 28px)",
+                  fontSize: scrolled ? "clamp(20px, 2.5vw, 28px)" : "clamp(24px, 3.5vw, 32px)",
                   letterSpacing: "-0.02em"
                 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="block text-[#1a1a2e] italic leading-[1.05] "
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
+               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className="block text-[#14143a]  leading-[1.05] font-bold"
+                style={{ fontFamily: "'Cormorant Unicase', serif" }}>
                 TechMart
               </motion.span>
             </div>
