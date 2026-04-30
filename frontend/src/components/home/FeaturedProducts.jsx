@@ -25,17 +25,29 @@ const Card = ({ product, isCenter }) => {
 
   return (
     <motion.div 
-      whileHover={{ scale: 1.02, y: -5 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className={`group w-full h-full rounded-[32px] p-2 sm:p-3 flex flex-col relative transition-all duration-700 bg-[#2c2c2c] ${isCenter ? 'shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)]' : 'shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)]'}`}
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className={`group w-full h-full rounded-[24px] p-2 sm:p-2.5 flex flex-col relative transition-all duration-700 bg-[#ffffff] border ${isCenter ? 'border-stone-200/60 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)]' : 'border-stone-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)]'}`}
     >
       
-      {/* Top Image Container */}
-      <div className="relative w-full h-[60%] sm:h-[65%] bg-[#eaeaea] rounded-[24px] flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:bg-[#e0e0e0]">
-        {/* Heart Icon */}
-        <div className="absolute top-3 right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#2c2c2c] flex items-center justify-center cursor-pointer hover:bg-black transition-colors z-10 shadow-md">
-          <Heart size={18} color="white" strokeWidth={2} />
+      {/* Top Image Container with Studio Lighting */}
+      <div className="relative w-full h-[65%] sm:h-[68%] bg-gradient-to-tr from-[#f0f0f0] via-[#ffffff] to-[#f8f8f8] rounded-[18px] flex items-center justify-center overflow-hidden transition-all duration-700 group-hover:from-[#eaeaea] group-hover:to-[#f0f0f0]">
+        
+        {/* Studio Ring Light Reflection */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/80 via-transparent to-transparent opacity-90 pointer-events-none" />
+        <div className="absolute inset-0 border border-black/[0.04] rounded-[18px] pointer-events-none" />
+
+        {/* Floating Brand Tag */}
+        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/70 backdrop-blur-md rounded border border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.03)] z-10">
+          <span className="text-[8px] sm:text-[9px] font-bold tracking-[0.25em] uppercase text-[#111010]" style={sans}>
+            {brand}
+          </span>
         </div>
+
+        {/* Heart Icon */}
+        <button className="absolute top-3 right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/70 backdrop-blur-md flex items-center justify-center cursor-pointer hover:bg-[#111010] group/heart transition-all z-10 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-white/60 hover:border-[#111010]">
+          <Heart size={14} className="text-[#111010] group-hover/heart:text-white transition-colors" strokeWidth={1.8} />
+        </button>
         
         {img ? (
           <motion.img 
@@ -44,33 +56,31 @@ const Card = ({ product, isCenter }) => {
             transition={{ duration: 0.8 }}
             src={img} 
             alt={name} 
-            className="w-[85%] h-[85%] object-contain mix-blend-multiply drop-shadow-[0_15px_25px_rgba(0,0,0,0.1)] transition-transform duration-700 group-hover:scale-110 group-hover:drop-shadow-[0_25px_35px_rgba(0,0,0,0.25)]" 
+            className="w-[80%] h-[80%] object-contain mix-blend-multiply drop-shadow-[0_15px_25px_rgba(0,0,0,0.06)] transition-transform duration-700 group-hover:scale-110 group-hover:drop-shadow-[0_25px_35px_rgba(0,0,0,0.12)]" 
             loading="lazy" 
           />
         ) : (
-          <div className="w-16 h-16 rounded-full bg-stone-300 shadow-inner" />
+          <div className="w-16 h-16 rounded-full bg-stone-200 shadow-inner" />
         )}
       </div>
 
       {/* Bottom Info Section */}
-      <div className="flex-1 px-2 pt-4 pb-2 flex flex-col justify-between">
-        <div>
-          <h3 className="text-white text-[15px] sm:text-[17px] font-medium leading-tight truncate tracking-wide" style={sans}>{name}</h3>
-          <p className="text-[#a0a0a0] text-[12px] sm:text-[13px] font-normal font-sans mt-1">{brand}</p>
-        </div>
+      <div className="flex-1 px-2 sm:px-3 pt-4 pb-2 flex flex-col justify-between">
+        <h3 className="text-[#111010] text-[15px] sm:text-[17px] font-medium leading-tight line-clamp-2 tracking-tight" style={sans}>{name}</h3>
         
-        <div className="flex justify-between items-end">
-          <span className="text-white text-[24px] sm:text-[28px] font-bold tracking-tight font-sans leading-none">
+        <div className="flex justify-between items-end mt-1">
+          <span className="text-[#111010] text-[20px] sm:text-[22px] font-bold tracking-tight leading-none" style={sans}>
             ₹{price.toLocaleString("en-IN")}
           </span>
           
-          {/* Action Button */}
+          {/* High-end Outline-to-Fill Action Button */}
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-white rounded-[16px] sm:rounded-[20px] w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center hover:bg-stone-200 transition-colors shadow-sm"
+            className="group/btn relative w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-full bg-transparent border border-[#111010]/20 text-[#111010] hover:bg-[#111010] hover:border-[#111010] hover:text-white transition-all duration-500 overflow-hidden"
           >
-            <ShoppingBag size={22} className="text-[#2c2c2c]" strokeWidth={2.2} />
+            <div className="absolute top-0 bottom-0 left-[-100%] w-[100%] bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] group-hover/btn:left-[200%] transition-all duration-700 ease-in-out" />
+            <ShoppingBag size={16} strokeWidth={1.8} className="relative z-10 transition-colors" />
           </motion.button>
         </div>
       </div>
@@ -123,18 +133,24 @@ export default function FeaturedProducts() {
       <PremiumBackground />
 
       {/* Header Area */}
-      <div className="relative z-20 flex flex-col items-center text-center px-3 mb-10 md:mb-16 w-full max-w-4xl mx-auto shrink-0">
+      <div className="relative z-20 flex flex-col items-center text-center px-3 mb-10 md:mb-16 w-full max-w-4xl mx-auto shrink-0 mt-6">
+        <motion.span initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} 
+          className="text-[#aa8429] text-[9px] sm:text-[10px] font-bold tracking-[0.4em] uppercase mb-4 flex items-center gap-3">
+          <div className="w-6 h-[1px] bg-[#aa8429]/50" />
+          The Collection
+          <div className="w-6 h-[1px] bg-[#aa8429]/50" />
+        </motion.span>
         
         {/* Title */}
         <motion.h2 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
-          className="text-3xl md:text-5xl lg:text-5xl font-semibold text-stone-900 mb-3 tracking-tight leading-tight" style={serif}>
-          TechMart <span className="italic font-normal text-stone-500">Exclusives</span>
+          className="text-4xl md:text-5xl lg:text-6xl font-light text-[#111010] mb-4 tracking-tighter leading-[1.1]" style={sans}>
+          Curated <span className="font-bold italic text-stone-400" style={serif}>Excellence.</span>
         </motion.h2>
 
         {/* Subtitle */}
         <motion.p initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
-          className="text-stone-500 text-[13px] md:text-[15px] font-light font-sans max-w-2xl leading-relaxed">
-          Dive into our carefully curated selection of premium devices, designed to deliver exceptional performance, unparalleled aesthetics, and a truly seamless lifestyle. Upgrade your everyday tech experience.
+          className="text-stone-500 text-[13px] md:text-[15px] font-light max-w-xl leading-relaxed mx-auto">
+          Experience our definitive selection of state-of-the-art technology. Engineered for visionaries.
         </motion.p>
       </div>
 
@@ -177,9 +193,9 @@ export default function FeaturedProducts() {
             } else if (dist === 1) {
               x = "75%"; z = -80; rotateY = -15; scale = 0.85; zIndex = 20; overlayOpacity = 0.2; blurAmount = 0;
             } else if (dist === -2) {
-              x = "-140%"; z = -160; rotateY = 25; scale = 0.7; zIndex = 10; overlayOpacity = 0.6; blurAmount = 14;
+              x = "-140%"; z = -160; rotateY = 25; scale = 0.7; zIndex = 10; overlayOpacity = 0.4; blurAmount = 4;
             } else if (dist === 2) {
-              x = "140%"; z = -160; rotateY = -25; scale = 0.7; zIndex = 10; overlayOpacity = 0.6; blurAmount = 14;
+              x = "140%"; z = -160; rotateY = -25; scale = 0.7; zIndex = 10; overlayOpacity = 0.4; blurAmount = 4;
             }
 
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;

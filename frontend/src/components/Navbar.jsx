@@ -13,7 +13,7 @@ import { getImg } from "../config.js";
 if (!document.getElementById("nb-fonts")) {
   const l = Object.assign(document.createElement("link"), {
     id: "nb-fonts", rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500;600&family=Syne:wght@400;600;800&family=Space+Grotesk:wght@400;700&display=swap",
   });
   document.head.appendChild(l);
 }
@@ -32,16 +32,52 @@ const Badge = ({ count }) => count > 0 && (
 /* ── Icon button ── */
 const IconBtn = ({ onClick, children, className = "" }) => (
   <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }} onClick={onClick}
-    className={`relative flex items-center justify-center w-9 h-9 rounded-full bg-transparent border-none cursor-pointer text-[#111010]/70 hover:text-[#111010] transition-colors ${className}`}>
+    className={`relative flex items-center justify-center w-10 h-10 rounded-full bg-transparent border-none cursor-pointer text-[#111010]/70 hover:text-[#111010] transition-colors ${className}`}>
     {children}
   </motion.button>
 );
+
+/* ── Reference Style Logo ── */
+const Logo = ({ scrolled, isMobile = false, isDrawer = false }) => {
+  const scale = isDrawer ? "scale-100" : (scrolled ? "scale-90" : "scale-100");
+  return (
+    <div className={`transition-transform duration-500 origin-left ${scale} py-1`}>
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        
+        {/* Black Droplet Icon */}
+        <div 
+          className="flex items-center justify-center bg-[#111010] shrink-0"
+          style={{ 
+            width: isMobile ? 29 : 32, 
+            height: isMobile ? 29 : 32,
+            borderRadius: isMobile ? "6px 20px 20px 20px" : "8px 22px 22px 22px"
+          }}
+        >
+          <svg viewBox="0 0 24 24" className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] text-white mt-[1.5px]" fill="none">
+            {/* Bag Handle */}
+            <path d="M8.5 8V5.5a3.5 3.5 0 1 1 7 0V8" stroke="currentColor" strokeWidth="2.5" />
+            {/* Bag Body */}
+            <rect x="4" y="7.5" width="16" height="13.5" rx="2.5" fill="currentColor" />
+            {/* The 't' */}
+            <path d="M11 11H9.5v1.5H11v3.5c0 1.2 1 2 2 2h1.5v-1.5h-1c-.4 0-.6-.2-.6-.6V12.5h1.5V11H13V9.5h-2V11z" fill="#111010" />
+          </svg>
+        </div>
+
+        {/* Wordmark */}
+        <span className="font-bold text-[#111010] tracking-tight" style={{ fontFamily: "'Outfit', sans-serif", fontSize: isMobile ? 20 : 23 }}>
+          TechMart
+        </span>
+
+      </div>
+    </div>
+  );
+};
 
 /* ── Nav link with animated underline ── */
 const NavItem = ({ to, children, onClick, isActive: forced }) => {
   const inner = (active) => (
     <span className="relative group flex flex-col items-start cursor-pointer">
-      <span className={`text-[10.5px] tracking-[0.18em] uppercase transition-colors duration-300 ${(forced ?? active) ? "text-[#111010]" : "text-[#111010]/60"}`} style={sans}>
+      <span className={`text-[11.5px] font-semibold tracking-[0.18em] uppercase transition-colors duration-300 ${(forced ?? active) ? "text-[#111010]" : "text-[#111010]/60"}`} style={sans}>
         {children}
       </span>
       <span className={`absolute -bottom-1 left-0 h-px bg-gradient-to-r from-[#111010] to-stone-800 transition-all duration-500 ${(forced ?? active) ? "w-full" : "w-0 group-hover:w-full"}`} />
@@ -192,18 +228,7 @@ export default function Navbar() {
           className="hidden lg:flex items-center relative px-[clamp(24px,5vw,80px)] transition-all duration-500 h-full">
 
           <NavLink to="/" className="no-underline pr-8 transition-all duration-500">
-            <div className="flex flex-col items-start leading-none">
-              <motion.span
-                animate={{
-                  fontSize: scrolled ? "clamp(20px, 2.5vw, 28px)" : "clamp(24px, 3.5vw, 32px)",
-                  letterSpacing: "-0.02em"
-                }}
-               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="block text-[#14143a]  leading-[1.05] font-bold"
-                style={{ fontFamily: "'Cormorant Unicase', serif" }}>
-                TechMart
-              </motion.span>
-            </div>
+            <Logo scrolled={scrolled} />
           </NavLink>
 
           {/* --- Navigation + Icons Right --- */}
@@ -224,24 +249,24 @@ export default function Navbar() {
                   <motion.div key="open" initial={{ width: 36, opacity: 0 }} animate={{ width: 260, opacity: 1 }} exit={{ width: 36, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 280, damping: 26 }} className="relative">
                     <form onSubmit={doSearch} className="flex items-center gap-2 h-9 px-3 bg-stone-100 border border-[#111010]/25 rounded-full">
-                      <Search size={13} className="text-[#111010] shrink-0" />
+                      <Search size={14} className="text-[#111010] shrink-0" />
                       <input autoFocus type="text" placeholder="Search…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                         className="bg-transparent border-none outline-none w-full text-[12.5px] text-stone-800" style={sans} />
                       <button type="button" onClick={() => { setSearchOpen(false); setSearchTerm(""); }} className="bg-transparent border-none cursor-pointer text-stone-400">
-                        <X size={11} />
+                        <X size={12} />
                       </button>
                     </form>
                     <SearchDropdown results={results} searchTerm={searchTerm} onSelect={goProduct} onViewAll={doSearch} />
                   </motion.div>
                 ) : (
-                  <IconBtn key="closed" onClick={() => setSearchOpen(true)}><Search size={17} strokeWidth={1.6} /></IconBtn>
+                  <IconBtn key="closed" onClick={() => setSearchOpen(true)}><Search size={19} strokeWidth={1.6} /></IconBtn>
                 )}
               </AnimatePresence>
             </div>
 
             {/* user */}
             {!user ? (
-              <IconBtn onClick={() => setAuthOpen(true)}><User size={17} strokeWidth={1.6} /></IconBtn>
+              <IconBtn onClick={() => setAuthOpen(true)}><User size={19} strokeWidth={1.6} /></IconBtn>
             ) : (
               <div ref={profileRef} className="relative">
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} onClick={() => setProfileOpen(!profileOpen)}
@@ -289,8 +314,8 @@ export default function Navbar() {
               </div>
             )}
 
-            <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={17} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
-            <NavLink to="/cart" className="no-underline"><IconBtn><ShoppingCart size={17} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
+            <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={19} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
+            <NavLink to="/cart" className="no-underline"><IconBtn><ShoppingCart size={19} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
           </div>
         </motion.div>
 
@@ -298,16 +323,16 @@ export default function Navbar() {
         <div className="flex lg:hidden flex-col">
           <div className={`flex items-center justify-between px-2 w-full transition-all duration-300 ${scrolled ? "h-12" : "h-16"}`}>
             <div className="flex items-center">
-              <IconBtn onClick={() => setMobileOpen(true)}><Menu size={20} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
-              <IconBtn onClick={() => setMobileSearch(!mobileSearch)}><Search size={18} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
+              <IconBtn onClick={() => setMobileOpen(true)}><Menu size={22} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
+              <IconBtn onClick={() => setMobileSearch(!mobileSearch)}><Search size={20} className="text-[#111010]" strokeWidth={1.6} /></IconBtn>
             </div>
             <NavLink to="/" className="no-underline">
-              <span className={`block tracking-[0.1em] text-[#111010] transition-all duration-300 ${scrolled ? "text-[20px]" : "text-[24px]"}`} style={serif}>TechMart</span>
+              <Logo scrolled={scrolled} isMobile={true} />
             </NavLink>
             <div className="flex items-center">
-              <NavLink to="/" className="no-underline"><IconBtn><House size={18} strokeWidth={1.6} /></IconBtn></NavLink>
-              <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={18} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
-              <NavLink to="/cart" className="no-underline"><IconBtn><ShoppingCart size={18} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
+              <NavLink to="/" className="no-underline"><IconBtn><House size={20} strokeWidth={1.6} /></IconBtn></NavLink>
+              <NavLink to="/wishlist" className="no-underline"><IconBtn><Heart size={20} strokeWidth={1.6} /><Badge count={wishlistCount} /></IconBtn></NavLink>
+              <NavLink to="/cart" className="no-underline"><IconBtn><ShoppingCart size={20} strokeWidth={1.6} /><Badge count={cartCount} /></IconBtn></NavLink>
             </div>
           </div>
           <AnimatePresence>
@@ -345,9 +370,7 @@ export default function Navbar() {
 
               <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
                 <div>
-                  <span className="text-[22px] tracking-[-0.015em] font-light text-[#0a0a0a] leading-[1.05]" style={{ fontFamily: "'Playfair Display', serif" }}>
-                    <em className="italic font-normal">techmart</em>
-                  </span>
+                  <Logo isDrawer={true} />
                 </div>
                 <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 border-none cursor-pointer">
                   <X size={15} className="text-[#0a0a0a]" />

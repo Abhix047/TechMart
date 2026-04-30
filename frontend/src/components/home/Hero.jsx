@@ -299,8 +299,8 @@ const Hero = () => {
   return (
     <section
       style={{
-        marginTop: isMobile ? 84 : NAVBAR_H,
-        padding: isMobile ? "0 10px 20px" : "0 clamp(14px,2vw,28px) 40px",
+        marginTop: isMobile ? 80 : 62,
+        padding: isMobile ? "2% 10px 20px" : "2% clamp(14px,2vw,28px) 40px",
         background: "transparent",
         position: "relative",
       }}
@@ -327,11 +327,11 @@ const Hero = () => {
             mouseY.set(0);
           }}
           style={{
-            height: isMobile ? "56vw" : "clamp(420px,88vh,940px)",
-            minHeight: isMobile ? 220 : 420,
+            height: isMobile ? "52vw" : "clamp(420px,86vh,960px)",
+            minHeight: isMobile ? 240 : 420,
             background: "#080808",
             cursor: "pointer",
-            borderRadius: isMobile ? 16 : 4,
+            borderRadius: isMobile ? 24 : 32,
             boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.04) inset",
           }}
         >
@@ -404,10 +404,10 @@ const Hero = () => {
 
           {/* ── Multi-layer gradients ── */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
-            background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 55%, transparent 75%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.15) 55%, transparent 80%)",
           }} />
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
-            background: "linear-gradient(100deg, rgba(0,0,0,0.35) 0%, transparent 50%)",
+            background: "linear-gradient(100deg, rgba(0,0,0,0.4) 0%, transparent 60%)",
           }} />
           {/* Vignette */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
@@ -461,12 +461,12 @@ const Hero = () => {
               }}
             >
               <span style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 9, fontWeight: 500,
-                letterSpacing: "0.22em",
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: 10, fontWeight: 600,
+                letterSpacing: "0.2em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.5)",
-              }}>Explore</span>
+                color: "rgba(255,255,255,0.8)",
+              }}>Latest Releases</span>
               <ArrowUpRight size={10} strokeWidth={2} style={{ color: "rgba(255,255,255,0.4)" }} />
             </motion.div>
           </div>
@@ -589,12 +589,12 @@ const Hero = () => {
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.4, delay: 0.2 }}
                           style={{
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: isMobile ? 9 : 11,
-                            fontWeight: 500,
+                            fontFamily: "'Outfit', sans-serif",
+                            fontSize: isMobile ? 10 : 12,
+                            fontWeight: 600,
                             letterSpacing: "0.3em",
                             textTransform: "uppercase",
-                            color: "rgba(255,255,255,0.45)",
+                            color: "#aa8429",
                             margin: 0,
                           }}
                         >
@@ -608,13 +608,13 @@ const Hero = () => {
                       <h1
                         style={{
                           fontFamily: "'Cormorant', serif",
-                          fontSize: isMobile ? "clamp(20px,5.5vw,26px)" : "clamp(30px,4.5vw,66px)",
+                          fontSize: isMobile ? "clamp(22px,5.5vw,28px)" : "clamp(30px,4.5vw,58px)",
                           fontWeight: 400,
                           color: "white",
-                          lineHeight: 1.14,
+                          lineHeight: 1.1,
                           letterSpacing: "-0.01em",
                           margin: 0,
-                          textShadow: "0 2px 40px rgba(0,0,0,0.3)",
+                          textShadow: "0 2px 40px rgba(0,0,0,0.4)",
                         }}
                       >
                         <SplitText
@@ -623,38 +623,6 @@ const Hero = () => {
                         />
                       </h1>
                     )}
-
-                    {/* CTA line */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4, delay: 0.45 }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        marginTop: isMobile ? 10 : 18,
-                      }}
-                    >
-                      <span style={{
-                        fontFamily: "'DM Sans', sans-serif",
-                        fontSize: isMobile ? 9.5 : 11,
-                        fontWeight: 400,
-                        letterSpacing: "0.22em",
-                        textTransform: "uppercase",
-                        color: "rgba(255,255,255,0.35)",
-                      }}>
-                        Shop Collection
-                      </span>
-                      {/* Animated arrow */}
-                      <motion.span
-                        animate={{ x: [0, 4, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      >
-                        <ArrowUpRight size={11} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.3)" }} />
-                      </motion.span>
-                    </motion.div>
 
                   </motion.div>
                 )}

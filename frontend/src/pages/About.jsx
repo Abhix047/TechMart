@@ -7,10 +7,10 @@ const ease = [0.22, 1, 0.36, 1];
 
 /* ── Real Unsplash photos (free to use) ── */
 const PHOTOS = {
-  hero:       "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1400&q=85&auto=format&fit=crop",
-  mission:    "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=900&q=85&auto=format&fit=crop",
-  workspace:  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=900&q=85&auto=format&fit=crop",
-  products:   "https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=900&q=85&auto=format&fit=crop",
+  hero:       "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1400&q=85&auto=format&fit=crop",
+  mission:    "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=900&q=85&auto=format&fit=crop",
+  workspace:  "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=900&q=85&auto=format&fit=crop",
+  products:   "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&q=85&auto=format&fit=crop",
 };
 
 /* ── Fade-in section wrapper ── */
