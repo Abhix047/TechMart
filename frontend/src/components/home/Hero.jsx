@@ -147,14 +147,8 @@ const Hero = () => {
   const imgY = useSpring(useTransform(mouseY, [-1, 1], [-8, 8]), { stiffness: 40, damping: 25, mass: 1.5 });
 
   const handleMouseMove = useCallback((e) => {
-    if (!heroRef.current || isMobile) return;
-    const rect = heroRef.current.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
-    mouseX.set(nx);
-    mouseY.set(ny);
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  }, [isMobile, mouseX, mouseY]);
+    // Disabled as requested
+  }, []);
 
   /* ── Scroll parallax ── */
   const { scrollY } = useScroll();
@@ -262,7 +256,7 @@ const Hero = () => {
           style={{
             height: "clamp(400px,66vh,800px)",
             background: "linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0d0d0d 100%)",
-            borderRadius: 20,
+            borderRadius: 0,
             position: "relative",
             overflow: "hidden",
           }}
@@ -331,28 +325,11 @@ const Hero = () => {
             minHeight: isMobile ? 240 : 420,
             background: "#080808",
             cursor: "pointer",
-            borderRadius: isMobile ? 24 : 32,
-            boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.04) inset",
+            borderRadius: 0,
+            boxShadow: isMobile ? "none" : "0 24px 80px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.04) inset",
           }}
         >
-          {/* ── Custom cursor spotlight ── */}
-          {!isMobile && (
-            <motion.div
-              style={{
-                position: "absolute",
-                left: mousePos.x - 120,
-                top: mousePos.y - 120,
-                width: 240,
-                height: 240,
-                borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)",
-                pointerEvents: "none",
-                zIndex: 25,
-              }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
+          {/* Cursor spotlight removed as requested */}
 
           {/* ── MEDIA: clip-path slide transition + mouse parallax ── */}
           <AnimatePresence mode="sync" custom={direction}>
@@ -373,10 +350,9 @@ const Hero = () => {
                 else if (swipe > 80) goPrev();
               }}
             >
-              {/* Inner parallax layer */}
               <motion.div
                 className="w-full h-full"
-                style={{ x: imgX, y: imgY, scale: 1.06 }}
+                style={{ x: 0, y: 0, scale: 1 }}
               >
                 {banner.type === "video" ? (
                   <video
@@ -418,126 +394,128 @@ const Hero = () => {
           <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between"
             style={{ padding: isMobile ? "16px 18px" : "22px 32px" }}>
 
-            {/* Slide counter */}
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: isMobile ? 9 : 10,
-                fontWeight: 300,
-                letterSpacing: "0.22em",
-              }}
-            >
-              <span style={{ color: "rgba(255,255,255,0.85)" }}>
-                <AnimatedCounter value={current + 1} />
-              </span>
-              <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>/</span>
-              <span style={{ color: "rgba(255,255,255,0.3)" }}>
-                {String(banners.length).padStart(2, "0")}
-              </span>
-            </motion.div>
+            {!isMobile && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 10,
+                  fontWeight: 300,
+                  letterSpacing: "0.22em",
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.85)" }}>
+                  <AnimatedCounter value={current + 1} />
+                </span>
+                <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 2px" }}>/</span>
+                <span style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {String(banners.length).padStart(2, "0")}
+                </span>
+              </motion.div>
+            )}
 
-            {/* Explore pill */}
-            <motion.div
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.1)" }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "6px 12px 6px 14px",
-                borderRadius: 99,
-                border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(12px)",
-                cursor: "pointer",
-              }}
-            >
-              <span style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 10, fontWeight: 600,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.8)",
-              }}>Latest Releases</span>
-              <ArrowUpRight size={10} strokeWidth={2} style={{ color: "rgba(255,255,255,0.4)" }} />
-            </motion.div>
+            {!isMobile && (
+              <motion.div
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.1)" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px 6px 14px",
+                  borderRadius: 99,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.05)",
+                  backdropFilter: "blur(12px)",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{
+                  fontFamily: "'Outfit', sans-serif",
+                  fontSize: 10, fontWeight: 600,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.8)",
+                }}>Latest Releases</span>
+                <ArrowUpRight size={10} strokeWidth={2} style={{ color: "rgba(255,255,255,0.4)" }} />
+              </motion.div>
+            )}
           </div>
 
-          {/* ── LEFT NAV ── */}
-          <motion.button
-            ref={magL.ref}
-            data-control="true"
-            onMouseMove={magL.onMove}
-            onMouseLeave={magL.onLeave}
-            onClick={goPrev}
-            whileTap={{ scale: 0.88 }}
-            style={{
-              position: "absolute",
-              left: isMobile ? 10 : 24,
-              top: "50%",
-              translateY: "-50%",
-              x: magL.sx,
-              y: magL.sy,
-              zIndex: 30,
-              width: isMobile ? 36 : 46,
-              height: isMobile ? 36 : 46,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              backdropFilter: "blur(12px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              opacity: isMobile ? 1 : undefined,
-            }}
-            className={!isMobile ? "opacity-0 group-hover:opacity-100" : ""}
-            transition={{ opacity: { duration: 0.3 } }}
-          >
-            <ChevronLeft size={isMobile ? 14 : 16} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.75)" }} />
-          </motion.button>
+          {!isMobile && (
+            <motion.button
+              ref={magL.ref}
+              data-control="true"
+              onMouseMove={magL.onMove}
+              onMouseLeave={magL.onLeave}
+              onClick={goPrev}
+              whileTap={{ scale: 0.88 }}
+              style={{
+                position: "absolute",
+                left: 24,
+                top: "50%",
+                translateY: "-50%",
+                x: magL.sx,
+                y: magL.sy,
+                zIndex: 30,
+                width: 46,
+                height: 46,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(12px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              className="opacity-0 group-hover:opacity-100"
+              transition={{ opacity: { duration: 0.3 } }}
+            >
+              <ChevronLeft size={16} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.75)" }} />
+            </motion.button>
+          )}
 
-          {/* ── RIGHT NAV ── */}
-          <motion.button
-            ref={magR.ref}
-            data-control="true"
-            onMouseMove={magR.onMove}
-            onMouseLeave={magR.onLeave}
-            onClick={goNext}
-            whileTap={{ scale: 0.88 }}
-            style={{
-              position: "absolute",
-              right: isMobile ? 10 : 24,
-              top: "50%",
-              translateY: "-50%",
-              x: magR.sx,
-              y: magR.sy,
-              zIndex: 30,
-              width: isMobile ? 36 : 46,
-              height: isMobile ? 36 : 46,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              backdropFilter: "blur(12px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              opacity: isMobile ? 1 : undefined,
-            }}
-            className={!isMobile ? "opacity-0 group-hover:opacity-100" : ""}
-            transition={{ opacity: { duration: 0.3 } }}
-          >
-            <ChevronRight size={isMobile ? 14 : 16} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.75)" }} />
-          </motion.button>
+          {!isMobile && (
+            <motion.button
+              ref={magR.ref}
+              data-control="true"
+              onMouseMove={magR.onMove}
+              onMouseLeave={magR.onLeave}
+              onClick={goNext}
+              whileTap={{ scale: 0.88 }}
+              style={{
+                position: "absolute",
+                right: 24,
+                top: "50%",
+                translateY: "-50%",
+                x: magR.sx,
+                y: magR.sy,
+                zIndex: 30,
+                width: 46,
+                height: 46,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(12px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              className="opacity-0 group-hover:opacity-100"
+              transition={{ opacity: { duration: 0.3 } }}
+            >
+              <ChevronRight size={16} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.75)" }} />
+            </motion.button>
+          )}
 
           {/* ── BOTTOM CONTENT ── */}
           <div
@@ -555,8 +533,7 @@ const Hero = () => {
                 {textReady && (
                   <motion.div key={banner._id + "-text"}>
 
-                    {/* Eyebrow tag */}
-                    {banner.subHeading && (
+                    {!isMobile && banner.subHeading && (
                       <motion.div
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: "auto" }}
@@ -566,7 +543,7 @@ const Hero = () => {
                           display: "inline-flex",
                           alignItems: "center",
                           gap: 8,
-                          marginBottom: isMobile ? 8 : 14,
+                          marginBottom: 14,
                           overflow: "hidden",
                         }}
                       >
@@ -577,7 +554,7 @@ const Hero = () => {
                           transition={{ duration: 0.4, delay: 0.15 }}
                           style={{
                             display: "block",
-                            width: isMobile ? 16 : 24,
+                            width: 24,
                             height: 1,
                             background: "rgba(255,255,255,0.4)",
                             transformOrigin: "left",
@@ -590,7 +567,7 @@ const Hero = () => {
                           transition={{ duration: 0.4, delay: 0.2 }}
                           style={{
                             fontFamily: "'Outfit', sans-serif",
-                            fontSize: isMobile ? 10 : 12,
+                            fontSize: 12,
                             fontWeight: 600,
                             letterSpacing: "0.3em",
                             textTransform: "uppercase",
@@ -629,14 +606,13 @@ const Hero = () => {
               </AnimatePresence>
             </div>
 
-            {/* Right: Progress indicators */}
-            <div
-              data-control="true"
-              className="flex flex-col items-end gap-4 shrink-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Circular progress ring */}
-              {!isMobile && (
+            {!isMobile && (
+              <div
+                data-control="true"
+                className="flex flex-col items-end gap-4 shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Circular progress ring */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -666,46 +642,46 @@ const Hero = () => {
                     {secondsLeft}s
                   </div>
                 </motion.div>
-              )}
 
-              {/* Dot indicators — slim lines */}
-              <div className="flex items-center gap-1.5">
-                {banners.map((_, idx) => (
-                  <button
-                    key={idx}
-                    data-control="true"
-                    onClick={() => goTo(idx)}
-                    style={{
-                      position: "relative",
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      border: "none",
-                      padding: 0,
-                      height: 2,
-                      width: idx === current ? 32 : 8,
-                      background: idx === current ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.18)",
-                      borderRadius: 2,
-                      transition: "width 0.45s cubic-bezier(0.4,0,0.2,1), background 0.3s",
-                    }}
-                  >
-                    {idx === current && (
-                      <motion.div
-                        key={current + "-bar"}
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.1, ease: "linear" }}
-                        style={{
-                          position: "absolute", top: 0, left: 0,
-                          height: "100%",
-                          background: "white",
-                          borderRadius: 2,
-                        }}
-                      />
-                    )}
-                  </button>
-                ))}
+                {/* Dot indicators — slim lines */}
+                <div className="flex items-center gap-1.5">
+                  {banners.map((_, idx) => (
+                    <button
+                      key={idx}
+                      data-control="true"
+                      onClick={() => goTo(idx)}
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        border: "none",
+                        padding: 0,
+                        height: 2,
+                        width: idx === current ? 32 : 8,
+                        background: idx === current ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.18)",
+                        borderRadius: 2,
+                        transition: "width 0.45s cubic-bezier(0.4,0,0.2,1), background 0.3s",
+                      }}
+                    >
+                      {idx === current && (
+                        <motion.div
+                          key={current + "-bar"}
+                          initial={{ width: "0%" }}
+                          animate={{ width: `${progress}%` }}
+                          transition={{ duration: 0.1, ease: "linear" }}
+                          style={{
+                            position: "absolute", top: 0, left: 0,
+                            height: "100%",
+                            background: "white",
+                            borderRadius: 2,
+                          }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 
