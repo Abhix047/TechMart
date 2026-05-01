@@ -359,7 +359,7 @@ const Hero = () => {
                     src={getImg(banner.media)}
                     autoPlay muted loop playsInline
                     className="w-full h-full object-cover"
-                    style={{ filter: "brightness(0.88) contrast(1.05) saturate(1.1)" }}
+                    style={{ filter: isMobile ? "none" : "brightness(0.88) contrast(1.05) saturate(1.1)" }}
                   />
                 ) : (
                   <img
@@ -367,7 +367,7 @@ const Hero = () => {
                     alt={banner.title || "Banner"}
                     className="w-full h-full object-cover"
                     draggable={false}
-                    style={{ filter: "brightness(0.88) contrast(1.05) saturate(1.1)" }}
+                    style={{ filter: isMobile ? "none" : "brightness(0.88) contrast(1.05) saturate(1.1)" }}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = "https://placehold.co/1400x800/0a0a0a/ffffff?text=Banner";
@@ -390,9 +390,11 @@ const Hero = () => {
             </>
           )}
           {/* Vignette */}
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
-            boxShadow: "inset 0 0 120px rgba(0,0,0,0.45)",
-          }} />
+          {!isMobile && (
+            <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
+              boxShadow: "inset 0 0 120px rgba(0,0,0,0.45)",
+            }} />
+          )}
 
           {/* ── TOP BAR ── */}
           <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between"
