@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Tag, Info, IndianRupee, Boxes, Settings,
   ImageIcon, Palette, Plus, Trash2, CheckCircle2,
-  UploadCloud, X, Zap, ArrowLeft
+  UploadCloud, X, Zap, ArrowLeft, Loader2
 } from "lucide-react";
 
 import { getImg } from "../../config";
@@ -43,6 +43,7 @@ const AddProduct = () => {
     images: [], colors: [],
   });
   const [specs,       setSpecs]       = useState([{ name: "", value: "" }]);
+  const [previews,   setPreviews]    = useState([]); // Local blobs for instant display
   const [isUploading, setIsUploading] = useState(false);
   const [isPublishing,setIsPublishing]= useState(false);
   const [dragOver,    setDragOver]    = useState(false);
@@ -51,15 +52,25 @@ const AddProduct = () => {
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleImageUpload = async (files) => {
-    if (!files.length) return;
+    if (!files || !files.length) return;
+    
+    // Create local previews immediately
+    const newPreviews = Array.from(files).map(f => URL.createObjectURL(f));
+    setPreviews(prev => [...prev, ...newPreviews]);
+    
     setIsUploading(true);
     const fd = new FormData();
     for (const f of files) fd.append("images", f);
+    
     try {
-      // Let the browser set the correct multipart boundary header.
       const { data } = await API.post("/products/upload", fd);
+      // Replace the local blobs with server URLs after successful upload
+      // Or just append them if you prefer. Here I append server URLs to form.images
       setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
+      toast.success(`${files.length} image(s) uploaded successfully`);
     } catch (err) {
+      // Remove the previews if upload fails
+      setPreviews(prev => prev.filter(p => !newPreviews.includes(p)));
       toast.error(err?.response?.data?.message || err?.message || "Failed to upload images.");
     } finally {
       setIsUploading(false);
@@ -328,12 +339,12 @@ const AddProduct = () => {
                 </div>
 
                 {/* Preview grid */}
-                {form.images.length > 0 && (
+                {(form.images.length > 0 || isUploading) && (
                   <div className="grid grid-cols-3 gap-2.5">
-                    <AnimatePresence>
+                    <AnimatePresence mode="popLayout">
                       {form.images.map((img, i) => (
                         <motion.div
-                          key={i}
+                          key={img}
                           className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.07] bg-[#f0ede8] group"
                           initial={{ opacity: 0, scale: 0.85 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -342,8 +353,12 @@ const AddProduct = () => {
                         >
                           <img
                             src={getImg(img)}
-                            alt={`Preview ${i + 1}`}
-                            className="w-full h-full object-cover mix-blend-multiply p-1"
+                            alt={`Product ${i + 1}`}
+                            className="w-full h-full object-contain mix-blend-multiply p-1.5"
+                            onError={(e) => {
+                              console.error("Image load error:", img);
+                              e.target.src = "https://placehold.co/400x400/f0ede8/999?text=Error";
+                            }}
                           />
                           <motion.button
                             type="button"
@@ -358,6 +373,18 @@ const AddProduct = () => {
                               Main
                             </span>
                           )}
+                        </motion.div>
+                      ))}
+                      
+                      {/* Fake previews while uploading */}
+                      {isUploading && [1, 2, 3].slice(0, 1).map((_, i) => (
+                        <motion.div
+                          key={`uploading-${i}`}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-dashed border-black/10 bg-black/[0.02] flex items-center justify-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <Loader2 size={16} className="text-black/20 animate-spin" />
                         </motion.div>
                       ))}
                     </AnimatePresence>

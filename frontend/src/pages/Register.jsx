@@ -82,8 +82,13 @@ const Register = ({ onSwitch, onClose }) => {
           throw new Error("Account created but login session could not be established");
         }
         toast.success("Account created successfully!");
+        
+        if (onClose) {
+          onClose();
+        } else {
+          navigate("/");
+        }
       }
-      onClose();
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || "Registration failed");
     } finally { setLoading(false); }

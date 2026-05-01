@@ -84,10 +84,17 @@ const Login = ({ onSwitch, onClose }) => {
           throw new Error("Login session could not be established");
         }
         toast.success("Login successful!");
-        onClose();
-        // Admin users ko admin dashboard pe redirect karo
-        if (sessionUser.role === "admin") {
-          navigate("/admin/dashboard");
+        
+        // Modal case: call onClose
+        if (onClose) {
+          onClose();
+        } else {
+          // Page case: redirect
+          if (sessionUser.role === "admin") {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/");
+          }
         }
       }
     } catch (err) {

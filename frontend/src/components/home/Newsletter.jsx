@@ -1,18 +1,17 @@
 import { useState, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Send, Mail } from "lucide-react";
 
-/* ── Fonts (same as NewArrivals) ── */
+/* ── Fonts ── */
 if (typeof document !== "undefined" && !document.getElementById("na-lux-fonts")) {
   const l = document.createElement("link");
   l.id = "na-lux-fonts";
   l.rel = "stylesheet";
   l.href =
-    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Tenor+Sans&display=swap";
+    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Tenor+Sans&family=Inter:wght@300;400;500&display=swap";
   document.head.appendChild(l);
 }
 
-/* ── CharReveal — same as NewArrivals heading ── */
 function CharReveal({ text, italic, delay = 0, inView, className = "" }) {
   return (
     <span
@@ -28,9 +27,9 @@ function CharReveal({ text, italic, delay = 0, inView, className = "" }) {
             initial={{ y: "115%", opacity: 0 }}
             animate={inView ? { y: 0, opacity: 1 } : {}}
             transition={{
-              duration: 0.62,
-              delay: delay + i * 0.03,
-              ease: [0.22, 1, 0.36, 1],
+              duration: 0.8,
+              delay: delay + i * 0.02,
+              ease: [0.16, 1, 0.3, 1],
             }}
           >
             {ch}
@@ -48,13 +47,12 @@ const Newsletter = () => {
   const [loading, setLoading]   = useState(false);
 
   const sectionRef = useRef(null);
-  const inView     = useInView(sectionRef, { once: true, margin: "0px 0px -60px 0px" });
+  const inView     = useInView(sectionRef, { once: true, margin: "0px 0px -100px 0px" });
 
   const handleSubmit = async () => {
     if (!email || !email.includes("@") || loading || submitted) return;
     setLoading(true);
-    /* Replace with your actual API call */
-    await new Promise((r) => setTimeout(r, 900));
+    await new Promise((r) => setTimeout(r, 1200));
     setLoading(false);
     setSubmitted(true);
   };
@@ -66,175 +64,193 @@ const Newsletter = () => {
   return (
     <section
       ref={sectionRef}
-      className="px-5 sm:px-10 lg:px-16 xl:px-[72px] py-20 md:py-28 bg-white overflow-hidden"
+      className="relative px-6 sm:px-12 lg:px-24 pt-16 pb-0 md:pt-24 bg-white overflow-hidden"
     >
-      <div className="flex flex-col items-center text-center max-w-lg mx-auto">
+      {/* ── Background Elements ── */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-transparent via-black/[0.03] to-transparent" />
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-px bg-gradient-to-r from-transparent via-black/[0.03] to-transparent" />
+        
+        {/* Animated Glows */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.1, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-[#FF4D00]/[0.05] rounded-full blur-[120px]" 
+        />
+        
+        {/* Floating Particles */}
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-[#FF4D00]/20 rounded-full"
+            animate={{
+              y: [0, -40, 0],
+              x: [0, (i % 2 === 0 ? 20 : -20), 0],
+              opacity: [0.2, 0.5, 0.2]
+            }}
+            transition={{
+              duration: 5 + i,
+              repeat: Infinity,
+              delay: i * 0.5,
+              ease: "easeInOut"
+            }}
+            style={{
+              top: `${20 + i * 15}%`,
+              left: `${10 + i * 15}%`
+            }}
+          />
+        ))}
+      </div>
 
-        {/* Eyebrow */}
-        <motion.p
-          className="font-[family-name:'Tenor_Sans',sans-serif] text-[9px] tracking-[0.34em] uppercase text-black/30 mb-5"
-          initial={{ opacity: 0, y: 8 }}
+      <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+        
+        {/* Floating Index */}
+        <motion.div
+          className="flex items-center gap-3 mb-6"
+          initial={{ opacity: 0, y: 15 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          Stay in the Loop
-        </motion.p>
+          <div className="w-8 h-[1px] bg-black/10" />
+          <span className="font-[family-name:'Tenor_Sans',sans-serif] text-[10px] tracking-[0.4em] uppercase text-black/40">
+            Techmart Intel
+          </span>
+          <div className="w-8 h-[1px] bg-black/10" />
+        </motion.div>
 
-        {/* Heading — char reveal, italic second word */}
-        <h2
-          aria-label="New drops, weekly."
-          className="flex justify-center flex-wrap gap-[0.22em] items-baseline mb-4 text-[clamp(30px,4.5vw,52px)]"
-        >
-          <CharReveal text="New"     italic={false} delay={0.04} inView={inView} className="text-[#0a0a0a]" />
-          <CharReveal text="drops,"  italic={true}  delay={0.18} inView={inView} className="text-[#0a0a0a]" />
-          <CharReveal text="weekly." italic={true}  delay={0.38} inView={inView} className="text-[#0a0a0a]" />
-        </h2>
+        {/* Main Editorial Heading */}
+        <div className="mb-6">
+          <h2 className="flex flex-col items-center">
+            <CharReveal 
+              text="New drops," 
+              italic={false} 
+              delay={0.1} 
+              inView={inView} 
+              className="text-[clamp(36px,5vw,72px)] font-normal text-[#0a0a0a]" 
+            />
+            <CharReveal 
+              text="delivered weekly." 
+              italic={true} 
+              delay={0.3} 
+              inView={inView} 
+              className="text-[clamp(30px,4.5vw,64px)] font-light text-[#0a0a0a]/60 mt-[-0.1em]" 
+            />
+          </h2>
+        </div>
 
         {/* Subtitle */}
-        <div className="overflow-hidden mb-10">
+        <div className="max-w-[480px] mb-12 px-4">
           <motion.p
-            className="font-[family-name:'Cormorant_Garamond',serif] font-light italic text-[clamp(14px,1.4vw,17px)] text-black/38 leading-relaxed tracking-[0.01em] max-w-[360px] m-0"
-            initial={{ y: "100%", opacity: 0 }}
-            animate={inView ? { y: 0, opacity: 1 } : {}}
-            transition={{ duration: 0.65, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="font-[family-name:'Inter',sans-serif] font-light text-[clamp(14px,1.1vw,16px)] text-black/40 leading-relaxed tracking-tight"
+            initial={{ opacity: 0, y: 15 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            Be first to know about new arrivals, exclusive deals and curated
-            tech picks — directly in your inbox.
+            Join a curated community of tech enthusiasts. Be the first to access 
+            limited drops and exclusive industry insights.
           </motion.p>
         </div>
 
-        {/* Input row */}
+        {/* Improved Glassmorphic Input Card */}
         <motion.div
-          className="w-full max-w-[400px]"
-          initial={{ opacity: 0, y: 16 }}
+          className="w-full max-w-[500px] relative"
+          initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.65, delay: 0.62, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <AnimatePresence mode="wait">
-            {submitted ? (
-              /* ── Success state ── */
-              <motion.div
-                key="success"
-                className="flex items-center justify-center gap-3 py-3.5"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <motion.span
-                  className="w-5 h-5 rounded-full bg-[#0a0a0a] flex items-center justify-center shrink-0"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.35, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          <div className="relative bg-[#faf9f8] border border-black/[0.05] rounded-3xl p-2 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.05)] transition-all duration-500 hover:shadow-[0_40px_80px_-12px_rgba(255,77,0,0.08)]">
+            <AnimatePresence mode="wait">
+              {submitted ? (
+                <motion.div
+                  key="success"
+                  className="flex items-center justify-center gap-4 py-4"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
                 >
-                  <Check size={11} className="text-white" strokeWidth={2.5} />
-                </motion.span>
-                <span className="font-[family-name:'Tenor_Sans',sans-serif] text-[11px] tracking-[0.18em] uppercase text-black/55">
-                  You're on the list
-                </span>
-              </motion.div>
-            ) : (
-              /* ── Input + button ── */
-              <motion.div
-                key="form"
-                className="flex w-full relative"
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {/* Animated bottom border only — luxury feel */}
-                <div className="flex-1 relative">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    onKeyDown={handleKey}
-                    placeholder="your@email.com"
-                    className="w-full px-0 py-3 border-0 border-b border-black/15 font-[family-name:'Tenor_Sans',sans-serif] text-[12px] tracking-[0.04em] text-[#0a0a0a] bg-transparent outline-none placeholder:text-black/25 rounded-none"
-                  />
-                  {/* Focus underline wipe */}
-                  <motion.span
-                    className="absolute bottom-0 left-0 h-px bg-[#0a0a0a] pointer-events-none"
-                    animate={{ width: focused ? "100%" : "0%" }}
-                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                  />
+                  <div className="w-10 h-10 rounded-full bg-[#0a0a0a] flex items-center justify-center">
+                    <Check size={18} className="text-white" />
+                  </div>
+                  <span className="font-[family-name:'Tenor_Sans',sans-serif] text-[11px] tracking-[0.2em] uppercase text-black/80 font-bold">
+                    Success! You're in.
+                  </span>
+                </motion.div>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex-1 relative flex items-center px-4 py-3 sm:py-0">
+                    <Mail size={16} className={`transition-colors duration-500 ${focused ? 'text-[#FF4D00]' : 'text-black/15'}`} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setFocused(true)}
+                      onBlur={() => setFocused(false)}
+                      onKeyDown={handleKey}
+                      placeholder="email@example.com"
+                      className="w-full pl-4 pr-2 bg-transparent border-none outline-none font-[family-name:'Inter',sans-serif] text-[15px] text-[#0a0a0a] placeholder:text-black/15"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="relative h-[56px] sm:h-auto px-10 py-4 bg-[#0a0a0a] rounded-[20px] overflow-hidden group/btn"
+                  >
+                    <motion.div 
+                      className="absolute inset-0 bg-[#FF4D00] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"
+                    />
+                    <div className="relative z-10 flex items-center justify-center gap-3">
+                      {loading ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                          className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                        />
+                      ) : (
+                        <>
+                          <span className="font-[family-name:'Tenor_Sans',sans-serif] text-[11px] tracking-[0.2em] uppercase text-white font-bold">
+                            Subscribe
+                          </span>
+                          <ArrowRight size={14} className="text-white group-hover/btn:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </div>
+                  </button>
                 </div>
-
-                {/* Submit button */}
-                <motion.button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="flex items-center gap-2 pl-5 pb-3 pt-3 bg-transparent border-0 border-b border-black/15 cursor-pointer shrink-0 relative overflow-hidden"
-                  whileTap={{ scale: 0.96 }}
-                >
-                  {/* Button fill on hover */}
-                  <motion.span
-                    className="absolute inset-0 bg-[#0a0a0a] pointer-events-none"
-                    initial={{ scaleX: 0, originX: 1 }}
-                    whileHover={{ scaleX: 1 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  />
-
-                  <AnimatePresence mode="wait">
-                    {loading ? (
-                      <motion.span
-                        key="loader"
-                        className="relative z-10 w-3.5 h-3.5 border border-black/30 border-t-black/80 rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
-                        initial={{ opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                      />
-                    ) : (
-                      <motion.span
-                        key="label"
-                        className="relative z-10 flex items-center gap-2 group-hover:text-white"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <motion.span
-                          className="font-[family-name:'Tenor_Sans',sans-serif] text-[10px] tracking-[0.22em] uppercase text-[#0a0a0a]"
-                          whileHover={{ color: "#ffffff" }}
-                          transition={{ duration: 0.35 }}
-                        >
-                          Subscribe
-                        </motion.span>
-                        <motion.span
-                          whileHover={{ x: 3, color: "#ffffff" }}
-                          transition={{ duration: 0.25 }}
-                          className="inline-flex"
-                        >
-                          <ArrowRight size={11} />
-                        </motion.span>
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
 
-        {/* Fine print */}
-        <motion.p
-          className="font-[family-name:'Tenor_Sans',sans-serif] text-[9px] tracking-[0.12em] text-black/25 mt-4"
+        {/* Refined Footer Details */}
+        <motion.div
+          className="mt-10 flex flex-col items-center"
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.5, delay: 0.8 }}
+          transition={{ duration: 0.8, delay: 1 }}
         >
-          No spam. Unsubscribe anytime.
-        </motion.p>
-
-        {/* Bottom rule — animated wipe */}
-        <motion.div
-          className="w-9 h-px bg-black/12 mt-8 origin-center"
-          initial={{ scaleX: 0 }}
-          animate={inView ? { scaleX: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
-        />
+          <div className="flex items-center gap-3 mb-6">
+            <span className="w-1 h-1 bg-[#FF4D00] rounded-full animate-ping" />
+            <p className="font-[family-name:'Tenor_Sans',sans-serif] text-[10px] tracking-[0.15em] text-black/30">
+              Limited slots available for May 2026
+            </p>
+          </div>
+          <div className="w-12 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+        </motion.div>
+      </div>
+      
+      {/* Decorative Corner Text */}
+      <div className="absolute bottom-12 left-12 hidden lg:block overflow-hidden">
+        <motion.span 
+          initial={{ y: "100%" }}
+          animate={inView ? { y: 0 } : {}}
+          transition={{ duration: 1, delay: 1.5 }}
+          className="block font-[family-name:'Tenor_Sans',sans-serif] text-[9px] tracking-[0.4em] uppercase text-black/15 rotate-90 origin-left"
+        >
+          Techmart Editorial
+        </motion.span>
       </div>
     </section>
   );

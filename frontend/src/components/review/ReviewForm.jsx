@@ -7,6 +7,8 @@ import { BASE_URL } from "../../config";
 const ease = [0.22, 1, 0.36, 1];
 const LABELS = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"];
 
+import API from "../../services/api";
+
 const ReviewForm = ({ productId, onSuccess }) => {
   const [rating,  setRating]  = useState(0);
   const [hovered, setHovered] = useState(0);
@@ -31,21 +33,20 @@ const ReviewForm = ({ productId, onSuccess }) => {
       fd.append("rating", rating);
       fd.append("comment", comment);
       if (image) fd.append("image", image.file);
-      const res  = await fetch(`${BASE_URL}/api/products/${productId}/reviews`, {
-        method: "POST", body: fd, credentials: "include",
-      });
-      const data = await res.text().then(t => (t ? JSON.parse(t) : {}));
-      if (!res.ok) throw new Error(data.message || "Something went wrong");
+
+      const { data } = await API.post(`/products/${productId}/reviews`, fd);
+
       setSuccess(true);
       setRating(0); setComment(""); setImage(null);
       onSuccess?.();
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message || "Failed to post review");
     } finally {
       setLoading(false);
     }
   };
+
 
   const active = hovered || rating;
 

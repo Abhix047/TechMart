@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import {
-  ArrowLeft, Package, MapPin, CreditCard, CheckCircle2,
-  Truck, Star, Receipt, X, Calendar, Hash, ShoppingBag,
-  Shield, RotateCcw, Zap
-} from "lucide-react";
+   ArrowLeft, Package, MapPin, CreditCard, CheckCircle2,
+   Truck, Star, Receipt, X, Calendar, Hash, ShoppingBag,
+   Shield, RotateCcw, Zap, Download
+ } from "lucide-react";
+ import { generateInvoice } from "../utils/invoiceHelper";
 import API from "../services/api";
 import ReviewForm from "../components/review/ReviewForm";
 import toast from "react-hot-toast";
@@ -249,19 +250,31 @@ export default function OrderDetail() {
               >
                 #{order._id?.slice(-8).toUpperCase()}
               </motion.h1>
-              <motion.div
-                className="flex items-center gap-2"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.28, ease }}
-              >
-                <Calendar size={11} className="text-white/35" />
-                <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-white/45">
-                  {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                    day: "numeric", month: "long", year: "numeric",
-                  })}
-                </span>
-              </motion.div>
-            </div>
+               <motion.div
+                 className="flex items-center gap-4 mt-4"
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                 transition={{ duration: 0.5, delay: 0.35, ease }}
+               >
+                 <div className="flex items-center gap-2">
+                   <Calendar size={11} className="text-white/35" />
+                   <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-white/45">
+                     {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                       day: "numeric", month: "long", year: "numeric",
+                     })}
+                   </span>
+                 </div>
+
+                 {order.isDelivered && (
+                   <button 
+                     onClick={() => generateInvoice(order)}
+                     className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all"
+                   >
+                     <Download size={12} />
+                     Download Invoice
+                   </button>
+                 )}
+               </motion.div>
+             </div>
 
             {/* Right — stats */}
             <motion.div

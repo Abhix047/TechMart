@@ -5,9 +5,11 @@ import API from "../services/api";
 import {
   Package, Calendar, CreditCard, Truck,
   ArrowRight, Clock, MapPin, CheckCircle,
-  CircleDashed, XCircle, ShoppingBag
+  CircleDashed, XCircle, ShoppingBag, ShieldCheck, ChevronDown,
+  FileText, ExternalLink, RefreshCcw, Download
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { generateInvoice } from "../utils/invoiceHelper";
 
 const ease = [0.22, 1, 0.36, 1];
 
@@ -20,42 +22,20 @@ const getOrderStatus = (order) => {
 };
 
 const STATUS_MAP = {
-  delivered:  { label: "Delivered",  dot: "bg-emerald-500", text: "text-emerald-700", step: 3 },
-  shipped:    { label: "Shipped",    dot: "bg-blue-500",    text: "text-blue-700",    step: 2 },
-  processing: { label: "Processing", dot: "bg-amber-500",   text: "text-amber-700",   step: 1 },
-  pending:    { label: "Pending",    dot: "bg-black/25",    text: "text-black/45",    step: 0 },
-  cancelled:  { label: "Cancelled",  dot: "bg-red-500",     text: "text-red-600",     step: 0 },
+  delivered:  { label: "Delivered",  dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-100", step: 3 },
+  shipped:    { label: "In Transit", dot: "bg-blue-500",    text: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-100",    step: 2 },
+  processing: { label: "Processing", dot: "bg-amber-500",   text: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-100",   step: 1 },
+  pending:    { label: "Confirmed",  dot: "bg-black/40",    text: "text-black/60",    bg: "bg-black/5",    border: "border-black/5",     step: 0 },
+  cancelled:  { label: "Cancelled",  dot: "bg-red-500",     text: "text-red-700",     bg: "bg-red-50",     border: "border-red-100",     step: 0 },
 };
 
 const formatDate = (d) =>
-  new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-
-/* ── Mini 4-step progress track ── */
-function MiniProgress({ step, cancelled }) {
-  return (
-    <div className="flex items-center gap-0 px-6 pb-4 pt-1">
-      {[0, 1, 2, 3].map((i) => {
-        const filled = !cancelled && i <= step;
-        return (
-          <div key={i} className="flex items-center flex-1 last:flex-none">
-            <div className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-500 ${
-              filled ? "bg-[#0f0f0f]" : "bg-black/10"
-            }`} />
-            {i < 3 && (
-              <div className={`flex-1 h-px transition-colors duration-500 ${
-                !cancelled && i < step ? "bg-[#0f0f0f]" : "bg-black/10"
-              }`} />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+  new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
 export default function MyOrders() {
   const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     API.get("/orders/myorders")
@@ -63,6 +43,14 @@ export default function MyOrders() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredOrders = orders.filter(order => {
+    const status = getOrderStatus(order);
+    if (activeTab === "all") return true;
+    if (activeTab === "not-shipped") return status === "processing" || status === "pending";
+    if (activeTab === "cancelled") return status === "cancelled";
+    return true;
+  });
 
   if (loading) return (
     <div className="min-h-screen bg-[#f7f5f2] flex items-center justify-center">
@@ -76,241 +64,194 @@ export default function MyOrders() {
 
   return (
     <div
-      className="min-h-screen bg-[#f7f5f2] pt-24 sm:pt-28 pb-[calc(80px+env(safe-area-inset-bottom))] px-4 sm:px-8"
+      className="min-h-screen bg-[#f7f5f2] pt-32 sm:pt-40 pb-24 px-4 sm:px-10"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
-      <div className="max-w-[960px] mx-auto">
+      <div className="max-w-[1000px] mx-auto">
 
         {/* ══ HEADER ══ */}
-        <motion.div
-          className="flex items-end justify-between gap-6 mb-8 pb-7 border-b border-black/[0.09]"
-          initial={{ opacity: 0, y: -14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease }}
-        >
-          <div>
-            <motion.p
-              className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.24em] text-black/28 mb-3"
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.08, ease }}
-            >
-              My Account
-            </motion.p>
-            <motion.h1
-              className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(40px,6vw,60px)] font-[400] text-[#0f0f0f] leading-[1]"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.14, ease }}
-            >
-              Your <em className="italic font-[300]">Orders</em>
-            </motion.h1>
-            <motion.p
-              className="font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/38 mt-2.5"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              transition={{ duration: 0.45, delay: 0.22, ease }}
-            >
-              Track, manage and review your purchases
-            </motion.p>
-          </div>
+        <div className="mb-10">
+          <h1 className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(40px,5vw,54px)] font-[400] text-[#0f0f0f] leading-tight mb-8">
+            Your <em className="italic font-[300]">Orders</em>
+          </h1>
 
-          {/* Order count */}
-          {orders.length > 0 && (
-            <motion.div
-              className="text-right shrink-0"
-              initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.18, ease }}
-            >
-              <p className="font-[family-name:'Cormorant_Garamond',serif] text-[clamp(42px,5vw,56px)] font-[400] text-[#0f0f0f] leading-none">
-                {orders.length}
-              </p>
-              <p className="font-[family-name:'DM_Sans',sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-black/28 mt-1">
-                {orders.length === 1 ? "Order" : "Orders"}
-              </p>
-            </motion.div>
-          )}
-        </motion.div>
+          {/* TABS & FILTERS */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-black/[0.06] pb-1">
+            <div className="flex items-center gap-8">
+              {[
+                { id: "all", label: "Orders" },
+                { id: "not-shipped", label: "Not Yet Shipped" },
+                { id: "cancelled", label: "Cancelled Orders" }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative pb-4 text-[13px] font-semibold transition-colors duration-200 ${
+                    activeTab === tab.id ? "text-[#0f0f0f]" : "text-black/35 hover:text-black/60"
+                  }`}
+                >
+                  {tab.label}
+                  {activeTab === tab.id && (
+                    <motion.div 
+                      layoutId="tab-underline"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#0f0f0f]"
+                      transition={{ duration: 0.3, ease }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3 self-end sm:self-auto mb-2 sm:mb-0">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white border border-black/[0.06] rounded-xl shadow-sm text-[12px] font-medium text-black/60 cursor-pointer hover:bg-black/[0.02] transition-all">
+                Past 1 Year <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* ══ EMPTY STATE ══ */}
-        {orders.length === 0 && (
+        {filteredOrders.length === 0 && (
           <motion.div
-            className="bg-white border border-black/[0.07] rounded-3xl p-14 text-center"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1, ease }}
+            className="bg-white border border-black/[0.05] rounded-[2.5rem] p-16 text-center shadow-sm"
+            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
           >
-            <div className="w-16 h-16 bg-[#f7f5f2] border border-black/[0.06] rounded-2xl flex items-center justify-center mx-auto mb-7">
-              <ShoppingBag size={22} className="text-black/28" strokeWidth={1.5} />
+            <div className="w-16 h-16 bg-[#f7f5f2] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <ShoppingBag size={24} className="text-black/15" strokeWidth={1.2} />
             </div>
-            <h2 className="font-[family-name:'Cormorant_Garamond',serif] text-[32px] font-[400] text-[#0f0f0f] mb-3">
-              No orders yet
+            <h2 className="font-[family-name:'Cormorant_Garamond',serif] text-[28px] font-[400] text-[#0f0f0f] mb-3">
+              No matching orders found
             </h2>
-            <p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] text-black/40 mb-9 max-w-[260px] mx-auto leading-relaxed">
-              You haven't placed any orders yet. Discover our curated collection.
+            <p className="text-[13px] text-black/35 mb-8">
+              We couldn't find any orders in this category.
             </p>
-            <Link
-              to="/products"
-              className="inline-flex items-center gap-2 bg-[#0f0f0f] text-white px-7 py-3.5 rounded-2xl font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-semibold hover:bg-black/80 transition-colors"
-            >
-              Explore Products <ArrowRight size={13} />
-            </Link>
+            <button onClick={() => setActiveTab("all")} className="text-[12px] font-bold uppercase tracking-widest text-[#0f0f0f] border-b border-black/20 pb-1 hover:border-black transition-all">
+              View all orders
+            </button>
           </motion.div>
         )}
 
         {/* ══ ORDERS LIST ══ */}
-        <AnimatePresence>
-          <div className="flex flex-col gap-3">
-            {orders.map((order, index) => {
+        <div className="flex flex-col gap-8">
+          <AnimatePresence mode="popLayout">
+            {filteredOrders.map((order, index) => {
               const status  = getOrderStatus(order);
               const sConfig = STATUS_MAP[status];
 
               return (
                 <motion.div
                   key={order._id}
-                  initial={{ opacity: 0, y: 18 }}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.52, delay: index * 0.08, ease }}
-                  className="bg-white border border-black/[0.07] rounded-2xl overflow-hidden hover:border-black/[0.15] transition-colors duration-300 group"
+                  transition={{ duration: 0.5, delay: index * 0.05, ease }}
+                  className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
-
-                  {/* ── TOP ROW: index · id+date · status · price ── */}
-                  <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-black/[0.055]">
-                    {/* Row 1: index + id/date + price (always on same line) */}
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      {/* Index number */}
-                      <span className="font-[family-name:'Cormorant_Garamond',serif] text-[14px] font-[500] text-black/22 leading-none select-none pt-0.5 shrink-0">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-
-                      {/* ID + date */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-[family-name:'DM_Sans',sans-serif] text-[10.5px] font-semibold uppercase tracking-[0.12em] text-black/38 mb-0.5">
-                          #{order._id.slice(-8).toUpperCase()}
-                        </p>
-                        <p className="font-[family-name:'DM_Sans',sans-serif] text-[11.5px] text-black/38">
-                          {formatDate(order.createdAt)}
+                  {/* CARD HEADER (GRAY BAR) */}
+                  <div className="bg-[#f6f6f6] px-6 py-4 border-b border-black/[0.06] flex flex-wrap items-center justify-between gap-y-4">
+                    <div className="flex flex-wrap items-center gap-x-10 gap-y-4 flex-1">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-black/35 mb-1">Order Date</p>
+                        <p className="text-[13px] font-bold text-[#0f0f0f]">{formatDate(order.createdAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-black/35 mb-1">Total Amount</p>
+                        <p className="text-[13px] font-bold text-[#0f0f0f]">₹{order.totalPrice?.toLocaleString("en-IN")}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-black/35 mb-1">Ship To</p>
+                        <p className="text-[13px] font-bold text-[#0f0f0f] flex items-center gap-1.5 cursor-pointer hover:text-black/60 transition-colors">
+                          {order.shippingAddress?.city || "Customer"} <ChevronDown size={12} className="text-black/30" />
                         </p>
                       </div>
-
-                      {/* Price */}
-                      <span className="font-[family-name:'Cormorant_Garamond',serif] text-[20px] sm:text-[22px] font-[500] text-[#0f0f0f] leading-none shrink-0">
-                        ₹{order.totalPrice?.toLocaleString("en-IN")}
-                      </span>
                     </div>
 
-                    {/* Row 2: status pill (below on mobile, looks clean) */}
-                    <div className="flex items-center gap-2 mt-2.5 pl-[calc(14px+12px)]">
-                      <motion.span
-                        className={`w-[7px] h-[7px] rounded-full shrink-0 ${sConfig.dot}`}
-                        animate={status !== "cancelled" ? { opacity: [1, 0.35, 1], scale: [1, 0.65, 1] } : {}}
-                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                      <span className={`font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold ${sConfig.text}`}>
-                        {sConfig.label}
-                      </span>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <p className="text-[11px] font-bold text-black/40 uppercase tracking-tight">Order: <span className="text-black/80 tracking-normal">#{order._id.slice(-10).toUpperCase()}</span></p>
+                      <div className="flex items-center gap-2">
+                        {status === "delivered" ? (
+                          <button 
+                            onClick={() => generateInvoice(order)}
+                            className="px-4 py-1.5 bg-white border border-black/[0.1] rounded-lg text-[11px] font-bold text-black/60 hover:bg-black/[0.04] transition-all flex items-center gap-1.5"
+                          >
+                            <Download size={12} />
+                            Download Invoice
+                          </button>
+                        ) : (
+                          <Link 
+                            to={`/order-detail/${order._id}`} 
+                            className="px-4 py-1.5 bg-white border border-black/[0.1] rounded-lg text-[11px] font-bold text-black/60 hover:bg-black/[0.02] transition-all"
+                          >
+                            View Details
+                          </Link>
+                        )}
+                        <Link to={`/order-detail/${order._id}`} className="px-4 py-1.5 bg-[#0f0f0f] text-white rounded-lg text-[11px] font-bold hover:bg-black/80 transition-all">View Order</Link>
+                      </div>
                     </div>
                   </div>
 
-                  {/* ── BODY: items + meta chips ── */}
-                  <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-5">
+                  {/* CARD CONTENT */}
+                  <div className="p-8">
+                    {/* Status Message */}
+                    <div className="mb-8 flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${sConfig.dot}`} />
+                      <h3 className="text-[18px] font-bold text-[#0f0f0f]">
+                        {status === 'delivered' ? `Delivered ${formatDate(order.deliveredAt || order.updatedAt)}` : sConfig.label}
+                      </h3>
+                    </div>
 
-                    {/* Items */}
-                    <div className="flex flex-col gap-2.5 flex-1 min-w-0">
-                      {order.orderItems?.slice(0, 3).map((item, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <div className="w-[38px] h-[38px] rounded-xl bg-[#f0ede8] border border-black/[0.06] shrink-0 overflow-hidden flex items-center justify-center">
+                    {/* Products */}
+                    <div className="flex flex-col gap-8">
+                      {order.orderItems?.map((item, i) => (
+                        <div key={i} className="flex flex-col md:flex-row gap-6 items-start">
+                          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-[#f9f9f9] border border-black/[0.04] rounded-2xl flex-shrink-0 overflow-hidden group/img">
                             {item.image ? (
                               <img
                                 src={getImg(item.image)}
                                 alt={item.name}
-                                className="w-full h-full object-contain mix-blend-multiply p-1"
+                                className="w-full h-full object-contain mix-blend-multiply p-2 transition-transform duration-500 group-hover/img:scale-110"
                               />
                             ) : (
-                              <Package size={14} className="text-black/22" />
+                              <div className="w-full h-full flex items-center justify-center text-black/10"><Package size={40} strokeWidth={1} /></div>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-[family-name:'DM_Sans',sans-serif] text-[13px] font-medium text-[#0f0f0f] truncate leading-snug">
+
+                          <div className="flex-1 min-w-0 pt-1">
+                            <Link to={`/product/${item.product}`} className="text-[15px] sm:text-[17px] font-bold text-[#0f0f0f] leading-tight hover:text-black/60 transition-colors">
                               {item.name}
+                            </Link>
+                            <p className="text-[12px] text-black/35 mt-2 mb-5 leading-relaxed">
+                              Qty: {item.qty} · Premium Quality · Certified Authentic
                             </p>
+                            
+                            <div className="flex flex-wrap items-center gap-6 mt-auto">
+                              <button className="flex items-center gap-2 text-[12px] font-bold text-[#0f0f0f] bg-black/[0.04] px-4 py-2 rounded-xl hover:bg-black/[0.08] transition-all">
+                                <RefreshCcw size={13} strokeWidth={2.5} />
+                                Buy it again
+                              </button>
+                              <Link to={`/product/${item.product}`} className="flex items-center gap-2 text-[12px] font-bold text-black/40 hover:text-black transition-all">
+                                <ExternalLink size={13} strokeWidth={2.5} />
+                                View Product
+                              </Link>
+                            </div>
                           </div>
-                          <span className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/35 shrink-0 ml-2">
-                            ×{item.qty}
-                          </span>
                         </div>
                       ))}
-                      {order.orderItems?.length > 3 && (
-                        <p className="font-[family-name:'DM_Sans',sans-serif] text-[11.5px] text-black/35 pl-[50px]">
-                          +{order.orderItems.length - 3} more item{order.orderItems.length - 3 > 1 ? "s" : ""}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Meta chips */}
-                    <div className="flex flex-col gap-2 items-end shrink-0">
-                      <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/42 bg-[#f7f5f2] border border-black/[0.06] rounded-full px-3 py-1.5">
-                        <CreditCard size={11} className="text-black/30" strokeWidth={1.5} />
-                        {order.paymentMethod || "Online"}
-                      </div>
-
-                      {order.deliveredAt ? (
-                        <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/60 rounded-full px-3 py-1.5">
-                          <Truck size={11} strokeWidth={1.8} />
-                          Delivered {formatDate(order.deliveredAt)}
-                        </div>
-                      ) : order.isShipped ? (
-                        <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-200/60 rounded-full px-3 py-1.5">
-                          <Truck size={11} strokeWidth={1.8} />
-                          In Transit
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/38 bg-[#f7f5f2] border border-black/[0.06] rounded-full px-3 py-1.5">
-                          <Clock size={11} className="text-black/28" strokeWidth={1.5} />
-                          {order.isPaid ? "Preparing" : "Awaiting payment"}
-                        </div>
-                      )}
                     </div>
                   </div>
-
-                  {/* ── MINI PROGRESS ── */}
-                  <MiniProgress step={sConfig.step} cancelled={status === "cancelled"} />
-
-                  {/* ── FOOTER: address + view link ── */}
-                  <div className="flex items-center justify-between px-6 py-3.5 bg-[#faf9f7] border-t border-black/[0.055]">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {order.shippingAddress ? (
-                        <>
-                          <MapPin size={11} className="text-black/28 shrink-0" strokeWidth={1.8} />
-                          <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] text-black/42 truncate max-w-[280px]">
-                            {order.shippingAddress.address}, {order.shippingAddress.city}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12px] text-black/28">
-                          No address on file
-                        </span>
-                      )}
-                    </div>
-
-                    <Link
-                      to={`/order-detail/${order._id}`}
-                      className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-semibold text-[#0f0f0f] hover:text-black/55 transition-colors group/link shrink-0 ml-4"
-                    >
-                      View Details
-                      <ArrowRight
-                        size={12}
-                        className="group-hover/link:translate-x-0.5 transition-transform duration-200"
-                      />
-                    </Link>
-                  </div>
-
                 </motion.div>
               );
             })}
-          </div>
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
 
       </div>
 
-      <style>{`* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }`}</style>
+      <style>{`
+        * { -webkit-font-smoothing: antialiased; }
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+      `}</style>
     </div>
   );
 }

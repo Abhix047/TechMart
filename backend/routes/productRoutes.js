@@ -19,10 +19,18 @@ const router = express.Router();
 
 router.post("/upload", protect, admin, upload.array("images", 5), (req, res) => {
   const files = Array.isArray(req.files) ? req.files : [];
-  const imagePaths = files.map(f => f?.secure_url || (f?.filename ? `/uploads/${f.filename}` : null)).filter(Boolean);
+  
+  const imagePaths = files.map(f => {
+    // If using Cloudinary, secure_url or path will contain the full URL
+    if (f.secure_url) return f.secure_url;
+    if (f.path && f.path.startsWith("http")) return f.path;
+    
+    // Fallback to local storage path
+    return f.filename ? `/uploads/${f.filename}` : null;
+  }).filter(Boolean);
 
   if (imagePaths.length === 0) {
-    return res.status(400).json({ message: "No files uploaded" });
+    return res.status(400).json({ message: "No files uploaded or invalid file format" });
   }
 
   res.json(imagePaths);

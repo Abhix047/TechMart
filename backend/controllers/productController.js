@@ -115,21 +115,29 @@ export const createProductReview = asyncHandler(async (req, res) => {
     throw new Error("Product already reviewed");
   }
 
-  // Cloudinary returns secure_url; fallback to path for local dev
+  // cloud-based or local file handling
   const file = req.file;
   const image = file?.secure_url || file?.path || "";
 
-  product.reviews.push({
+  const newReview = {
     user: req.user._id,
     name: req.user.name,
     rating: Number(req.body.rating),
     comment: req.body.comment,
     image,
-  });
+  };
 
+  product.reviews.push(newReview);
   product.numReviews = product.reviews.length;
   product.rating = product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length;
 
-  await product.save();
+  // Use findByIdAndUpdate to avoid triggering validation on unrelated fields (like specs or user)
+  await Product.findByIdAndUpdate(req.params.id, {
+    reviews: product.reviews,
+    numReviews: product.numReviews,
+    rating: product.rating,
+  });
+
   res.status(201).json({ message: "Review added" });
 });
+

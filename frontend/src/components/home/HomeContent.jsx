@@ -65,7 +65,7 @@ const HomeContent = () => (
       <NewArrivals />
     </StackedCard>
 
-    <StackedCard index={7} bgClass="bg-black">
+    <StackedCard index={7} bgClass="bg-white">
       <Newsletter />
     </StackedCard>
     

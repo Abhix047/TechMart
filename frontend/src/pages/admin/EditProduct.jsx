@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Info, IndianRupee, Boxes, Settings,
   ImageIcon, Palette, Plus, Trash2, Save,
-  UploadCloud, X, ArrowLeft, CheckCircle2
+  UploadCloud, X, ArrowLeft, CheckCircle2, Loader2
 } from "lucide-react";
 
 import { getImg } from "../../config";
@@ -79,14 +79,14 @@ const EditProduct = () => {
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleImageUpload = async (files) => {
-    if (!files.length) return;
+    if (!files || !files.length) return;
     setIsUploading(true);
     const fd = new FormData();
     for (const f of files) fd.append("images", f);
     try {
-      // Let the browser set the correct multipart boundary header.
       const { data } = await API.post("/products/upload", fd);
       setForm(prev => ({ ...prev, images: [...prev.images, ...data] }));
+      toast.success(`${files.length} image(s) uploaded successfully`);
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || "Failed to upload images.");
     } finally {
@@ -394,12 +394,12 @@ const EditProduct = () => {
                 </div>
 
                 {/* Preview grid */}
-                {form.images.length > 0 && (
+                {(form.images.length > 0 || isUploading) && (
                   <div className="grid grid-cols-3 gap-2.5">
-                    <AnimatePresence>
+                    <AnimatePresence mode="popLayout">
                       {form.images.map((img, i) => (
                         <motion.div
-                          key={i}
+                          key={img}
                           className="relative aspect-square rounded-xl overflow-hidden border border-black/[0.07] bg-[#f0ede8] group"
                           initial={{ opacity: 0, scale: 0.85 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -407,9 +407,12 @@ const EditProduct = () => {
                           transition={{ duration: 0.28, ease }}
                         >
                           <img
-                            src={getImg(img)} // Removed local getImg in favor of centralized one
+                            src={getImg(img)}
                             alt={`Product ${i + 1}`}
-                            className="w-full h-full object-contain mix-blend-multiply p-1"
+                            className="w-full h-full object-contain mix-blend-multiply p-1.5"
+                            onError={(e) => {
+                              e.target.src = "https://placehold.co/400x400/f0ede8/999?text=Error";
+                            }}
                           />
                           <motion.button
                             type="button"
@@ -426,6 +429,17 @@ const EditProduct = () => {
                           )}
                         </motion.div>
                       ))}
+
+                      {/* Loader for new uploads */}
+                      {isUploading && (
+                        <motion.div
+                          className="relative aspect-square rounded-xl overflow-hidden border border-dashed border-black/10 bg-black/[0.02] flex items-center justify-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <Loader2 size={16} className="text-black/20 animate-spin" />
+                        </motion.div>
+                      )}
                     </AnimatePresence>
                   </div>
                 )}

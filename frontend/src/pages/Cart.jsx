@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, CheckCircle2, ShoppingBag,
-  ArrowRight, Tag, Shield, Truck, RotateCcw
+  ArrowRight, Tag, Shield, Truck, RotateCcw, Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
@@ -26,21 +26,23 @@ if (typeof document !== "undefined" && !document.getElementById("cart-fonts")) {
 /* ── stagger variants ── */
 const listVariants = {
   hidden: {},
-  show:   { transition: { staggerChildren: 0.07 } },
+  show: { transition: { staggerChildren: 0.07 } },
 };
 const rowVariants = {
-  hidden:  { opacity: 0, y: 16 },
-  show:    { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
-  exit:    { opacity: 0, x: -24, scale: 0.98, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, x: -24, scale: 0.98, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 };
 
 /* ════════════════════════════════════════
    MAIN
 ════════════════════════════════════════ */
 export default function CartPage() {
-  const [cart, setCart]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [voucher, setVoucher]   = useState("");
+  const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [voucher, setVoucher] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [isApplying, setIsApplying] = useState(false);
   const [vFocused, setVFocused] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const navigate = useNavigate();
@@ -99,8 +101,27 @@ export default function CartPage() {
     const variantAdd = i.selectedStorage?.priceAdd || 0;
     return s + (basePrice + variantAdd) * i.quantity;
   }, 0);
+
+  const handleApplyCoupon = async () => {
+    if (!voucher) return toast.error("Please enter a coupon code");
+    setIsApplying(true);
+    try {
+      const { data } = await API.post("/coupons/validate", { 
+        code: voucher, 
+        cartTotal: subtotal 
+      });
+      setDiscount(data.calculatedDiscount);
+      toast.success(data.message);
+    } catch (err) {
+      setDiscount(0);
+      toast.error(err.response?.data?.message || "Invalid coupon");
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   const deliveryFee = 0;
-  const total       = cart.length > 0 ? subtotal + deliveryFee : 0;
+  const total = cart.length > 0 ? Math.max(0, subtotal + deliveryFee - discount) : 0;
 
   /* ── Loading ── */
   if (loading) return (
@@ -196,11 +217,11 @@ export default function CartPage() {
                 >
                   <AnimatePresence initial={false}>
                     {cart.map((item, idx) => {
-                          const basePrice = item.product.discountPrice || item.product.price;
-                          const variantAdd = item.selectedStorage?.priceAdd || 0;
-                          const itemPrice = basePrice + variantAdd;
-                          const rowTotal  = itemPrice * item.quantity;
-                          const imgSrc    = getImg(item.product.images?.[0]);
+                      const basePrice = item.product.discountPrice || item.product.price;
+                      const variantAdd = item.selectedStorage?.priceAdd || 0;
+                      const itemPrice = basePrice + variantAdd;
+                      const rowTotal = itemPrice * item.quantity;
+                      const imgSrc = getImg(item.product.images?.[0]);
 
                       return (
                         <motion.div
@@ -208,9 +229,8 @@ export default function CartPage() {
                           variants={rowVariants}
                           exit="exit"
                           layout
-                          className={`border-b border-black/5 last:border-none ${
-                            removingId === item._id ? "pointer-events-none" : ""
-                          }`}
+                          className={`border-b border-black/5 last:border-none ${removingId === item._id ? "pointer-events-none" : ""
+                            }`}
                           style={{ opacity: removingId === item._id ? 0.4 : 1 }}
                         >
                           {/* Mobile card layout */}
@@ -236,24 +256,24 @@ export default function CartPage() {
                               >
                                 {item.product.name}
                               </h3>
-                                <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mb-1">
-                                  {item.product.brand || item.product.category || "Standard"}
-                                </p>
-                                {(item.selectedColor || item.selectedStorage) && (
-                                  <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
-                                    {item.selectedColor && (
-                                      <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45">
-                                        <div className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: item.selectedColor.hex }} />
-                                        {item.selectedColor.name}
-                                      </div>
-                                    )}
-                                    {item.selectedStorage && (
-                                      <div className="font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45 bg-black/[0.04] px-1.5 py-0.5 rounded">
-                                        {item.selectedStorage.size}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                              <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/30 mb-1">
+                                {item.product.brand || item.product.category || "Standard"}
+                              </p>
+                              {(item.selectedColor || item.selectedStorage) && (
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+                                  {item.selectedColor && (
+                                    <div className="flex items-center gap-1.5 font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45">
+                                      <div className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: item.selectedColor.hex }} />
+                                      {item.selectedColor.name}
+                                    </div>
+                                  )}
+                                  {item.selectedStorage && (
+                                    <div className="font-[family-name:'DM_Sans',sans-serif] text-[10px] text-black/45 bg-black/[0.04] px-1.5 py-0.5 rounded">
+                                      {item.selectedStorage.size}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                               <div className="flex items-center justify-between gap-2">
                                 {/* Qty stepper */}
                                 <div className="flex items-center border border-black/10 rounded-xl overflow-hidden bg-[#f8f7f5]">
@@ -454,10 +474,12 @@ export default function CartPage() {
                         />
                       </div>
                       <motion.button
-                        className="border border-black/10 hover:border-black/28 hover:bg-[#f8f7f5] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/45 hover:text-black/70 transition-all whitespace-nowrap"
+                        onClick={handleApplyCoupon}
+                        disabled={isApplying}
+                        className="border border-black/10 hover:border-black/28 hover:bg-[#f8f7f5] rounded-xl px-4 py-2.5 font-[family-name:'DM_Sans',sans-serif] text-[12px] font-medium text-black/45 hover:text-black/70 transition-all whitespace-nowrap flex items-center justify-center min-w-[70px]"
                         whileTap={{ scale: 0.96 }}
                       >
-                        Apply
+                        {isApplying ? <Loader2 size={14} className="animate-spin" /> : "Apply"}
                       </motion.button>
                     </div>
                   </div>
@@ -468,13 +490,13 @@ export default function CartPage() {
                   {/* Price breakdown */}
                   <div className="flex flex-col gap-3">
                     {[
-                      { label: "Subtotal",     value: `₹${subtotal.toLocaleString("en-IN")}` },
-                      { label: "Discount",     value: "₹0" },
+                      { label: "Subtotal", value: `₹${subtotal.toLocaleString("en-IN")}` },
+                      { label: "Discount", value: `- ₹${discount.toLocaleString("en-IN")}`, isDiscount: true },
                       { label: "Delivery fee", value: deliveryFee === 0 ? "Free" : `₹${deliveryFee}` },
-                    ].map(({ label, value }) => (
+                    ].map(({ label, value, isDiscount }) => (
                       <div key={label} className="flex items-center justify-between">
                         <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] text-black/40">{label}</span>
-                        <span className="font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium text-[#0f0f0f]">{value}</span>
+                        <span className={`font-[family-name:'DM_Sans',sans-serif] text-[12.5px] font-medium ${isDiscount ? "text-emerald-600" : "text-[#0f0f0f]"}`}>{value}</span>
                       </div>
                     ))}
                   </div>
@@ -495,15 +517,6 @@ export default function CartPage() {
                     </span>
                   </motion.div>
 
-                  {/* Warranty note */}
-                  <div className="flex items-start gap-2.5 bg-[#f8f7f5] border border-black/5 rounded-xl p-3.5">
-                    <CheckCircle2 size={13} className="shrink-0 mt-0.5 text-black/28" strokeWidth={1.5} />
-                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/38 leading-relaxed">
-                      90 Day warranty against manufacturer's defects.{" "}
-                      <a href="#" className="underline text-black/55 hover:text-black/80 transition-colors">View Details</a>
-                    </p>
-                  </div>
-
                   {/* Checkout CTA */}
                   <motion.button
                     onClick={() => navigate("/checkout")}
@@ -515,6 +528,15 @@ export default function CartPage() {
                     <ArrowRight size={15} strokeWidth={2.5} />
                   </motion.button>
 
+                  {/* Warranty note */}
+                  <div className="flex items-start gap-2.5 bg-[#f8f7f5] border border-black/5 rounded-xl p-3.5">
+                    <CheckCircle2 size={13} className="shrink-0 mt-0.5 text-black/28" strokeWidth={1.5} />
+                    <p className="font-[family-name:'DM_Sans',sans-serif] text-[11px] text-black/38 leading-relaxed">
+                      90 Day warranty against manufacturer's defects.{" "}
+                      <a href="#" className="underline text-black/55 hover:text-black/80 transition-colors">View Details</a>
+                    </p>
+                  </div>
+
                   <p className="font-[family-name:'DM_Sans',sans-serif] text-center text-[10px] text-black/22 tracking-wide">
                     Secure checkout · SSL encrypted
                   </p>
@@ -524,9 +546,9 @@ export default function CartPage() {
               {/* Trust badges */}
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { icon: Shield,    label: "Secure\nPayment"  },
-                  { icon: Truck,     label: "Fast\nDelivery"   },
-                  { icon: RotateCcw, label: "Easy\nReturns"    },
+                  { icon: Shield, label: "Secure\nPayment" },
+                  { icon: Truck, label: "Fast\nDelivery" },
+                  { icon: RotateCcw, label: "Easy\nReturns" },
                 ].map(({ icon: Icon, label }) => (
                   <div key={label} className="bg-white border border-black/6 rounded-xl py-3 px-2 flex flex-col items-center gap-1.5 shadow-[0_1px_6px_rgba(0,0,0,0.03)]">
                     <Icon size={15} className="text-black/28" strokeWidth={1.5} />
