@@ -379,12 +379,16 @@ const Hero = () => {
           </AnimatePresence>
 
           {/* ── Multi-layer gradients ── */}
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
-            background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.15) 55%, transparent 80%)",
-          }} />
-          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
-            background: "linear-gradient(100deg, rgba(0,0,0,0.4) 0%, transparent 60%)",
-          }} />
+          {!isMobile && (
+            <>
+              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
+                background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.15) 55%, transparent 80%)",
+              }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
+                background: "linear-gradient(100deg, rgba(0,0,0,0.4) 0%, transparent 60%)",
+              }} />
+            </>
+          )}
           {/* Vignette */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5,
             boxShadow: "inset 0 0 120px rgba(0,0,0,0.45)",
